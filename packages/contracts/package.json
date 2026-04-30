@@ -1,0 +1,17 @@
+{
+  "name": "@mezoyield/contracts",
+  "version": "0.0.1",
+  "packageManager": "pnpm@10.33.0",
+  "private": true,
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "hardhat": "^2.22.0",
+    "typescript": "^5.4.0"
+  }
+}
