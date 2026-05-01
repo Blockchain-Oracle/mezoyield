@@ -12,7 +12,15 @@ import { renderHook, act, waitFor } from "@testing-library/react";
  * after the routing fix.
  */
 
-const writeContractAsync = vi.fn(async () => "0xdead" as `0x${string}`);
+type WriteArgs = {
+  address: `0x${string}`;
+  abi: readonly unknown[];
+  functionName: string;
+  args: readonly [readonly `0x${string}`[], readonly bigint[]];
+};
+const writeContractAsync = vi.fn(
+  async (_args: WriteArgs): Promise<`0x${string}`> => "0xdead",
+);
 
 vi.mock("wagmi", () => ({
   useWriteContract: () => ({ writeContractAsync }),
@@ -42,10 +50,7 @@ describe("useSubmitVote routing", () => {
       ]);
     });
     expect(writeContractAsync).toHaveBeenCalledTimes(1);
-    const callArgs = writeContractAsync.mock.calls[0][0] as {
-      functionName: string;
-      args: unknown;
-    };
+    const callArgs = writeContractAsync.mock.calls[0]![0];
     expect(callArgs.functionName).toBe("setManualAllocation");
     expect(callArgs.functionName).not.toBe("castOptimalVote");
   });
@@ -58,10 +63,7 @@ describe("useSubmitVote routing", () => {
       ]);
     });
     expect(writeContractAsync).toHaveBeenCalledTimes(1);
-    const callArgs = writeContractAsync.mock.calls[0][0] as {
-      functionName: string;
-      args: unknown;
-    };
+    const callArgs = writeContractAsync.mock.calls[0]![0];
     expect(callArgs.functionName).toBe("setManualAllocation");
   });
 
@@ -73,9 +75,7 @@ describe("useSubmitVote routing", () => {
         { gauge: G2, weightBps: 4_000 },
       ]);
     });
-    const callArgs = writeContractAsync.mock.calls[0][0] as {
-      args: readonly [readonly `0x${string}`[], readonly bigint[]];
-    };
+    const callArgs = writeContractAsync.mock.calls[0]![0];
     expect(callArgs.args[0]).toEqual([G1, G2]);
     expect(callArgs.args[1]).toEqual([6_000n, 4_000n]);
   });
