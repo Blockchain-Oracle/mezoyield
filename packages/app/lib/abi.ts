@@ -86,4 +86,13 @@ export const optimizerAbi = [
     inputs: [{ name: "user", type: "address" }],
     outputs: [{ name: "", type: "bool" }],
   },
+  {
+    type: "event",
+    name: "RewardsClaimed",
+    inputs: [
+      { name: "user", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
+    anonymous: false,
+  },
 ] as const;

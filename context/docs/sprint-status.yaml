@@ -93,17 +93,17 @@ stories:
   started_at: null
   status: PENDING
   title: Optimize modal + vote submission
-- completed_at: null
+- completed_at: 2026-05-01T20:10:20Z
   depends_on:
   - STORY-007
   epic: EPIC-4
   id: STORY-008
   issue_url: https://github.com/Blockchain-Oracle/mezoyield/issues/8
-  merged_at: null
-  pr_url: ''
+  merged_at: 2026-05-01T20:10:20Z
+  pr_url: https://github.com/Blockchain-Oracle/mezoyield/pull/25
   priority: P0
-  started_at: null
-  status: PENDING
+  started_at: 2026-05-01T19:55:00Z
+  status: COMPLETED
   title: Claim rewards flow
 - completed_at: null
   depends_on:
@@ -114,8 +114,8 @@ stories:
   merged_at: null
   pr_url: ''
   priority: P1
-  started_at: null
-  status: PENDING
+  started_at: 2026-05-01T20:45:00Z
+  status: IN_PROGRESS
   title: Yield history chart
 - completed_at: null
   depends_on:

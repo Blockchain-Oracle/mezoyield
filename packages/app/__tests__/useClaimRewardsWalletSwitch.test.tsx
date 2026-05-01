@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 /**
  * Codex P2 on PR #25 (commit 3a8f...): in-flight claim state persisted
@@ -36,8 +38,16 @@ import { useClaimRewards } from "@/hooks/useClaimRewards";
 const A: `0x${string}` = "0xa0000000000000000000000000000000000000aa";
 const B: `0x${string}` = "0xb0000000000000000000000000000000000000bb";
 
+let queryClient: QueryClient;
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
+
 describe("useClaimRewards: wallet switch reset", () => {
   beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
     writeContractAsync.mockClear();
     refetch.mockClear();
     receiptState.isSuccess = false;
@@ -48,7 +58,7 @@ describe("useClaimRewards: wallet switch reset", () => {
   it("resets phase + txHash when the connected user changes mid-flight", async () => {
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
-      { initialProps: { user: A } },
+      { initialProps: { user: A }, wrapper },
     );
     await act(async () => {
       await result.current.claim();
@@ -76,7 +86,7 @@ describe("useClaimRewards: wallet switch reset", () => {
 
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
-      { initialProps: { user: A } },
+      { initialProps: { user: A }, wrapper },
     );
 
     // Kick off claim — promise is pending, no hash yet.
@@ -120,7 +130,7 @@ describe("useClaimRewards: wallet switch reset", () => {
 
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
-      { initialProps: { user: A } },
+      { initialProps: { user: A }, wrapper },
     );
 
     // A starts claim → pending.
@@ -156,10 +166,37 @@ describe("useClaimRewards: wallet switch reset", () => {
     expect(result.current.status).toBe("confirming");
   });
 
+  it("invalidates the user-scoped yield-history query on confirmed claim (Codex pre-push P2 STORY-009)", async () => {
+    // STORY-009 BDD: \"user claims rewards in current epoch → YieldChart
+    // updates\". Without invalidation, useYieldHistory's 30s staleTime
+    // leaves the chart on pre-claim buckets until remount/refocus.
+    // Spy on the queryClient's invalidateQueries to confirm we issue the
+    // correct key once receipt.isSuccess flips.
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const { result, rerender } = renderHook(
+      ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
+      { initialProps: { user: A }, wrapper },
+    );
+    await act(async () => {
+      await result.current.claim();
+    });
+    expect(result.current.status).toBe("confirming");
+
+    // Receipt confirms — flip the receipt mock and rerender to trigger
+    // the success-path useEffect.
+    receiptState.isSuccess = true;
+    rerender({ user: A });
+    await waitFor(() => expect(result.current.status).toBe("success"));
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["yield-history", A],
+    });
+  });
+
   it("does NOT reset when user stays the same across rerenders", async () => {
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
-      { initialProps: { user: A } },
+      { initialProps: { user: A }, wrapper },
     );
     await act(async () => {
       await result.current.claim();

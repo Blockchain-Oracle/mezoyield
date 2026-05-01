@@ -6,6 +6,7 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
+import { useQueryClient } from "@tanstack/react-query";
 import { OPTIMIZER_ADDRESS, MATCHBOX_ADDRESS } from "@/lib/contracts";
 import { matchboxAbi } from "@/lib/abi";
 import type { Address } from "@/lib/types";
@@ -60,6 +61,16 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
     query: { enabled: !!user },
   });
 
+  // Codex pre-push P2 on STORY-009: STORY-009 BDD case "user claims
+  // rewards in current epoch → YieldChart updates" requires the chart's
+  // history query to reflect the new claim. useYieldHistory has 30s
+  // staleTime + no input that changes mid-session, so without explicit
+  // invalidation the chart shows pre-claim buckets until remount.
+  // Plumbing the query client here decouples the producer (claim) from
+  // the consumer (history) — the history hook never has to know about
+  // claims.
+  const queryClient = useQueryClient();
+
   const { writeContractAsync } = useWriteContract();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
@@ -104,6 +115,12 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
     if (receipt.isSuccess) {
       setPhase("success");
       void pendingQuery.refetch();
+      // Invalidate the user-scoped yield history so the chart reflects
+      // the just-confirmed claim without waiting for a remount or
+      // 30-second staleTime expiration.
+      if (user) {
+        void queryClient.invalidateQueries({ queryKey: ["yield-history", user] });
+      }
     } else if (receipt.isError) {
       setPhase("error");
       setErrorMessage((receipt.error as Error | null)?.message ?? "Transaction reverted");
