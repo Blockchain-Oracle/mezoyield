@@ -33,18 +33,30 @@ type DeploymentManifest = {
     MezoYieldOptimizer: DeployedContract;
     MockGaugeController: DeployedContract;
     MockMatchbox: DeployedContract;
+    MockVeMezo: DeployedContract;
   };
   notes: string;
 };
 
 const manifest = deployments as unknown as DeploymentManifest;
 
-if (manifest.chainId !== 31611) {
+// Accept both Mezo testnet (31611) and mainnet (31612) so the same lib
+// works against either deployment manifest. CLAUDE.md commits to a
+// future mainnet deploy; readers of this file should not need to edit
+// the assertion when that lands. Other chains are rejected fast so a
+// stray manifest doesn't silently mis-wire the app.
+const ACCEPTED_CHAIN_IDS = new Set<number>([31611, 31612]);
+if (!ACCEPTED_CHAIN_IDS.has(manifest.chainId)) {
   throw new Error(
-    `Expected Mezo testnet (31611) deployment manifest, got chainId ${manifest.chainId}.`,
+    `Expected Mezo testnet (31611) or mainnet (31612) deployment, got chainId ${manifest.chainId}.`,
   );
 }
 
+export const MEZO_CHAIN_ID = manifest.chainId;
+export const MEZO_RPC_URL = manifest.rpcUrl;
+export const MEZO_EXPLORER = manifest.explorer;
+
+// Deprecated aliases retained so STORY-004's tests don't break.
 export const MEZO_TESTNET_CHAIN_ID = manifest.chainId;
 export const MEZO_TESTNET_RPC_URL = manifest.rpcUrl;
 export const MEZO_TESTNET_EXPLORER = manifest.explorer;
@@ -53,5 +65,6 @@ export const OPTIMIZER_ADDRESS = manifest.contracts.MezoYieldOptimizer.address;
 export const GAUGE_CONTROLLER_ADDRESS =
   manifest.contracts.MockGaugeController.address;
 export const MATCHBOX_ADDRESS = manifest.contracts.MockMatchbox.address;
+export const VE_MEZO_ADDRESS = manifest.contracts.MockVeMezo.address;
 
 export const DEPLOYMENT_MANIFEST = manifest;

@@ -80,6 +80,13 @@ async function main() {
   const matchboxAddress = await matchbox.getAddress();
   console.log(`MockMatchbox: ${matchboxAddress}`);
 
+  const VeMezoFactory = await ethers.getContractFactory("MockVeMezo");
+  const veMezo = await VeMezoFactory.deploy();
+  const veMezoTx = veMezo.deploymentTransaction();
+  await veMezo.waitForDeployment();
+  const veMezoAddress = await veMezo.getAddress();
+  console.log(`MockVeMezo: ${veMezoAddress}`);
+
   const OptimizerFactory = await ethers.getContractFactory("MezoYieldOptimizer");
   const optimizer = await OptimizerFactory.deploy(
     gaugeControllerAddress,
@@ -98,6 +105,8 @@ async function main() {
   const gc: any = gaugeController;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mb: any = matchbox;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ve: any = veMezo;
   const seedReceipts: { name: string; gauge: string }[] = [];
   for (const g of SEED_GAUGES) {
     const tx = await gc.addGauge(g.name, g.totalVeMezo);
@@ -108,6 +117,14 @@ async function main() {
     seedReceipts.push({ name: g.name, gauge: gaugeAddress });
     console.log(`  ${g.name} → ${gaugeAddress}`);
   }
+
+  // Seed the deployer with a sample veMEZO balance so the dashboard's
+  // PositionCard renders a non-empty position out of the box. Any other
+  // address can call `faucet()` themselves to top up.
+  const SEED_DEPLOYER_BALANCE = ethers.parseUnits("1500", 18);
+  console.log(`Minting ${SEED_DEPLOYER_BALANCE.toString()} wei veMEZO to deployer...`);
+  const mintTx = await ve.mint(deployer.address, SEED_DEPLOYER_BALANCE);
+  await mintTx.wait();
 
   if (network.name === "hardhat") {
     console.log("(hardhat-network: ephemeral; skipping JSON emit)");
@@ -124,6 +141,7 @@ async function main() {
   const optimizerReceipt = await optimizerTx?.wait();
   const matchboxReceipt = await matchboxTx?.wait();
   const gaugeReceipt = await gaugeControllerTx?.wait();
+  const veMezoReceipt = await veMezoTx?.wait();
 
   const json = {
     chainId: chainIdRaw,
@@ -153,7 +171,13 @@ async function main() {
         txHash: matchboxTx?.hash,
         blockNumber: matchboxReceipt?.blockNumber,
       },
+      MockVeMezo: {
+        address: veMezoAddress,
+        txHash: veMezoTx?.hash,
+        blockNumber: veMezoReceipt?.blockNumber,
+      },
     },
+    seedDeployerVeMezoWei: SEED_DEPLOYER_BALANCE.toString(),
     seededGauges: SEED_GAUGES.map((g, i) => ({
       name: g.name,
       address: seedReceipts[i].gauge,
