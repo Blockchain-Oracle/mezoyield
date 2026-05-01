@@ -1,0 +1,26 @@
+{
+  "chainId": 31611,
+  "network": "mezoTestnet",
+  "rpcUrl": "https://rpc.test.mezo.org",
+  "explorer": "https://explorer.test.mezo.org",
+  "deployer": "0x84f94745ea0a434540749839819E65E281970004",
+  "deployedAt": "2026-05-01T10:22:12.373Z",
+  "contracts": {
+    "MezoYieldOptimizer": {
+      "address": "0x0e3517126aE2a94Ac9411952b74d4d682Ce74256",
+      "txHash": "0x2f98a6fe04944fb1f1e3e8900cebb744063fcdc732af98166ed86064342d23d9",
+      "blockNumber": 12749966
+    },
+    "MockGaugeController": {
+      "address": "0xDfCBD2958C1F28257182Ce4992bf627669F1F452",
+      "txHash": "0x2f2942a3281a851cd54b21edcfbdedf893c59456a303351fce2939d70d8a17b4",
+      "blockNumber": 12749964
+    },
+    "MockMatchbox": {
+      "address": "0xa3b3F1a5c83b1F3B289c1DAA38040238dCc0f6e5",
+      "txHash": "0xee1b0ee386958f811d01006a6fe623def17204a2de3e8a7bf96492c580c290b2",
+      "blockNumber": 12749965
+    }
+  },
+  "notes": "MockGaugeController and MockMatchbox are testnet stand-ins because Mezo's real gauge/matchbox addresses aren't published yet (CONTEXT.md OQ #6). The real Mezo gauge system is mezo-org/tigris's Voter.sol (Solidly-style); STORY-005+ will introduce an adapter once subgraph data is wired. See TESTNET_ADDRESSES.md (STORY-010) for the full disclosure."
+}
