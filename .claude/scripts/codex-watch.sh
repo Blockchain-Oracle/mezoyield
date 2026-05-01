@@ -46,8 +46,16 @@ check_once() {
   # is within seconds of the actual push AND is tied to the push event, not
   # commit metadata. Falls back to commit.committer.date only if no check
   # suites exist (e.g., a brand-new repo with no workflows configured).
-  head_pushed_at="$(gh api "repos/$REPO/commits/$head_sha/check-suites" \
-    --jq '[.check_suites[] | .created_at] | sort | .[0] // empty')"
+  #
+  # Codex P1 on PR #26 (round 2): must paginate. Default `gh api` returns
+  # only page 1 (max 30 items). A SHA with many suites — multiple GitHub
+  # Apps installed, or re-runs — can have older suites on later pages, so
+  # min(created_at) of page 1 alone yields a cutoff that's too new and
+  # legitimate post-push approvals get filtered out. `--paginate` walks
+  # all pages; ISO 8601 timestamps sort lexicographically, so piping to
+  # `sort | head -1` across pages gives the global earliest.
+  head_pushed_at="$(gh api --paginate "repos/$REPO/commits/$head_sha/check-suites" \
+    --jq '.check_suites[].created_at' 2>/dev/null | sort | head -1)"
   local pushed_source
   if [ -z "$head_pushed_at" ]; then
     head_pushed_at="$(gh api "repos/$REPO/commits/$head_sha" --jq .commit.committer.date)"
