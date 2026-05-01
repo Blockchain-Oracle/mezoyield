@@ -74,17 +74,21 @@ Pass this rule into every subagent brief. "If you don't know, look it up — don
 
 ## Required external libraries (locked)
 
+_Status reflects what's on `main`. "PR #N" means the lib lands when that PR merges._
+
 | Library | Purpose | Status |
 |---|---|---|
-| `@mezo-org/passport` 0.17.2 | Wallet connect (Bitcoin + EVM) — MANDATORY | ✅ STORY-002 |
-| `@rainbow-me/rainbowkit` v2 | Connect modal | ✅ STORY-002 |
-| `wagmi` v2 + `viem` v2 | EVM hooks + low-level client | ✅ STORY-002 |
-| `@tanstack/react-query` v5 | Async data layer (required by wagmi v2) | ✅ STORY-002 |
-| shadcn/ui (Button, Tabs, Dialog, Slider) | UI primitives via `@base-ui/react` | ✅ Tabs in STORY-002; rest in STORY-007 |
+| `@mezo-org/passport` 0.17.2 | Wallet connect (Bitcoin + EVM) — MANDATORY | pending PR #18 (STORY-002) |
+| `@rainbow-me/rainbowkit` v2 | Connect modal | pending PR #18 (STORY-002) |
+| `wagmi` v2 + `viem` v2 | EVM hooks + low-level client | pending PR #18 (STORY-002) |
+| `@tanstack/react-query` v5 | Async data layer (required by wagmi v2) | pending PR #18 (STORY-002) |
+| shadcn/ui Button + `cn()` helper | UI primitives via `@base-ui/react` | ✅ on `main` (#15) |
+| shadcn/ui Tabs | Tabs primitive | pending PR #18 (STORY-002) |
+| shadcn/ui Dialog + Slider | Optimize-flow primitives | STORY-007 |
 | `graphql-request` | Goldsky subgraph queries | STORY-005 |
 | `recharts` | Yield history chart | STORY-009 |
 | `zod` | Schema validation at I/O edges | STORY-005 |
-| Hardhat 2.22 + `@nomicfoundation/hardhat-toolbox` | Compile + test + deploy | ✅ scaffold |
+| Hardhat 2.22 + `@nomicfoundation/hardhat-toolbox` | Compile + test + deploy | ✅ on `main` |
 
 **Do NOT use** `@solana/web3.js`, `@web3-react/core`, `ethers.js` for app code. Mezo is EVM, viem only. Hardhat may use ethers transitively via `hardhat-toolbox`. ADR-mandated exception: contracts ship a `MockGaugeController` + `MockMatchbox` deployed alongside the optimizer, because Mezo's real gauge/matchbox addresses aren't documented yet (CONTEXT.md open question #6) — disclose in `TESTNET_ADDRESSES.md`.
 
@@ -125,7 +129,8 @@ Pass this rule into every subagent brief. "If you don't know, look it up — don
 Before commit, on any PR that adds or modifies a hot-path source file:
 
 ```bash
-# Skips paths that don't yet exist on the branch — the gate stays valid
+# Exits 0 when clean, 1 when a forbidden token is found.
+# Skips paths that don't yet exist on the branch so the gate stays valid
 # story-by-story as the file tree fills in.
 HOT_PATHS=(
   packages/app/lib
@@ -135,10 +140,20 @@ HOT_PATHS=(
 )
 EXISTING=()
 for p in "${HOT_PATHS[@]}"; do [ -e "$p" ] && EXISTING+=("$p"); done
-if [ ${#EXISTING[@]} -gt 0 ]; then
-  grep -rEl 'mock|fake|dummy|hardcoded' "${EXISTING[@]}" 2>/dev/null
+
+if [ ${#EXISTING[@]} -eq 0 ]; then
+  echo "§14 grep gate: no hot-path files yet — clean."
+  exit 0
 fi
-# Expected output: nothing (zero matches).
+
+MATCHES=$(grep -rEl 'mock|fake|dummy|hardcoded' "${EXISTING[@]}" 2>/dev/null || true)
+if [ -n "$MATCHES" ]; then
+  echo "§14 grep gate FAIL — forbidden tokens in:" >&2
+  echo "$MATCHES" >&2
+  exit 1
+fi
+
+echo "§14 grep gate: clean."
 ```
 
 Test fixtures under `__tests__/` and `__fixtures__/` are exempt. Solidity mocks under `packages/contracts/contracts/mocks/` are also exempt — they exist only because Mezo's real gauge/matchbox addresses are undocumented (disclose in `TESTNET_ADDRESSES.md`).
