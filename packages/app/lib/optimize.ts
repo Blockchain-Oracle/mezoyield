@@ -27,19 +27,21 @@ export const TOTAL_BPS = 10_000;
 export function autoAllocate(gauges: Gauge[]): AllocationEntry[] {
   if (gauges.length === 0) return [];
 
+  // Score = bribe / totalVeMezo, kept in bigint as a fixed-point ratio
+  // scaled by 1e18 so we don't lose precision on small ratios. Codex P2
+  // on PR #24 caught that scaling to a plain number (1e9) and filtering
+  // `score > 0` would truncate any positive bribe with ratio < 1e-9 to
+  // zero — possible on large-veMEZO/small-bribe gauges. bigint arithmetic
+  // through to the final BPS conversion avoids the precision cliff.
+  const SCALE = 10n ** 18n;
   const scored = gauges
     .map((g) => ({
       gauge: g,
-      // Use the raw bribe / total ratio. We scale by 1e18 to keep precision
-      // while staying in plain numbers for the proportional-distribution
-      // arithmetic below. Skip gauges with no veMEZO to avoid /0.
       score:
-        g.totalVeMezoWei === 0n
-          ? 0
-          : Number((g.bribeMUSDWei * 10n ** 9n) / g.totalVeMezoWei),
+        g.totalVeMezoWei === 0n ? 0n : (g.bribeMUSDWei * SCALE) / g.totalVeMezoWei,
     }))
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .filter((x) => x.score > 0n)
+    .sort((a, b) => (a.score < b.score ? 1 : a.score > b.score ? -1 : 0));
 
   if (scored.length === 0) {
     // Fallback: pick the gauge with highest totalVeMezo so the user has a
@@ -54,12 +56,14 @@ export function autoAllocate(gauges: Gauge[]): AllocationEntry[] {
     return [{ gauge: fallback.address, weightBps: TOTAL_BPS }];
   }
 
-  const total = scored.reduce((acc, x) => acc + x.score, 0);
-  // Floor each weight, then redistribute the rounding drift onto the
-  // heaviest entry so the final sum is exactly TOTAL_BPS.
+  const totalScore = scored.reduce((acc, x) => acc + x.score, 0n);
+  const totalBpsBig = BigInt(TOTAL_BPS);
+  // Floor each weight (bigint division IS floor for positive operands),
+  // then redistribute the rounding drift onto the heaviest entry so the
+  // final sum is exactly TOTAL_BPS.
   const entries = scored.map((x) => ({
     gauge: x.gauge.address,
-    weightBps: Math.floor((x.score / total) * TOTAL_BPS),
+    weightBps: Number((x.score * totalBpsBig) / totalScore),
   }));
   const drift = TOTAL_BPS - entries.reduce((acc, e) => acc + e.weightBps, 0);
   if (drift !== 0 && entries.length > 0) {

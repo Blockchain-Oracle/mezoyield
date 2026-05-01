@@ -38,9 +38,14 @@ export type SubmitVoteState = {
   /** Human-readable revert reason from viem's BaseError, if any. */
   errorMessage?: string;
   /**
-   * Submit a vote. Auto mode calls `castOptimalVote` (keeper-authorized);
-   * manual mode calls `setManualAllocation` (caller-only) — the user pins
-   * their own allocation rather than triggering a system-wide vote.
+   * Submit a vote. Both Auto and Manual modes call `setManualAllocation`
+   * — the only difference is HOW the weights are computed (autoAllocate
+   * over live gauge data vs the user's slider values). `setManualAllocation`
+   * is caller-authorized so any connected wallet can pin its own
+   * allocation; `castOptimalVote` is keeper-only and intentionally NOT
+   * exposed in the user UI. Codex P1 on PR #24 caught that routing auto
+   * through `castOptimalVote` would have reverted for any non-keeper
+   * wallet — i.e. every regular user.
    */
   submit: (mode: SubmitMode, allocation: AllocationEntry[]) => Promise<void>;
   reset: () => void;
@@ -49,9 +54,8 @@ export type SubmitVoteState = {
 /**
  * Wraps wagmi's `useWriteContract` + `useWaitForTransactionReceipt` for the
  * vote submission flow. Returns a single `submit(mode, allocation)` entry
- * point so OptimizeModal doesn't have to know which on-chain function to
- * call — `auto` → `castOptimalVote` (keeper path), `manual` →
- * `setManualAllocation` (per-user pin).
+ * point. Both modes route through `setManualAllocation` (caller-authorized);
+ * a future keeper-bot story can add a separate path for `castOptimalVote`.
  *
  * §14: no polling, no synthesized state. wagmi's receipt waiter is the
  * single source of truth for confirmation.
@@ -83,17 +87,19 @@ export function useSubmitVote(): SubmitVoteState {
     status: phase,
     txHash,
     errorMessage,
-    submit: async (mode, allocation) => {
+    submit: async (_mode, allocation) => {
       try {
         setPhase("writing");
         setErrorMessage(undefined);
         const gauges = allocation.map((e) => e.gauge) as readonly `0x${string}`[];
         const weights = allocation.map((e) => BigInt(e.weightBps));
-        const functionName = mode === "auto" ? "castOptimalVote" : "setManualAllocation";
+        // Always route through `setManualAllocation` — caller-authorized,
+        // works for any connected wallet. `castOptimalVote` is keeper-only
+        // and reserved for the automation path (a future keeper-bot story).
         const hash = await writeContractAsync({
           address: OPTIMIZER_ADDRESS,
           abi: optimizerWriteAbi,
-          functionName,
+          functionName: "setManualAllocation",
           args: [gauges, weights] as never,
         });
         setTxHash(hash);
