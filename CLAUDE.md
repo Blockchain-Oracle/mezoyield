@@ -26,10 +26,18 @@ Frame as **set-and-forget yield with one CTA** — never as "governance dashboar
 ## Top-3 commands
 
 ```bash
-pnpm test && pnpm lint && pnpm exec tsc --noEmit && pnpm --filter @mezoyield/app build  # full local gate
-pnpm dev                                                                                    # Next.js dev server (packages/app)
-pnpm --filter @mezoyield/contracts test                                                     # Hardhat unit tests
+# Full local gate — run per-package because root tsconfig excludes packages/.
+pnpm --filter @mezoyield/contracts run build && \
+pnpm --filter @mezoyield/contracts exec tsc --noEmit && \
+pnpm --filter @mezoyield/app exec tsc --noEmit && \
+pnpm test && pnpm lint && \
+pnpm --filter @mezoyield/app run build
+
+pnpm dev                                                                              # Next.js dev server (packages/app)
+pnpm --filter @mezoyield/contracts test                                                # Hardhat unit tests
 ```
+
+The contracts `build` runs first because typechain types must exist before `tsc --noEmit` checks any code that imports them.
 
 `.claude/scripts/green-light.sh` runs the same gates and is workspace-aware (post-#17 cleanup) — but rely on the explicit `pnpm` commands above for verification, since the script's full plumbing isn't covered by tests.
 
@@ -114,14 +122,28 @@ Pass this rule into every subagent brief. "If you don't know, look it up — don
 
 ## §14 grep gate — hot-path verification
 
-Before commit, on any PR touching hot-path source:
+Before commit, on any PR that adds or modifies a hot-path source file:
 
 ```bash
-# Should return zero matches:
-grep -rE 'mock|fake|dummy|hardcoded' packages/app/lib packages/app/hooks packages/app/components/Dashboard packages/contracts/contracts/MezoYieldOptimizer.sol
+# Skips paths that don't yet exist on the branch — the gate stays valid
+# story-by-story as the file tree fills in.
+HOT_PATHS=(
+  packages/app/lib
+  packages/app/hooks
+  packages/app/components/Dashboard
+  packages/contracts/contracts/MezoYieldOptimizer.sol
+)
+EXISTING=()
+for p in "${HOT_PATHS[@]}"; do [ -e "$p" ] && EXISTING+=("$p"); done
+if [ ${#EXISTING[@]} -gt 0 ]; then
+  grep -rEl 'mock|fake|dummy|hardcoded' "${EXISTING[@]}" 2>/dev/null
+fi
+# Expected output: nothing (zero matches).
 ```
 
-Test fixtures under `__tests__/` and `__fixtures__/` are exempt. Solidity mocks under `packages/contracts/contracts/mocks/` are also exempt — they exist only because Mezo's real gauge/matchbox addresses are undocumented (disclose in TESTNET_ADDRESSES.md).
+Test fixtures under `__tests__/` and `__fixtures__/` are exempt. Solidity mocks under `packages/contracts/contracts/mocks/` are also exempt — they exist only because Mezo's real gauge/matchbox addresses are undocumented (disclose in `TESTNET_ADDRESSES.md`).
+
+Hot-path scope grows with the project — when a new lib/hook/component lands that handles real on-chain data, add its path to the list above in the same PR.
 
 ## Burn list (the Codex/PR-pitfalls log — pre-empt these)
 
@@ -221,7 +243,7 @@ If CI is red:
 Before opening a PR:
 
 - [ ] Tests written FIRST (ATDD against story BDD).
-- [ ] `pnpm test && pnpm lint && pnpm exec tsc --noEmit && pnpm --filter @mezoyield/app build` all green.
+- [ ] Full local gate green (per-package commands — see "Top-3 commands" above; the per-package `tsc --noEmit` matters because root tsconfig excludes `packages/`).
 - [ ] §14 grep clean on hot-path source files.
 - [ ] `codex exec review --base main --full-auto --title "<title>"` run; valid findings addressed.
 - [ ] PR body includes BDD-line → test-name mapping.
