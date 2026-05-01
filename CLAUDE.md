@@ -76,21 +76,25 @@ Pass this rule into every subagent brief. "If you don't know, look it up — don
 
 _Status reflects what's on `main`. "PR #N" means the lib lands when that PR merges._
 
-| Library | Purpose | Status |
-|---|---|---|
-| `@mezo-org/passport` 0.17.2 | Wallet connect (Bitcoin + EVM) — MANDATORY | pending PR #18 (STORY-002) |
-| `@rainbow-me/rainbowkit` v2 | Connect modal | pending PR #18 (STORY-002) |
-| `wagmi` v2 + `viem` v2 | EVM hooks + low-level client | pending PR #18 (STORY-002) |
-| `@tanstack/react-query` v5 | Async data layer (required by wagmi v2) | pending PR #18 (STORY-002) |
-| shadcn/ui Button + `cn()` helper | UI primitives via `@base-ui/react` | ✅ on `main` (#15) |
-| shadcn/ui Tabs | Tabs primitive | pending PR #18 (STORY-002) |
-| shadcn/ui Dialog + Slider | Optimize-flow primitives | STORY-007 |
-| `graphql-request` | Goldsky subgraph queries | STORY-005 |
-| `recharts` | Yield history chart | STORY-009 |
-| `zod` | Schema validation at I/O edges | STORY-005 |
-| Hardhat 2.22 + `@nomicfoundation/hardhat-toolbox` | Compile + test + deploy | ✅ on `main` |
+**Versioning rule:** never pin a patch version when adding a dependency — let pnpm resolve. Use `pnpm --filter @mezoyield/<pkg> add <name>` (no version) so pnpm picks the latest compatible release; the resulting `^x.y.z` in `package.json` is a major-version range and is what we want. The major versions listed below are the COMPATIBILITY constraints (e.g. wagmi must be v2 because that's what `@mezo-org/passport` peers against — wagmi v3 exists and pnpm will pick it by default unless you specify the major). Only specify a version like `wagmi@2` when there's an active peer-dep mismatch; never `wagmi@^2.5.12`.
+
+| Library | Purpose | Major | Status |
+|---|---|---|---|
+| `@mezo-org/passport` | Wallet connect (Bitcoin + EVM) — see Codex Flow note below | 0.x | pending PR #18 (STORY-002) |
+| `@rainbow-me/rainbowkit` | Connect modal | v2 | pending PR #18 (STORY-002) |
+| `wagmi` + `viem` | EVM hooks + low-level client | v2 (peers of Passport) | pending PR #18 (STORY-002) |
+| `@tanstack/react-query` | Async data layer | v5 (peer of wagmi v2) | pending PR #18 (STORY-002) |
+| shadcn/ui Button + `cn()` helper | UI primitives via `@base-ui/react` | — | ✅ on `main` (#15) |
+| shadcn/ui Tabs | Tabs primitive | — | pending PR #18 (STORY-002) |
+| shadcn/ui Dialog + Slider | Optimize-flow primitives | — | STORY-007 |
+| `graphql-request` | Goldsky subgraph queries | latest | STORY-005 |
+| `recharts` | Yield history chart | latest | STORY-009 |
+| `zod` | Schema validation at I/O edges | latest | STORY-005 |
+| Hardhat + `@nomicfoundation/hardhat-toolbox` | Compile + test + deploy | v2.x | ✅ on `main` |
 
 **Do NOT use** `@solana/web3.js`, `@web3-react/core`, `ethers.js` for app code. Mezo is EVM, viem only. Hardhat may use ethers transitively via `hardhat-toolbox`. ADR-mandated exception: contracts ship a `MockGaugeController` + `MockMatchbox` deployed alongside the optimizer, because Mezo's real gauge/matchbox addresses aren't documented yet (CONTEXT.md open question #6) — disclose in `TESTNET_ADDRESSES.md`.
+
+**Note on `@mezo-org/passport` vs vanilla RainbowKit:** Mezo's own gauge dApp (`mezo-org/tigris`) uses vanilla `getDefaultConfig` from `@rainbow-me/rainbowkit` with `ssr: true`, NOT `@mezo-org/passport`. Tigris's `dapp/` is the canonical Next.js + wagmi v2 wiring on Mezo and is cloned at `context/refs/repos/tigris/dapp/` for reference. STORY-002 uses Passport per its BDD spec; future stories should consider whether the simpler Tigris wiring is preferable.
 
 ## Rules for this repo (anti-slop list — grows with every burn)
 
@@ -146,8 +150,22 @@ if [ ${#EXISTING[@]} -eq 0 ]; then
   exit 0
 fi
 
-MATCHES=$(grep -rEl 'mock|fake|dummy|hardcoded' "${EXISTING[@]}" 2>/dev/null || true)
-if [ -n "$MATCHES" ]; then
+set +e
+MATCHES=$(grep -rEl 'mock|fake|dummy|hardcoded' "${EXISTING[@]}" 2>&1)
+RC=$?
+set -e
+
+# grep exit codes: 0 = matches found, 1 = no matches, 2 = error.
+# We must distinguish: only exit 1 (no match) is "clean". Exit 2 means
+# something is wrong with the scan itself (read error, bad pattern) and
+# the gate must fail closed — never silently pass.
+if [ $RC -eq 2 ]; then
+  echo "§14 grep gate ERROR — grep failed to scan:" >&2
+  echo "$MATCHES" >&2
+  exit 2
+fi
+
+if [ $RC -eq 0 ] && [ -n "$MATCHES" ]; then
   echo "§14 grep gate FAIL — forbidden tokens in:" >&2
   echo "$MATCHES" >&2
   exit 1

@@ -18,3 +18,11 @@ next-env.d.ts
 packages/contracts/cache/
 packages/contracts/artifacts/
 packages/contracts/typechain-types/
+
+# Reference clones — agents clone these on demand per context/refs/sponsor-repos.md.
+# Tigris (Mezo gauge contracts + Next.js dApp reference) and chains (canonical
+# viem chain config) are not committed; their stubs in sponsor-repos.md point
+# to the upstream URLs. (musd is committed as a regular tree from PR #16; we
+# treat new clones the kite-style stub-pointer way to avoid further repo bloat.)
+context/refs/repos/tigris/
+context/refs/repos/chains/
