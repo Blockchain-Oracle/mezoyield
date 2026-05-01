@@ -31,9 +31,10 @@ describe("HomePage", () => {
   it("switches to the Optimize panel when its tab is clicked", () => {
     renderApp();
     fireEvent.click(screen.getByRole("tab", { name: "Optimize" }));
-    expect(screen.getByTestId("optimize-panel")).toHaveTextContent(
-      /choose your strategy/i,
-    );
+    expect(screen.getByTestId("optimize-panel")).toBeInTheDocument();
+    // OptimizeModal mounts; pre-hydration it shows the connect-needed
+    // skeleton via the same useWalletReady gate as ConnectButton/PositionCard.
+    expect(screen.getByTestId("optimize-modal-skeleton")).toBeInTheDocument();
   });
 
   it("renders the Connect call-to-action in the header by default", () => {
