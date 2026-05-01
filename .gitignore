@@ -13,7 +13,8 @@ coverage/
 *.swo
 *~
 .DS_Store
-tsconfig.tsbuildinfo
+*.tsbuildinfo
+next-env.d.ts
 packages/contracts/cache/
 packages/contracts/artifacts/
 packages/contracts/typechain-types/
