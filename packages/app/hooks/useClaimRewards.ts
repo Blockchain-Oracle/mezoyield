@@ -58,6 +58,20 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
   const [phase, setPhase] = useState<"idle" | "writing" | "confirming" | "success" | "error">(
     "idle",
   );
+  // Track which address initiated the in-flight claim. If the user switches
+  // wallets before the receipt lands, the next-renders' `user` won't match
+  // and we reset — wallet B never inherits wallet A's UI state or toast.
+  // Codex P2 on PR #25.
+  const [claimUser, setClaimUser] = useState<Address | undefined>(undefined);
+
+  useEffect(() => {
+    if (claimUser && user && claimUser.toLowerCase() !== user.toLowerCase()) {
+      setPhase("idle");
+      setTxHash(undefined);
+      setErrorMessage(undefined);
+      setClaimUser(undefined);
+    }
+  }, [user, claimUser]);
 
   const receipt = useWaitForTransactionReceipt({
     hash: txHash,
@@ -88,6 +102,7 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
       try {
         setPhase("writing");
         setErrorMessage(undefined);
+        setClaimUser(user);
         const hash = await writeContractAsync({
           address: OPTIMIZER_ADDRESS,
           abi: optimizerClaimAbi,
@@ -106,6 +121,7 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
       setPhase("idle");
       setTxHash(undefined);
       setErrorMessage(undefined);
+      setClaimUser(undefined);
     },
   };
 }
