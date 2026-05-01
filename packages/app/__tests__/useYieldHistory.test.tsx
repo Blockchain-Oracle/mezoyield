@@ -68,37 +68,25 @@ describe("useYieldHistory", () => {
     expect(getLogsMock).not.toHaveBeenCalled();
   });
 
-  it("groups claims by Unix epoch (604800s) and returns last 8 buckets", async () => {
-    // Two claims in epoch E0, one in E1, one in E5. Expect 3 buckets,
-    // sorted ascending by epoch — chart x-axis renders left-to-right
-    // from oldest to newest. (CLAUDE.md UX spec: Epoch -7…0 relative.)
-    const epoch0Start = 1_700_000n * SECONDS_PER_EPOCH;
-    const e1 = epoch0Start + SECONDS_PER_EPOCH * 1n + 1000n;
-    const e5 = epoch0Start + SECONDS_PER_EPOCH * 5n + 200n;
-    const a1 = logAt(epoch0Start + 100n, 5n * 10n ** 18n);
-    const a2 = logAt(epoch0Start + 500n, 3n * 10n ** 18n);
-    const b1 = logAt(e1, 7n * 10n ** 18n);
-    const c1 = logAt(e5, 2n * 10n ** 18n, 200n);
-
-    getLogsMock.mockResolvedValue([a1.log, a2.log, b1.log, c1.log]);
-    getBlockMock.mockImplementation(({ blockNumber }: { blockNumber: bigint }) => {
-      if (blockNumber === 100n) return Promise.resolve(a1.block);
-      if (blockNumber === 200n) return Promise.resolve(c1.block);
-      // a2 + b1 both share the default block 100n in this fixture; for
-      // realism we mint distinct blocks per log. Map by reference here.
-      return Promise.resolve({ number: blockNumber, timestamp: 0n });
-    });
-
-    // To make the per-log timestamp unambiguous, use a unique block per log:
-    const logs = [a1, a2, b1, c1].map((x, i) => ({
-      ...x.log,
-      blockNumber: BigInt(100 + i),
-    }));
+  it("groups claims by Unix epoch and emits 8 contiguous buckets with zero-fill (Codex P1 round 1)", async () => {
+    // Two claims in epoch E0, one in E1, one in E5. The X-axis is a
+    // CALENDAR — gaps must show as zero-bars, not be omitted (Codex P1
+    // on PR #27). With anchor = max(latestClaim=E5, nowEpoch) = E5,
+    // we expect contiguous epochs [E-2..E5] (8 slots), filled as:
+    //   E-2:0  E-1:0  E0:8  E1:7  E2:0  E3:0  E4:0  E5:2
+    const E0 = 1_700_000;
+    const epoch0Start = BigInt(E0) * SECONDS_PER_EPOCH;
+    const logs = [
+      { blockNumber: 100n, args: { user: USER, amount: 5n * 10n ** 18n } },
+      { blockNumber: 101n, args: { user: USER, amount: 3n * 10n ** 18n } }, // also E0
+      { blockNumber: 102n, args: { user: USER, amount: 7n * 10n ** 18n } }, // E1
+      { blockNumber: 103n, args: { user: USER, amount: 2n * 10n ** 18n } }, // E5
+    ];
     const tsByBlock = new Map<bigint, bigint>([
-      [100n, a1.block.timestamp],
-      [101n, a2.block.timestamp],
-      [102n, b1.block.timestamp],
-      [103n, c1.block.timestamp],
+      [100n, epoch0Start + 100n],
+      [101n, epoch0Start + 500n],
+      [102n, epoch0Start + SECONDS_PER_EPOCH * 1n + 1000n],
+      [103n, epoch0Start + SECONDS_PER_EPOCH * 5n + 200n],
     ]);
     getLogsMock.mockResolvedValue(logs);
     getBlockMock.mockImplementation(({ blockNumber }: { blockNumber: bigint }) =>
@@ -109,16 +97,53 @@ describe("useYieldHistory", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.isError).toBe(false);
-    // 3 distinct epochs after grouping — and they fit within the 8-cap.
-    expect(result.current.epochs).toHaveLength(3);
-    // Sort: ascending by epoch index → E0, E1, E5.
-    expect(result.current.epochs[0].musdWei).toBe(8n * 10n ** 18n); // 5 + 3
-    expect(result.current.epochs[1].musdWei).toBe(7n * 10n ** 18n);
-    expect(result.current.epochs[2].musdWei).toBe(2n * 10n ** 18n);
-    // Epoch indices monotonically increase.
-    expect(result.current.epochs[1].epoch).toBeGreaterThan(
-      result.current.epochs[0].epoch,
-    );
+    // Exactly 8 contiguous epoch slots, ending at the latest claim.
+    expect(result.current.epochs).toHaveLength(8);
+    const last = result.current.epochs[7];
+    expect(last.epoch).toBe(E0 + 5);
+    // First slot is anchor - 7.
+    expect(result.current.epochs[0].epoch).toBe(E0 - 2);
+    // Sums in the right slots.
+    const wei = result.current.epochs.map((b) => b.musdWei);
+    expect(wei).toEqual([
+      0n,                  // E-2
+      0n,                  // E-1
+      8n * 10n ** 18n,     // E0 (5+3)
+      7n * 10n ** 18n,     // E1
+      0n,                  // E2
+      0n,                  // E3
+      0n,                  // E4
+      2n * 10n ** 18n,     // E5
+    ]);
+    // Epoch indices monotonically increase by exactly 1 — contiguous.
+    for (let i = 1; i < result.current.epochs.length; i++) {
+      expect(result.current.epochs[i].epoch).toBe(
+        result.current.epochs[i - 1].epoch + 1,
+      );
+    }
+  });
+
+  it("zero-fills weeks with no claims even when only the most recent week has activity", async () => {
+    // Single claim, far back. The chart should still show 8 contiguous
+    // calendar slots — 7 zeros + the one bar. This is the case Codex
+    // explicitly called out: "weeks 1 and 8 only" → 2 bars labeled
+    // "Epoch -1, 0" hides the gap.
+    const E = 1_700_050;
+    const ts = BigInt(E) * SECONDS_PER_EPOCH + 100n;
+    getLogsMock.mockResolvedValue([
+      { blockNumber: 200n, args: { user: USER, amount: 4n * 10n ** 18n } },
+    ]);
+    getBlockMock.mockResolvedValue({ number: 200n, timestamp: ts });
+
+    const { result } = renderHook(() => useYieldHistory(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.epochs).toHaveLength(8);
+    expect(result.current.epochs[7].epoch).toBe(E);
+    expect(result.current.epochs[7].musdWei).toBe(4n * 10n ** 18n);
+    for (let i = 0; i < 7; i++) {
+      expect(result.current.epochs[i].musdWei).toBe(0n);
+    }
   });
 
   it("caps at 8 most recent buckets when history is longer", async () => {

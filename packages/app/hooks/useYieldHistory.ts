@@ -39,6 +39,36 @@ const REWARDS_CLAIMED_EVENT = optimizerAbi.find(
 );
 
 /**
+ * Codex P1 on PR #27: trimming to the last 8 *non-empty* claim buckets
+ * misrepresents the X-axis as a calendar. A user who claimed in weeks 1
+ * and 8 would otherwise see two bars sitting next to each other labeled
+ * "Epoch -1, 0" — the chart would lie about the time-spacing between
+ * claims and hide six zero-claim weeks. Absent epochs must appear as
+ * zero-height bars so the gaps are visible.
+ *
+ * Pure helper — pad-to-MAX_BUCKETS-contiguous-epochs ending at
+ * `anchorEpoch`, filling missing slots with `musdWei = 0n`. Empty input
+ * → empty output (the empty-state UI in the chart handles that case).
+ */
+export function padContiguousEpochs(
+  buckets: Map<number, bigint>,
+  anchorEpoch: number,
+): YieldBucket[] {
+  if (buckets.size === 0) return [];
+  const out: YieldBucket[] = [];
+  for (let i = MAX_BUCKETS - 1; i >= 0; i--) {
+    const epoch = anchorEpoch - i;
+    out.push({ epoch, musdWei: buckets.get(epoch) ?? 0n });
+  }
+  return out;
+}
+
+/** Current Unix-aligned epoch index (seconds-since-epoch / 604_800). */
+function nowEpoch(): number {
+  return Math.floor(Date.now() / 1000 / 604_800);
+}
+
+/**
  * Fetch the user's last `MAX_BUCKETS` epochs of MUSD claims, grouped
  * by Unix-aligned epoch, by reading `RewardsClaimed(user)` event logs
  * from the optimizer.
@@ -98,12 +128,16 @@ export function useYieldHistory(): UseYieldHistoryResult {
         buckets.set(epoch, (buckets.get(epoch) ?? 0n) + amount);
       }
 
-      // Ascending by epoch; trim to the most-recent MAX_BUCKETS.
-      const ordered: YieldBucket[] = [...buckets.entries()]
-        .sort((a, b) => a[0] - b[0])
-        .map(([epoch, musdWei]) => ({ epoch, musdWei }));
-      if (ordered.length <= MAX_BUCKETS) return ordered;
-      return ordered.slice(ordered.length - MAX_BUCKETS);
+      // Anchor the X-axis on the latest of (current epoch, latest claim
+      // epoch). Anchor=now keeps "Epoch 0" always-honest as right-now.
+      // Anchor=max(claim) protects users who haven't claimed in a long
+      // time from seeing 8 zeros: when their last claim is older than
+      // 8 epochs, we slide the window back so the historical activity
+      // is at least visible. Codex P1 on PR #27.
+      const claimEpochs = [...buckets.keys()];
+      const latestClaim = claimEpochs.length > 0 ? Math.max(...claimEpochs) : -Infinity;
+      const anchor = Math.max(nowEpoch(), latestClaim);
+      return padContiguousEpochs(buckets, anchor);
     },
   });
 
