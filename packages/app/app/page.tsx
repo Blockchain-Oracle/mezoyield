@@ -11,6 +11,7 @@ import { ConnectButton } from "@/components/ConnectButton";
 import { GaugeBoard } from "@/components/Dashboard/GaugeBoard";
 import { PositionCard } from "@/components/Dashboard/PositionCard";
 import { EpochCountdown } from "@/components/Dashboard/EpochCountdown";
+import { OptimizeModal } from "@/components/OptimizeModal";
 
 const TAB_TRIGGERS = (
   <TabsList variant="line">
@@ -34,11 +35,8 @@ export default function HomePage() {
         </TabsContent>
 
         <TabsContent value="optimize">
-          <div
-            className="rounded-lg border border-border bg-card p-12 text-center text-muted-foreground"
-            data-testid="optimize-panel"
-          >
-            Choose your strategy — auto or manual.
+          <div data-testid="optimize-panel" className="space-y-6">
+            <OptimizeModal />
           </div>
         </TabsContent>
       </main>
