@@ -63,6 +63,42 @@ describe("useClaimRewards: wallet switch reset", () => {
     expect(result.current.errorMessage).toBeUndefined();
   });
 
+  it("drops a late writeContractAsync resolution when wallet switches mid-write", async () => {
+    // Codex P2 round 2 (commit 5a98368): writeContractAsync is itself an
+    // await point. If the user switches wallets while the write is pending
+    // — *before* the hash returns — the resolved promise would still set
+    // txHash and phase="confirming" for the abandoned wallet after the
+    // reset effect ran. The ref-guard inside `claim` must drop the result.
+    let resolveWrite: (h: `0x${string}`) => void = () => {};
+    writeContractAsync.mockImplementationOnce(
+      () => new Promise<`0x${string}`>((res) => { resolveWrite = res; }),
+    );
+
+    const { result, rerender } = renderHook(
+      ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
+      { initialProps: { user: A } },
+    );
+
+    // Kick off claim — promise is pending, no hash yet.
+    let claimPromise: Promise<void>;
+    act(() => {
+      claimPromise = result.current.claim();
+    });
+    expect(result.current.status).toBe("writing");
+
+    // User switches to B while write is still pending.
+    rerender({ user: B });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    // Now the write resolves — the late completion must NOT pollute B's state.
+    await act(async () => {
+      resolveWrite("0xlatehash");
+      await claimPromise;
+    });
+    expect(result.current.status).toBe("idle");
+    expect(result.current.txHash).toBeUndefined();
+  });
+
   it("does NOT reset when user stays the same across rerenders", async () => {
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),

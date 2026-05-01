@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useReadContract,
   useWriteContract,
@@ -61,11 +61,20 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
   // Track which address initiated the in-flight claim. If the user switches
   // wallets before the receipt lands, the next-renders' `user` won't match
   // and we reset — wallet B never inherits wallet A's UI state or toast.
-  // Codex P2 on PR #25.
+  // Codex P2 on PR #25 (round 1).
   const [claimUser, setClaimUser] = useState<Address | undefined>(undefined);
+  // Codex P2 on PR #25 (round 2): the reset effect handles state already
+  // committed via setTxHash/setPhase, but `writeContractAsync` is itself a
+  // suspension point — if the wallet switches *while it's pending* (before
+  // the hash returns), the resolved promise would still set txHash and
+  // phase="confirming" for the abandoned wallet after the reset ran. A ref
+  // is the only thing that survives across the await without triggering a
+  // rerender, so we read it post-await to drop late completions on the floor.
+  const abandonedRef = useRef(false);
 
   useEffect(() => {
     if (claimUser && user && claimUser.toLowerCase() !== user.toLowerCase()) {
+      abandonedRef.current = true;
       setPhase("idle");
       setTxHash(undefined);
       setErrorMessage(undefined);
@@ -99,6 +108,7 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
     errorMessage,
     claim: async () => {
       if (!user) return;
+      abandonedRef.current = false;
       try {
         setPhase("writing");
         setErrorMessage(undefined);
@@ -109,15 +119,20 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
           functionName: "claimRewards",
           args: [user],
         });
+        // Wallet may have switched while the write was pending. The reset
+        // effect already cleared state for the new user; don't re-pollute it.
+        if (abandonedRef.current) return;
         setTxHash(hash);
         setPhase("confirming");
       } catch (err) {
+        if (abandonedRef.current) return;
         setPhase("error");
         const e = err as { shortMessage?: string; message?: string };
         setErrorMessage(e.shortMessage ?? e.message ?? "Claim failed");
       }
     },
     reset: () => {
+      abandonedRef.current = false;
       setPhase("idle");
       setTxHash(undefined);
       setErrorMessage(undefined);
