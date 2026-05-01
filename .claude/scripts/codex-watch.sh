@@ -33,13 +33,29 @@ BOT="chatgpt-codex-connector[bot]"
 check_once() {
   local head_sha head_pushed_at
   head_sha="$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)"
-  # Use the commit's committer date as a "head exists since" floor. Any
-  # Codex top-level approval comment/reaction with a timestamp AFTER this
-  # is a head-specific signal. Codex's "Chef's kiss / no major issues"
-  # path drops a top-level issue comment + a 👍 reaction without filing a
-  # formal Reviews API entry, so this is the only way to detect approval.
-  head_pushed_at="$(gh api "repos/$REPO/commits/$head_sha" --jq .commit.committer.date)"
-  echo "── PR #$PR · head=${head_sha:0:10} · pushed=$head_pushed_at · repo=$REPO ──"
+  # Determining the actual PUSH time of the head SHA is non-trivial — the
+  # GitHub API has no first-class push event for branch updates from a
+  # client. Codex P1 on PR #26 flagged that `commit.committer.date` is the
+  # wrong cutoff because it's the commit's author/committer timestamp, not
+  # the push event. A developer can author a commit at 14:00, idle, then
+  # push at 18:00 — stale approvals between those times would falsely pass
+  # our post-head filter on cherry-picks, rebases, or delayed pushes.
+  #
+  # Reliable proxy: the earliest `check_suite.created_at` for the head SHA.
+  # GitHub creates a check_suite the moment a push lands, so its created_at
+  # is within seconds of the actual push AND is tied to the push event, not
+  # commit metadata. Falls back to commit.committer.date only if no check
+  # suites exist (e.g., a brand-new repo with no workflows configured).
+  head_pushed_at="$(gh api "repos/$REPO/commits/$head_sha/check-suites" \
+    --jq '[.check_suites[] | .created_at] | sort | .[0] // empty')"
+  local pushed_source
+  if [ -z "$head_pushed_at" ]; then
+    head_pushed_at="$(gh api "repos/$REPO/commits/$head_sha" --jq .commit.committer.date)"
+    pushed_source="commit-date fallback"
+  else
+    pushed_source="check-suite created_at"
+  fi
+  echo "── PR #$PR · head=${head_sha:0:10} · pushed=$head_pushed_at ($pushed_source) · repo=$REPO ──"
 
   # 1. Headline reviews from Codex (filtered to head SHA).
   # Codex sometimes embeds findings IN the review body itself (with a deep
