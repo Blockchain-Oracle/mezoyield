@@ -134,14 +134,16 @@ run_types_for_tsconfigs() {
 pm_install
 
 if [ -f "package.json" ] || [ -f "pnpm-workspace.yaml" ] || [ -f "yarn.lock" ] || [ -f "package-lock.json" ]; then
+  WORKSPACE_PKGS=(packages/contracts packages/app)
+
   echo "▶ tests"
-  for pkg in contracts packages/cli packages/mcp packages/web; do
+  for pkg in "${WORKSPACE_PKGS[@]}"; do
     [ -d "$pkg" ] || continue
     run_test_suite "$pkg"
   done
 
   echo "▶ lint"
-  for pkg in contracts packages/cli packages/mcp packages/web; do
+  for pkg in "${WORKSPACE_PKGS[@]}"; do
     [ -d "$pkg" ] || continue
     run_lint_suite "$pkg"
   done
@@ -150,7 +152,7 @@ if [ -f "package.json" ] || [ -f "pnpm-workspace.yaml" ] || [ -f "yarn.lock" ] |
   run_types_for_tsconfigs
 
   echo "▶ build"
-  for pkg in contracts packages/cli packages/mcp packages/web; do
+  for pkg in "${WORKSPACE_PKGS[@]}"; do
     [ -d "$pkg" ] || continue
     run_build_suite "$pkg"
   done

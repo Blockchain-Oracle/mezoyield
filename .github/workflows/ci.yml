@@ -12,63 +12,32 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Detect scaffold state
-        id: state
-        run: |
-          COUNT=$(find . -path ./node_modules -prune -o -name '*.ts' ! -name '*.d.ts' -print | grep -v node_modules | grep -c . || true)
-          if [ "${COUNT:-0}" -gt 3 ]; then
-            echo "mode=full" >> $GITHUB_OUTPUT
-            echo "Source files found — running full CI gates"
-          else
-            echo "mode=scaffold" >> $GITHUB_OUTPUT
-            echo "Day-0 scaffold — no source files yet. Skipping test/lint/build gates."
-          fi
-
       - name: Reject placeholder tests
-        if: steps.state.outputs.mode == 'full'
         run: |
           if grep -q '"test":.*placeholder' package.json; then
             echo "❌ package.json has placeholder test script — replace with real test runner"
             exit 1
           fi
-          if ! find . -path ./node_modules -prune -o \
+          if ! find . -path ./node_modules -prune -o -path ./context -prune -o \
               \( -name '*.test.ts' -o -name '*.test.tsx' -o -name '*.spec.ts' -o -name '*.spec.tsx' \
                  -o -name '*.test.js' -o -name '*.spec.js' -o -path '*/__tests__/*' \) -print | grep -q .; then
             echo "❌ no test files found — story PRs must include tests"
             exit 1
           fi
 
+      - name: Compile contracts (generates typechain)
+        run: pnpm --filter @mezoyield/contracts run build
+
       - name: Type-check
-        if: steps.state.outputs.mode == 'full'
         run: |
-          if [ -f tsconfig.json ]; then
-            pnpm --filter @mezoyield/contracts exec tsc --noEmit
-            pnpm --filter @mezoyield/app exec tsc --noEmit
-          else
-            echo "❌ tsconfig.json missing — TypeScript project required"
-            exit 1
-          fi
+          pnpm --filter @mezoyield/contracts exec tsc --noEmit
+          pnpm --filter @mezoyield/app exec tsc --noEmit
 
       - name: Lint
-        if: steps.state.outputs.mode == 'full'
-        run: |
-          if pnpm run | grep -q '^  lint$'; then
-            pnpm run lint
-          else
-            echo "❌ no 'lint' script in package.json — required for CI"
-            exit 1
-          fi
+        run: pnpm run lint
 
       - name: Test
-        if: steps.state.outputs.mode == 'full'
         run: pnpm test
 
       - name: Build
-        if: steps.state.outputs.mode == 'full'
-        run: |
-          if pnpm run | grep -q '^  build$'; then
-            pnpm run build
-          else
-            echo "❌ no 'build' script in package.json — required for CI"
-            exit 1
-          fi
+        run: pnpm --filter @mezoyield/app run build
