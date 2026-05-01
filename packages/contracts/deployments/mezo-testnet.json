@@ -4,30 +4,31 @@
   "rpcUrl": "https://rpc.test.mezo.org",
   "explorer": "https://explorer.test.mezo.org",
   "deployer": "0x84f94745ea0a434540749839819E65E281970004",
-  "deployedAt": "2026-05-01T12:32:39.902Z",
+  "deployedAt": "2026-05-01T18:52:04.908Z",
   "contracts": {
     "MezoYieldOptimizer": {
-      "address": "0x9f073E25aD9fC0Ca58618c60CfF0C4465896D10A",
-      "txHash": "0xa3283bd322333ac1470ad223ff025a60a1c9d69509a8ad1715e150ebf71bbe0e",
-      "blockNumber": 12752160
+      "address": "0x1A9a4f8279F88a1551117766957DB23A35133B6D",
+      "txHash": "0x05095dc0ec8c1385c6b648f994899b094870ae78a8541ec6c12d6163cc63b4b5",
+      "blockNumber": 12758568
     },
     "MockGaugeController": {
-      "address": "0x19BCbf8F72504a1d95413569952Ec72FB5470295",
-      "txHash": "0xfbd1fe780703e8722486817a44d2e2340e94994e6d85a039da4a4ab24ac97a80",
-      "blockNumber": 12752157
+      "address": "0xB2f5cBbf2401F4F74F3E4d9FaCb3C4b7c1897140",
+      "txHash": "0xe1c61060c21490db409effb068ceee50b89841edd91250b4ab3fe3cc63965eba",
+      "blockNumber": 12758565
     },
     "MockMatchbox": {
-      "address": "0x601CEEe246f043E372B643Df5E136D3c48dFd0ef",
-      "txHash": "0xc0255544bb1b0bc2bffd51e791c3c94f72d9b8b56fac1754056e2fc659e0a4ea",
-      "blockNumber": 12752158
+      "address": "0x5C86Aa4Cc0aff9f4AA9751671eE946dc4Dc07431",
+      "txHash": "0xd2c5115052416bc684fc0bf1fe48828196306951973c21fb0644a42cbce86d5e",
+      "blockNumber": 12758566
     },
     "MockVeMezo": {
-      "address": "0xFBc6E9507c18006E038157ce67Ce12AFdc1ADc06",
-      "txHash": "0x77d2a07c5b419c97c95736b09474500c1fef455b22c56c600caded93434da3b4",
-      "blockNumber": 12752159
+      "address": "0x5351665b6805B35e0ba3C7522e62e7E3EEEeA2d6",
+      "txHash": "0x9f07a2386723dcd12bc4ca1143dbfdfed22f6857e3649b747c2cc0556a7d4305",
+      "blockNumber": 12758567
     }
   },
   "seedDeployerVeMezoWei": "1500000000000000000000",
+  "seedDeployerPendingMUSDWei": "25000000000000000000",
   "seededGauges": [
     {
       "name": "Stability Pool",

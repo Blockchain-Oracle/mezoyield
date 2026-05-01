@@ -126,6 +126,17 @@ async function main() {
   const mintTx = await ve.mint(deployer.address, SEED_DEPLOYER_BALANCE);
   await mintTx.wait();
 
+  // Seed the deployer with a sample pending MUSD reward so STORY-008's
+  // ClaimButton has something to claim end-to-end on the testnet demo.
+  // Any other connecting wallet sees 0 pending until someone calls
+  // setPending for it (or the future keeper-bot story credits rewards).
+  const SEED_DEPLOYER_PENDING = ethers.parseUnits("25", 18);
+  console.log(
+    `Seeding deployer with ${SEED_DEPLOYER_PENDING.toString()} wei MUSD pending...`,
+  );
+  const pendingTx = await mb.setPending(deployer.address, SEED_DEPLOYER_PENDING);
+  await pendingTx.wait();
+
   if (network.name === "hardhat") {
     console.log("(hardhat-network: ephemeral; skipping JSON emit)");
     return;
@@ -178,6 +189,7 @@ async function main() {
       },
     },
     seedDeployerVeMezoWei: SEED_DEPLOYER_BALANCE.toString(),
+    seedDeployerPendingMUSDWei: SEED_DEPLOYER_PENDING.toString(),
     seededGauges: SEED_GAUGES.map((g, i) => ({
       name: g.name,
       address: seedReceipts[i].gauge,

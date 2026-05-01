@@ -5,6 +5,7 @@ import { formatUnits } from "viem";
 import { useVeMezoPosition } from "@/hooks/useVeMezoPosition";
 import { useGaugeData } from "@/hooks/useGaugeData";
 import { useWalletReady } from "@/app/providers";
+import { ClaimButton } from "@/components/ClaimButton";
 import type { Gauge } from "@/lib/types";
 
 function formatVeMezo(balanceWei: bigint): string {
@@ -95,27 +96,32 @@ function PositionCardInner() {
       data-testid="position-card"
       className="rounded-lg border border-border bg-card p-6"
     >
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-        Estimated yield
-      </div>
-      <div
-        className="mt-1 font-mono text-3xl font-semibold text-foreground"
-        data-testid="position-card-hero"
-      >
-        ≈ {weeklyDisplay.toFixed(2)} MUSD/week
-      </div>
-      <div className="mt-2 text-sm text-muted-foreground">
-        from <span className="font-mono">{formatVeMezo(position.balanceWei)}</span> veMEZO
-        {position.allocation.length > 0 && (
-          <>
-            {" "}
-            ·{" "}
-            <span data-testid="position-card-allocated">
-              Allocated: {position.allocation.length}{" "}
-              {position.allocation.length === 1 ? "gauge" : "gauges"}
-            </span>
-          </>
-        )}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Estimated yield
+          </div>
+          <div
+            className="mt-1 font-mono text-3xl font-semibold text-foreground"
+            data-testid="position-card-hero"
+          >
+            ≈ {weeklyDisplay.toFixed(2)} MUSD/week
+          </div>
+          <div className="mt-2 text-sm text-muted-foreground">
+            from <span className="font-mono">{formatVeMezo(position.balanceWei)}</span> veMEZO
+            {position.allocation.length > 0 && (
+              <>
+                {" "}
+                ·{" "}
+                <span data-testid="position-card-allocated">
+                  Allocated: {position.allocation.length}{" "}
+                  {position.allocation.length === 1 ? "gauge" : "gauges"}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        <ClaimButton />
       </div>
     </div>
   );
