@@ -128,15 +128,23 @@ export function useYieldHistory(): UseYieldHistoryResult {
         buckets.set(epoch, (buckets.get(epoch) ?? 0n) + amount);
       }
 
-      // Anchor the X-axis on the latest of (current epoch, latest claim
-      // epoch). Anchor=now keeps "Epoch 0" always-honest as right-now.
-      // Anchor=max(claim) protects users who haven't claimed in a long
-      // time from seeing 8 zeros: when their last claim is older than
-      // 8 epochs, we slide the window back so the historical activity
-      // is at least visible. Codex P1 on PR #27.
+      // Anchor the X-axis. The first instinct is "anchor=now so Epoch 0
+      // is always right-now" — but Codex P1 round 2 on PR #27 caught the
+      // edge case: when latestClaim < now-7, anchor=now puts the user's
+      // claim OUTSIDE the trailing 8-epoch window and the chart shows 8
+      // zeros, hiding their actual history.
+      //
+      // Correct rule: if the latest claim falls inside the trailing
+      // 8-epoch window from now, anchor on now (current-relative labels,
+      // user sees recent activity vs zero-weeks). Otherwise the user is
+      // dormant — anchor on their latest claim instead so 8 weeks of
+      // historical activity are at least visible.
       const claimEpochs = [...buckets.keys()];
-      const latestClaim = claimEpochs.length > 0 ? Math.max(...claimEpochs) : -Infinity;
-      const anchor = Math.max(nowEpoch(), latestClaim);
+      const latestClaim =
+        claimEpochs.length > 0 ? Math.max(...claimEpochs) : -Infinity;
+      const nowEp = nowEpoch();
+      const anchor =
+        latestClaim >= nowEp - (MAX_BUCKETS - 1) ? nowEp : latestClaim;
       return padContiguousEpochs(buckets, anchor);
     },
   });

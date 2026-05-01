@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
@@ -53,11 +53,27 @@ function logAt(blockTimestamp: bigint, amountWei: bigint, blockNumber = 100n) {
   };
 }
 
+// Pin "now" deterministically. Without this, tests that exercise the
+// anchor logic depend on real wall-clock and break when fixture epochs
+// drift from the actual current epoch.
+const NOW_EPOCH = 100;
+
 describe("useYieldHistory", () => {
   beforeEach(() => {
     getLogsMock.mockReset();
     getBlockMock.mockReset();
     accountState.value = { address: USER };
+    // shouldAdvanceTime: true lets RTL's waitFor poll-loop run while
+    // Date.now stays pinned to NOW_EPOCH. Without this, fake timers
+    // freeze waitFor's polling and every async test times out.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(
+      new Date(Number(NOW_EPOCH) * Number(SECONDS_PER_EPOCH) * 1000),
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("returns empty epochs when wallet is disconnected", () => {
@@ -69,24 +85,24 @@ describe("useYieldHistory", () => {
   });
 
   it("groups claims by Unix epoch and emits 8 contiguous buckets with zero-fill (Codex P1 round 1)", async () => {
-    // Two claims in epoch E0, one in E1, one in E5. The X-axis is a
-    // CALENDAR — gaps must show as zero-bars, not be omitted (Codex P1
-    // on PR #27). With anchor = max(latestClaim=E5, nowEpoch) = E5,
-    // we expect contiguous epochs [E-2..E5] (8 slots), filled as:
-    //   E-2:0  E-1:0  E0:8  E1:7  E2:0  E3:0  E4:0  E5:2
-    const E0 = 1_700_000;
-    const epoch0Start = BigInt(E0) * SECONDS_PER_EPOCH;
+    // Two claims in epoch (now-5), one in (now-4), one in now. Anchor
+    // = now (latestClaim is inside the window). Contiguous epochs
+    // [now-7..now], 8 slots:
+    //   n-7:0  n-6:0  n-5:8  n-4:7  n-3:0  n-2:0  n-1:0  n:2
+    const E5 = NOW_EPOCH - 5;
+    const E4 = NOW_EPOCH - 4;
+    const epochE5Start = BigInt(E5) * SECONDS_PER_EPOCH;
     const logs = [
-      { blockNumber: 100n, args: { user: USER, amount: 5n * 10n ** 18n } },
-      { blockNumber: 101n, args: { user: USER, amount: 3n * 10n ** 18n } }, // also E0
-      { blockNumber: 102n, args: { user: USER, amount: 7n * 10n ** 18n } }, // E1
-      { blockNumber: 103n, args: { user: USER, amount: 2n * 10n ** 18n } }, // E5
+      { blockNumber: 100n, args: { user: USER, amount: 5n * 10n ** 18n } }, // E5
+      { blockNumber: 101n, args: { user: USER, amount: 3n * 10n ** 18n } }, // also E5
+      { blockNumber: 102n, args: { user: USER, amount: 7n * 10n ** 18n } }, // E4
+      { blockNumber: 103n, args: { user: USER, amount: 2n * 10n ** 18n } }, // now
     ];
     const tsByBlock = new Map<bigint, bigint>([
-      [100n, epoch0Start + 100n],
-      [101n, epoch0Start + 500n],
-      [102n, epoch0Start + SECONDS_PER_EPOCH * 1n + 1000n],
-      [103n, epoch0Start + SECONDS_PER_EPOCH * 5n + 200n],
+      [100n, epochE5Start + 100n],
+      [101n, epochE5Start + 500n],
+      [102n, epochE5Start + SECONDS_PER_EPOCH * 1n + 1000n],
+      [103n, BigInt(NOW_EPOCH) * SECONDS_PER_EPOCH + 200n],
     ]);
     getLogsMock.mockResolvedValue(logs);
     getBlockMock.mockImplementation(({ blockNumber }: { blockNumber: bigint }) =>
@@ -97,24 +113,21 @@ describe("useYieldHistory", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.isError).toBe(false);
-    // Exactly 8 contiguous epoch slots, ending at the latest claim.
     expect(result.current.epochs).toHaveLength(8);
-    const last = result.current.epochs[7];
-    expect(last.epoch).toBe(E0 + 5);
-    // First slot is anchor - 7.
-    expect(result.current.epochs[0].epoch).toBe(E0 - 2);
-    // Sums in the right slots.
+    expect(result.current.epochs[7].epoch).toBe(NOW_EPOCH);
+    expect(result.current.epochs[0].epoch).toBe(NOW_EPOCH - 7);
     const wei = result.current.epochs.map((b) => b.musdWei);
     expect(wei).toEqual([
-      0n,                  // E-2
-      0n,                  // E-1
-      8n * 10n ** 18n,     // E0 (5+3)
-      7n * 10n ** 18n,     // E1
-      0n,                  // E2
-      0n,                  // E3
-      0n,                  // E4
-      2n * 10n ** 18n,     // E5
+      0n,                  // now-7
+      0n,                  // now-6
+      8n * 10n ** 18n,     // now-5 (5+3)
+      7n * 10n ** 18n,     // now-4
+      0n,                  // now-3
+      0n,                  // now-2
+      0n,                  // now-1
+      2n * 10n ** 18n,     // now
     ]);
+    void E4; // referenced via tsByBlock; kept for readability above.
     // Epoch indices monotonically increase by exactly 1 — contiguous.
     for (let i = 1; i < result.current.epochs.length; i++) {
       expect(result.current.epochs[i].epoch).toBe(
@@ -123,13 +136,59 @@ describe("useYieldHistory", () => {
     }
   });
 
-  it("zero-fills weeks with no claims even when only the most recent week has activity", async () => {
-    // Single claim, far back. The chart should still show 8 contiguous
-    // calendar slots — 7 zeros + the one bar. This is the case Codex
-    // explicitly called out: "weeks 1 and 8 only" → 2 bars labeled
-    // "Epoch -1, 0" hides the gap.
-    const E = 1_700_050;
-    const ts = BigInt(E) * SECONDS_PER_EPOCH + 100n;
+  it("anchors on latestClaim when the user is dormant (Codex P1 round 2)", async () => {
+    // Dormant user: last claim was 20 epochs ago. The naive
+    // `Math.max(now, latestClaim)` rule would pick `now` and produce
+    // 8 zero-bars, hiding the user's real history. The correct rule:
+    // when latestClaim < now-7, anchor on latestClaim so 8 weeks
+    // ENDING at the last activity are visible.
+    //
+    // Simulate "now" = epoch 100. Last claim = epoch 80 (20 weeks ago).
+    // Expected anchor = 80, contiguous range [73..80], with the claim
+    // landing in slot index 7.
+    const LAST_CLAIM_EPOCH = NOW_EPOCH - 20;
+    const ts = BigInt(LAST_CLAIM_EPOCH) * SECONDS_PER_EPOCH + 100n;
+    getLogsMock.mockResolvedValue([
+      { blockNumber: 200n, args: { user: USER, amount: 11n * 10n ** 18n } },
+    ]);
+    getBlockMock.mockResolvedValue({ number: 200n, timestamp: ts });
+
+    const { result } = renderHook(() => useYieldHistory(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.epochs).toHaveLength(8);
+    // Anchor must be the latest claim (80), NOT now (100).
+    expect(result.current.epochs[7].epoch).toBe(LAST_CLAIM_EPOCH);
+    expect(result.current.epochs[0].epoch).toBe(LAST_CLAIM_EPOCH - 7);
+    expect(result.current.epochs[7].musdWei).toBe(11n * 10n ** 18n);
+    // The other 7 are zero-fill.
+    for (let i = 0; i < 7; i++) {
+      expect(result.current.epochs[i].musdWei).toBe(0n);
+    }
+  });
+
+  it("anchors on now when the latest claim is inside the trailing 8-epoch window", async () => {
+    // Active user: claimed in current epoch. Anchor must be `now` so
+    // "Epoch 0" is right-now and the claim lands in slot 7.
+    const ts = BigInt(NOW_EPOCH) * SECONDS_PER_EPOCH + 50n;
+    getLogsMock.mockResolvedValue([
+      { blockNumber: 200n, args: { user: USER, amount: 6n * 10n ** 18n } },
+    ]);
+    getBlockMock.mockResolvedValue({ number: 200n, timestamp: ts });
+
+    const { result } = renderHook(() => useYieldHistory(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.epochs[7].epoch).toBe(NOW_EPOCH);
+    expect(result.current.epochs[7].musdWei).toBe(6n * 10n ** 18n);
+  });
+
+  it("zero-fills weeks with no claims even when only one week inside the window has activity", async () => {
+    // Single claim in current epoch. The chart should still show 8
+    // contiguous calendar slots — 7 zeros + the one bar. This is the
+    // case Codex explicitly called out on round 1: "weeks 1 and 8 only"
+    // → 2 bars labeled "Epoch -1, 0" hides the 6-week gap.
+    const ts = BigInt(NOW_EPOCH) * SECONDS_PER_EPOCH + 100n;
     getLogsMock.mockResolvedValue([
       { blockNumber: 200n, args: { user: USER, amount: 4n * 10n ** 18n } },
     ]);
@@ -139,7 +198,7 @@ describe("useYieldHistory", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.epochs).toHaveLength(8);
-    expect(result.current.epochs[7].epoch).toBe(E);
+    expect(result.current.epochs[7].epoch).toBe(NOW_EPOCH);
     expect(result.current.epochs[7].musdWei).toBe(4n * 10n ** 18n);
     for (let i = 0; i < 7; i++) {
       expect(result.current.epochs[i].musdWei).toBe(0n);
@@ -147,16 +206,20 @@ describe("useYieldHistory", () => {
   });
 
   it("caps at 8 most recent buckets when history is longer", async () => {
-    const epoch0Start = 1_700_000n * SECONDS_PER_EPOCH;
-    // 12 distinct epochs, each with one claim. Hook should return the
-    // newest 8. The X-axis caption per spec is "last 8 epochs".
+    // 12 distinct claim epochs ending at `now`. Anchor = now (latest is
+    // inside window). Contiguous [now-7..now]. The 4 oldest claims
+    // (i=0..3, epochs now-11..now-8) fall outside the window and are
+    // dropped; the 8 newest (i=4..11, epochs now-7..now) appear in
+    // sequence with their respective amounts.
+    const startEpoch = NOW_EPOCH - 11;
+    const startTs = BigInt(startEpoch) * SECONDS_PER_EPOCH;
     const logs = Array.from({ length: 12 }, (_, i) => ({
       blockNumber: BigInt(100 + i),
       transactionHash: ("0x" + "a".repeat(64)) as `0x${string}`,
       args: { user: USER, amount: BigInt(i + 1) * 10n ** 18n },
     }));
     const tsByBlock = new Map<bigint, bigint>(
-      logs.map((l, i) => [l.blockNumber, epoch0Start + SECONDS_PER_EPOCH * BigInt(i)]),
+      logs.map((l, i) => [l.blockNumber, startTs + SECONDS_PER_EPOCH * BigInt(i)]),
     );
     getLogsMock.mockResolvedValue(logs);
     getBlockMock.mockImplementation(({ blockNumber }: { blockNumber: bigint }) =>
@@ -167,10 +230,12 @@ describe("useYieldHistory", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.epochs).toHaveLength(8);
-    // First entry should be the OLDEST of the trailing 8 — i.e., epoch
-    // index 4 (0-3 dropped). Amount at i=4 was 5 MUSD.
+    // First slot is anchor-7 = now-7, which corresponds to i=4 → 5 MUSD.
     expect(result.current.epochs[0].musdWei).toBe(5n * 10n ** 18n);
+    expect(result.current.epochs[0].epoch).toBe(NOW_EPOCH - 7);
+    // Last slot is anchor = now, corresponding to i=11 → 12 MUSD.
     expect(result.current.epochs[7].musdWei).toBe(12n * 10n ** 18n);
+    expect(result.current.epochs[7].epoch).toBe(NOW_EPOCH);
   });
 
   it("returns empty epochs (not error) when getLogs returns []", async () => {
