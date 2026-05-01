@@ -105,17 +105,17 @@ stories:
   started_at: 2026-05-01T19:55:00Z
   status: COMPLETED
   title: Claim rewards flow
-- completed_at: null
+- completed_at: 2026-05-01T22:08:00Z
   depends_on:
   - STORY-006
   epic: EPIC-5
   id: STORY-009
   issue_url: https://github.com/Blockchain-Oracle/mezoyield/issues/9
-  merged_at: null
-  pr_url: ''
+  merged_at: 2026-05-01T22:08:00Z
+  pr_url: https://github.com/Blockchain-Oracle/mezoyield/pull/27
   priority: P1
   started_at: 2026-05-01T20:45:00Z
-  status: IN_PROGRESS
+  status: COMPLETED
   title: Yield history chart
 - completed_at: null
   depends_on:
@@ -134,8 +134,8 @@ stories:
   merged_at: null
   pr_url: ''
   priority: P0
-  started_at: null
-  status: PENDING
+  started_at: 2026-05-01T22:10:00Z
+  status: IN_PROGRESS
   title: Submission shell — README, Vercel deploy, testnet addresses
 thread_anchor: ''
 thread_channel_id: '1498205579020206171'
