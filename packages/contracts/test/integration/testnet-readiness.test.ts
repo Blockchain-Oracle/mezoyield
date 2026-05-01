@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { JsonRpcProvider, Contract } from "ethers";
+import { ethers } from "hardhat";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 
@@ -33,7 +33,7 @@ describeOrSkip("Mezo testnet integration smoke (live RPC)", function () {
   }
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
-  const provider = new JsonRpcProvider(manifest.rpcUrl);
+  const provider = new ethers.JsonRpcProvider(manifest.rpcUrl);
   const optimizerAddr: string = manifest.contracts.MezoYieldOptimizer.address;
   const gaugeControllerAddr: string = manifest.contracts.MockGaugeController.address;
   const matchboxAddr: string = manifest.contracts.MockMatchbox.address;
@@ -59,7 +59,7 @@ describeOrSkip("Mezo testnet integration smoke (live RPC)", function () {
   });
 
   it("MezoYieldOptimizer's wiring matches the manifest", async () => {
-    const c = new Contract(optimizerAddr, optimizerAbi, provider);
+    const c = new ethers.Contract(optimizerAddr, optimizerAbi, provider);
     expect(await c.TOTAL_BPS()).to.equal(10_000n);
     expect(await c.gaugeController()).to.equal(gaugeControllerAddr);
     expect(await c.matchbox()).to.equal(matchboxAddr);
@@ -68,7 +68,7 @@ describeOrSkip("Mezo testnet integration smoke (live RPC)", function () {
   });
 
   it("MockGaugeController's seeded gauges round-trip", async () => {
-    const c = new Contract(gaugeControllerAddr, gaugeControllerAbi, provider);
+    const c = new ethers.Contract(gaugeControllerAddr, gaugeControllerAbi, provider);
     const onChain: string[] = await c.gauges();
     const seeded: { name: string; address: string }[] = manifest.seededGauges ?? [];
     expect(seeded.length).to.be.greaterThan(0);
@@ -81,7 +81,7 @@ describeOrSkip("Mezo testnet integration smoke (live RPC)", function () {
   });
 
   it("MockMatchbox's seeded bribes match the manifest", async () => {
-    const c = new Contract(matchboxAddr, matchboxAbi, provider);
+    const c = new ethers.Contract(matchboxAddr, matchboxAbi, provider);
     const seeded: { address: string; bribeMUSDWei: string }[] = manifest.seededGauges ?? [];
     for (const g of seeded) {
       const onChain: bigint = await c.bribeForGauge(g.address);

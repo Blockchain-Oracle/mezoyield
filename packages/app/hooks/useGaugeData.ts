@@ -25,36 +25,47 @@ export type UseGaugeDataResult = {
  * Source the gauge board's table.
  *
  * Strategy (per story-005):
- *   1. Try the Goldsky subgraph (sponsor integration). Returns null if no
- *      endpoint is configured (NEXT_PUBLIC_GOLDSKY_GAUGES_URL).
- *   2. Fall back to direct on-chain reads via wagmi `useReadContracts`:
- *      a. Read `MockGaugeController.gauges()` for the address list.
- *      b. Batch-read `gaugeMeta(addr)` and `MockMatchbox.bribeForGauge(addr)`
- *         per gauge.
- *      c. Compose into the `Gauge[]` shape with APY computed via
- *         `(bribe / totalVeMezo) * 52`.
+ *   A. Try the Goldsky subgraph (sponsor integration). Returns null
+ *      from the client when no endpoint is configured — that's a
+ *      "fall through" signal, not an error.
+ *   B. Whenever the subgraph isn't currently delivering data (no
+ *      endpoint, transient error, or first-load not yet returned),
+ *      run the RPC fallback: read `MockGaugeController.gauges()` for
+ *      the address list, then batch-read `gaugeMeta(addr)` and
+ *      `MockMatchbox.bribeForGauge(addr)` per gauge. Compose into
+ *      `Gauge[]` with APY computed via the spec's
+ *      `(bribe / totalVeMezo) * 52`.
+ *   C. Surface a terminal error only when the active path actually
+ *      failed — a subgraph-only error MUST NOT mask a successful RPC
+ *      fallback (Codex P1 fix on PR #22). If RPC also fails (or RPC
+ *      isn't reachable because subgraph is the only configured leg),
+ *      surface that error with a Retry button in the UI.
  *
- * The hook surfaces `source` so callers can show provenance ("Goldsky"
- * vs "on-chain") in the UI if useful, and `isError` so GaugeBoard can
- * render the user-readable error state from the spec.
- *
- * §14: this hook never synthesizes or caches gauge data. If both paths
- * fail, the result is an explicit error state — never invented rows.
+ * §14: never synthesizes or caches gauge rows. If both legs fail,
+ * the hook returns isError; never invented data.
  */
 export function useGaugeData(): UseGaugeDataResult {
-  // -- Path 1: subgraph --
+  // -- Path A: subgraph --
   const subgraphQuery = useQuery({
     queryKey: ["gauges", "subgraph"],
     queryFn: fetchGaugesFromSubgraph,
-    // null result means "no endpoint configured" — not an error, just a signal to fall through.
     retry: false,
     staleTime: 30_000,
   });
 
-  const subgraphAvailable =
-    subgraphQuery.data !== null && subgraphQuery.data !== undefined;
+  const subgraphHasData = subgraphQuery.data != null;
+  const subgraphFailedOrUnconfigured =
+    !subgraphQuery.isLoading &&
+    (subgraphQuery.data === null || subgraphQuery.error != null);
 
-  // -- Path 2: RPC fallback --
+  // -- Path B: RPC fallback --
+  // Engaged whenever the subgraph isn't currently the source of truth:
+  // unconfigured (data === null), errored, or hasn't returned yet on first
+  // load. Disabled only if the subgraph is actively loading its first
+  // request — avoids two simultaneous requests on cold mount.
+  const rpcEnabled =
+    !subgraphHasData && !subgraphQuery.isLoading;
+
   const listQuery = useReadContracts({
     contracts: [
       {
@@ -64,12 +75,13 @@ export function useGaugeData(): UseGaugeDataResult {
       },
     ],
     query: {
-      enabled: !subgraphAvailable && !subgraphQuery.isLoading,
+      enabled: rpcEnabled,
       staleTime: 30_000,
     },
   });
 
-  const gaugeAddresses = (listQuery.data?.[0]?.result as readonly Address[] | undefined) ?? undefined;
+  const gaugeAddresses =
+    (listQuery.data?.[0]?.result as readonly Address[] | undefined) ?? undefined;
 
   const metaQuery = useReadContracts({
     contracts:
@@ -93,84 +105,102 @@ export function useGaugeData(): UseGaugeDataResult {
     },
   });
 
+  const refetchAll = () => {
+    void subgraphQuery.refetch();
+    if (rpcEnabled) {
+      void listQuery.refetch();
+      void metaQuery.refetch();
+    }
+  };
+
   // -- Compose --
-  if (subgraphAvailable && subgraphQuery.data) {
+
+  // A. Subgraph success: preferred outcome.
+  if (subgraphHasData && subgraphQuery.data) {
     return {
       gauges: subgraphQuery.data,
       isLoading: false,
       isError: false,
       error: null,
       source: "subgraph",
-      refetch: () => void subgraphQuery.refetch(),
+      refetch: refetchAll,
     };
   }
 
-  const isLoading =
-    subgraphQuery.isLoading ||
-    listQuery.isLoading ||
-    (!!gaugeAddresses && gaugeAddresses.length > 0 && metaQuery.isLoading);
+  // B. RPC fallback success — even if subgraph errored. This is the
+  // canonical "RPC fallback" of the spec; we don't shadow it with a
+  // subgraph-only error.
+  const rpcReady =
+    !!gaugeAddresses &&
+    (gaugeAddresses.length === 0 ||
+      (!!metaQuery.data && !metaQuery.isLoading));
 
-  const error =
-    (subgraphQuery.error as Error | null) ??
-    (listQuery.error as Error | null) ??
-    (metaQuery.error as Error | null) ??
-    null;
+  if (rpcEnabled && rpcReady && !listQuery.error && !metaQuery.error) {
+    const gauges: Gauge[] = (gaugeAddresses ?? []).map((address, i) => {
+      const metaResult = metaQuery.data?.[i * 2]?.result as
+        | readonly [string, bigint]
+        | undefined;
+      const bribeResult = metaQuery.data?.[i * 2 + 1]?.result as bigint | undefined;
+      const name = metaResult?.[0] ?? "Unknown";
+      const totalVeMezoWei = metaResult?.[1] ?? 0n;
+      const bribeMUSDWei = bribeResult ?? 0n;
+      return {
+        address,
+        name,
+        totalVeMezoWei,
+        bribeMUSDWei,
+        apyPercent: computeApy(bribeMUSDWei, totalVeMezoWei),
+      };
+    });
+    return {
+      gauges,
+      isLoading: false,
+      isError: false,
+      error: null,
+      source: "rpc",
+      refetch: refetchAll,
+    };
+  }
 
-  if (error) {
+  // C. Terminal error — only when the active path actually failed. RPC
+  // error wins when RPC was attempted (we know it failed); otherwise the
+  // subgraph error surfaces only if RPC isn't engaged at all (defensive —
+  // unreachable in the default config because rpcEnabled is true whenever
+  // subgraph isn't actively loading or delivering).
+  const rpcError =
+    (listQuery.error as Error | null) ?? (metaQuery.error as Error | null) ?? null;
+  if (rpcEnabled && rpcError) {
     return {
       gauges: undefined,
       isLoading: false,
       isError: true,
-      error,
+      error: rpcError,
       source: null,
-      refetch: () => {
-        void subgraphQuery.refetch();
-        void listQuery.refetch();
-        void metaQuery.refetch();
-      },
+      refetch: refetchAll,
     };
   }
-
-  if (!gaugeAddresses || (gaugeAddresses.length > 0 && !metaQuery.data)) {
+  if (!rpcEnabled && (subgraphQuery.error as Error | null)) {
     return {
       gauges: undefined,
-      isLoading,
-      isError: false,
-      error: null,
+      isLoading: false,
+      isError: true,
+      error: subgraphQuery.error as Error,
       source: null,
-      refetch: () => {
-        void listQuery.refetch();
-        void metaQuery.refetch();
-      },
+      refetch: refetchAll,
     };
   }
 
-  const gauges: Gauge[] = gaugeAddresses.map((address, i) => {
-    const metaResult = metaQuery.data?.[i * 2]?.result as
-      | readonly [string, bigint]
-      | undefined;
-    const bribeResult = metaQuery.data?.[i * 2 + 1]?.result as bigint | undefined;
-    const name = metaResult?.[0] ?? "Unknown";
-    const totalVeMezoWei = metaResult?.[1] ?? 0n;
-    const bribeMUSDWei = bribeResult ?? 0n;
-    return {
-      address,
-      name,
-      totalVeMezoWei,
-      bribeMUSDWei,
-      apyPercent: computeApy(bribeMUSDWei, totalVeMezoWei),
-    };
-  });
-
+  // Otherwise: still loading.
+  const isLoading =
+    subgraphQuery.isLoading ||
+    listQuery.isLoading ||
+    (!!gaugeAddresses && gaugeAddresses.length > 0 && metaQuery.isLoading);
   return {
-    gauges,
-    isLoading: false,
+    gauges: undefined,
+    isLoading,
     isError: false,
     error: null,
-    source: "rpc",
-    refetch: () => {
-      void listQuery.refetch();
-      void metaQuery.refetch();
-    },
+    source: null,
+    refetch: refetchAll,
   };
 }
