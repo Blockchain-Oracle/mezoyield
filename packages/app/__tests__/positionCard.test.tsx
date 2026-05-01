@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import type { Gauge } from "@/lib/types";
 
 /**
@@ -49,6 +51,20 @@ vi.mock("wagmi", () => ({
 
 import { PositionCard } from "@/components/Dashboard/PositionCard";
 
+// PositionCard nests <ClaimButton /> which uses useClaimRewards →
+// useQueryClient. A real QueryClientProvider has to wrap these renders;
+// the wagmi mock doesn't provide one. Per-test fresh client to avoid
+// cache leakage between cases.
+function renderWithQuery(ui: React.ReactElement) {
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={qc}>{children}</QueryClientProvider>
+  );
+  return render(ui, { wrapper: Wrapper });
+}
+
 describe("PositionCard", () => {
   beforeEach(() => {
     walletReadyState.value = true;
@@ -59,13 +75,13 @@ describe("PositionCard", () => {
 
   it("renders the skeleton while wallet providers haven't mounted", () => {
     walletReadyState.value = false;
-    render(<PositionCard />);
+    renderWithQuery(<PositionCard />);
     expect(screen.getByTestId("position-card-skeleton")).toBeInTheDocument();
   });
 
   it("renders the disconnected hint when no wallet is connected", () => {
     veMezoState.value = { balanceWei: 0n, allocation: [], isConnected: false, isLoading: false };
-    render(<PositionCard />);
+    renderWithQuery(<PositionCard />);
     expect(screen.getByTestId("position-card-disconnected")).toHaveTextContent(
       /Connect wallet/i,
     );
@@ -90,7 +106,7 @@ describe("PositionCard", () => {
         },
       ],
     };
-    render(<PositionCard />);
+    renderWithQuery(<PositionCard />);
     const card = screen.getByTestId("position-card");
     expect(card).toHaveTextContent("1.50k veMEZO");
     expect(screen.getByTestId("position-card-allocated")).toHaveTextContent(
@@ -120,7 +136,7 @@ describe("PositionCard", () => {
         },
       ],
     };
-    render(<PositionCard />);
+    renderWithQuery(<PositionCard />);
     expect(screen.getByTestId("position-card-hero")).toHaveTextContent(
       "≈ 1.50 MUSD/week",
     );

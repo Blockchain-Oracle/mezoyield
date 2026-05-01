@@ -11,6 +11,7 @@ import { ConnectButton } from "@/components/ConnectButton";
 import { GaugeBoard } from "@/components/Dashboard/GaugeBoard";
 import { PositionCard } from "@/components/Dashboard/PositionCard";
 import { EpochCountdown } from "@/components/Dashboard/EpochCountdown";
+import { YieldChart } from "@/components/Dashboard/YieldChart";
 import { OptimizeModal } from "@/components/OptimizeModal";
 
 const TAB_TRIGGERS = (
@@ -30,6 +31,7 @@ export default function HomePage() {
           <div data-testid="dashboard-panel" className="space-y-6">
             <EpochCountdown />
             <PositionCard />
+            <YieldChart />
             <GaugeBoard />
           </div>
         </TabsContent>

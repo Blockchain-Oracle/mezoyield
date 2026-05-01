@@ -67,4 +67,13 @@ export const GAUGE_CONTROLLER_ADDRESS =
 export const MATCHBOX_ADDRESS = manifest.contracts.MockMatchbox.address;
 export const VE_MEZO_ADDRESS = manifest.contracts.MockVeMezo.address;
 
+// Lower bound for `getLogs` calls against the optimizer. Without this
+// bound, the RPC walks the entire chain since genesis — slow on testnet
+// and forbidden on most providers (`fromBlock: "earliest"` rejected for
+// being too broad). Bigint because viem's getLogs takes block-number
+// args as bigint.
+export const OPTIMIZER_DEPLOYMENT_BLOCK = BigInt(
+  manifest.contracts.MezoYieldOptimizer.blockNumber,
+);
+
 export const DEPLOYMENT_MANIFEST = manifest;
