@@ -49,11 +49,20 @@ export function ClaimButton() {
 
   const noRewards = claim.pendingWei === 0n;
   const inFlight = claim.status === "writing" || claim.status === "confirming";
-  const disabled = noRewards || inFlight;
+  // After a successful claim, the receipt arrives BEFORE the pending refetch
+  // settles. Without this gate the button briefly returns to enabled with the
+  // stale pre-claim amount and a second click would submit a duplicate tx
+  // that wastes gas or reverts. Codex P2 on PR #25 (round 4): treat "success
+  // until refetch lands" as busy. `isRefetchingPending` covers the post-reset
+  // window; `status === "success"` covers the brief pre-reset render.
+  const settling = claim.status === "success" || claim.isRefetchingPending;
+  const disabled = noRewards || inFlight || settling;
 
   let label: string;
   if (inFlight) {
     label = claim.status === "writing" ? "Confirming…" : "Settling…";
+  } else if (settling) {
+    label = "Settling…";
   } else if (noRewards) {
     label = "No pending rewards";
   } else {

@@ -14,6 +14,7 @@ const claimState: {
   value: {
     pendingWei: bigint;
     isLoadingPending: boolean;
+    isRefetchingPending: boolean;
     status: "idle" | "writing" | "confirming" | "success" | "error";
     txHash?: `0x${string}`;
     errorMessage?: string;
@@ -24,6 +25,7 @@ const claimState: {
   value: {
     pendingWei: 0n,
     isLoadingPending: false,
+    isRefetchingPending: false,
     status: "idle",
     claim: vi.fn(),
     reset: vi.fn(),
@@ -52,6 +54,7 @@ describe("ClaimButton", () => {
     claimState.value = {
       pendingWei: 0n,
       isLoadingPending: false,
+      isRefetchingPending: false,
       status: "idle",
       claim: vi.fn(),
       reset: vi.fn(),
@@ -114,6 +117,39 @@ describe("ClaimButton", () => {
       ...claimState.value,
       pendingWei: 12n * 10n ** 18n,
       status: "confirming",
+    };
+    render(<ClaimButton />);
+    const btn = screen.getByTestId("claim-button");
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveTextContent(/settling/i);
+  });
+
+  it("stays disabled in the success → pending-refetch settle window (Codex P2 round 4)", () => {
+    // Race: receipt landed → status="success" but the optimistic refetch of
+    // pendingWei hasn't returned yet, so pendingWei is the stale pre-claim
+    // value. Without the settle gate the button would re-enable here and a
+    // second click would submit a duplicate tx.
+    claimState.value = {
+      ...claimState.value,
+      pendingWei: 12n * 10n ** 18n,
+      status: "success",
+      isRefetchingPending: true,
+    };
+    render(<ClaimButton />);
+    const btn = screen.getByTestId("claim-button");
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveTextContent(/settling/i);
+  });
+
+  it("stays disabled in the post-reset refetch window even when status is idle", () => {
+    // After ClaimButton's success effect calls claim.reset(), status flips
+    // to "idle" but the refetch may still be in flight. The CTA must stay
+    // disabled until pendingWei reflects the post-claim balance.
+    claimState.value = {
+      ...claimState.value,
+      pendingWei: 12n * 10n ** 18n,
+      status: "idle",
+      isRefetchingPending: true,
     };
     render(<ClaimButton />);
     const btn = screen.getByTestId("claim-button");

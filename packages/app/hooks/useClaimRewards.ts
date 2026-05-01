@@ -24,6 +24,14 @@ export type ClaimState = {
   /** Pending MUSD amount in wei. 0n when disconnected or no rewards. */
   pendingWei: bigint;
   isLoadingPending: boolean;
+  /**
+   * True while a refetch of `pendingWei` is in flight (first-load or
+   * post-claim refresh). Consumers must keep the claim CTA disabled while
+   * this is true: otherwise a successful claim re-enables the button with
+   * the stale pre-claim amount, and a second click submits a duplicate
+   * tx that wastes gas or reverts. Codex P2 on PR #25 (round 4).
+   */
+  isRefetchingPending: boolean;
   /** "idle" → "writing" → "confirming" → "success" / "error". */
   status: "idle" | "writing" | "confirming" | "success" | "error";
   txHash?: `0x${string}`;
@@ -106,6 +114,7 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
   return {
     pendingWei: (pendingQuery.data as bigint | undefined) ?? 0n,
     isLoadingPending: pendingQuery.isLoading,
+    isRefetchingPending: pendingQuery.isFetching && !pendingQuery.isLoading,
     status: phase,
     txHash,
     errorMessage,
