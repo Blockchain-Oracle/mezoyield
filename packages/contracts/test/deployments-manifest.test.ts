@@ -36,7 +36,12 @@ describe("deployments/mezo-testnet.json", () => {
     // by story-004's BDD ("written with address, txHash, blockNumber").
     const contracts = json.contracts as Record<string, Record<string, unknown>>;
     expect(contracts).to.be.an("object");
-    for (const name of ["MezoYieldOptimizer", "MockGaugeController", "MockMatchbox"]) {
+    for (const name of [
+      "MezoYieldOptimizer",
+      "MockGaugeController",
+      "MockMatchbox",
+      "MockVeMezo",
+    ]) {
       const c = contracts[name];
       expect(c, `contracts.${name} must be present`).to.exist;
       expect(c.address, `contracts.${name}.address must be 0x-hex`).to.match(

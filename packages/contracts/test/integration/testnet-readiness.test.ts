@@ -51,6 +51,7 @@ describeOrSkip("Mezo testnet integration smoke (live RPC)", function () {
     "function gaugeMeta(address) view returns (string, uint256)",
   ];
   const matchboxAbi = ["function bribeForGauge(address) view returns (uint256)"];
+  const veMezoAbi = ["function balanceOf(address) view returns (uint256)"];
 
   it("connects to the configured chain", async () => {
     const network = await provider.getNetwork();
@@ -87,5 +88,12 @@ describeOrSkip("Mezo testnet integration smoke (live RPC)", function () {
       const onChain: bigint = await c.bribeForGauge(g.address);
       expect(onChain.toString()).to.equal(g.bribeMUSDWei);
     }
+  });
+
+  it("MockVeMezo holds the deployer's seed balance", async () => {
+    const veMezoAddr: string = manifest.contracts.MockVeMezo.address;
+    const c = new ethers.Contract(veMezoAddr, veMezoAbi, provider);
+    const onChain: bigint = await c.balanceOf(manifest.deployer);
+    expect(onChain.toString()).to.equal(manifest.seedDeployerVeMezoWei);
   });
 });

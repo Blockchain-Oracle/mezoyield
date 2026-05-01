@@ -9,6 +9,8 @@ import {
 import { Header } from "@/components/Header";
 import { ConnectButton } from "@/components/ConnectButton";
 import { GaugeBoard } from "@/components/Dashboard/GaugeBoard";
+import { PositionCard } from "@/components/Dashboard/PositionCard";
+import { EpochCountdown } from "@/components/Dashboard/EpochCountdown";
 
 const TAB_TRIGGERS = (
   <TabsList variant="line">
@@ -25,6 +27,8 @@ export default function HomePage() {
       <main className="mx-auto max-w-5xl px-6 py-8">
         <TabsContent value="dashboard">
           <div data-testid="dashboard-panel" className="space-y-6">
+            <EpochCountdown />
+            <PositionCard />
             <GaugeBoard />
           </div>
         </TabsContent>

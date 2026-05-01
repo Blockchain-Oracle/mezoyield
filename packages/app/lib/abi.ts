@@ -51,6 +51,23 @@ export const matchboxAbi = [
   },
 ] as const;
 
+export const veMezoAbi = [
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "balanceOf",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "faucet",
+    inputs: [],
+    outputs: [],
+  },
+] as const;
+
 export const optimizerAbi = [
   {
     type: "function",

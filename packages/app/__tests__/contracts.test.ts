@@ -14,7 +14,8 @@ import deployments from "@mezoyield/contracts/deployments/mezo-testnet.json";
 describe("lib/contracts", () => {
   it("exports addresses that match the committed manifest", async () => {
     const lib = await import("@/lib/contracts");
-    expect(lib.MEZO_TESTNET_CHAIN_ID).toBe(31611);
+    expect(lib.MEZO_CHAIN_ID).toBe(31611);
+    expect(lib.MEZO_TESTNET_CHAIN_ID).toBe(31611); // legacy alias
     expect(lib.OPTIMIZER_ADDRESS).toBe(
       deployments.contracts.MezoYieldOptimizer.address,
     );
@@ -24,6 +25,7 @@ describe("lib/contracts", () => {
     expect(lib.MATCHBOX_ADDRESS).toBe(
       deployments.contracts.MockMatchbox.address,
     );
+    expect(lib.VE_MEZO_ADDRESS).toBe(deployments.contracts.MockVeMezo.address);
     expect(lib.MEZO_TESTNET_RPC_URL).toBe(deployments.rpcUrl);
   });
 
@@ -41,5 +43,6 @@ describe("lib/contracts", () => {
     expect(lib.OPTIMIZER_ADDRESS).toMatch(addressRe);
     expect(lib.GAUGE_CONTROLLER_ADDRESS).toMatch(addressRe);
     expect(lib.MATCHBOX_ADDRESS).toMatch(addressRe);
+    expect(lib.VE_MEZO_ADDRESS).toMatch(addressRe);
   });
 });
