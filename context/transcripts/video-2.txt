@@ -1,0 +1,895 @@
+Hello everybody. Welcome back to
+workshop number three. I think we're on
+to now um for this um Mezoh hackathon.
+Joined today by Michael from Spectrum,
+which is one of the tooling partners. Um
+and he's going to run you through how to
+create a DAP. Um so hopefully you by the
+end of this you'll learn a bit more
+about how to use a Spectrum dashboard,
+making RPC calls on your DAP. Um and
+we'll give you a bit of practical dev
+tooling um for builders working in this
+uh this hackathon. Um hopefully this I
+think this will be a bit of a workshop
+bit of Q&As at the end. Um if you guys
+have any questions just drop them in the
+chat and I'm sure Michael can get to
+these throughout the uh the workshop and
+um okay awesome. With that said I will
+hand over to Michael and he can begin.
+Great. I'm just going to drop some links
+in the chat first.
+So
+be talking about the basics the
+foundations of creating a do. Um, I've
+dropped a link for a repository.
+Uh, and the DAP is going to be pretty
+basic about a to-do list. So, the
+evolution of a to-do list online. Um,
+we're going to start out with a web one
+version and then web two and then of
+course web three builds upon both of
+those and we'll have a decentralized
+DAP. Um, if you want to follow along,
+you can clone the repo. Um there are
+some required uh values in a file. Um
+that'll be a wallet connect um project.
+Uh then there's going to be an RPC URL
+and then a contract address. Um so um I
+can teach you
+how to the first one. You sign up to
+Wallet Connect. you sign in with your uh
+with your Google account and create a
+project. It's pretty straightforward. I
+don't need to show you that. Um the RPC
+uh this is something that we can host
+for you and it's uh this is a uh
+provider spectrum nodes. We're an RPC
+provider supporting 200 different
+networks.
+Um
+and to create your account is very easy.
+You just log in with Google. Um, I
+already have an account, so I'm just
+going to log in. Um,
+okay. I think I have it open in another
+window. this way.
+Um,
+yep. And to get your URL, you go to your
+nodes. Um, on the free tier you get up
+to three different endpoints, but in the
+code I sent you there is you can claim
+up to you can have up to five networks
+across all these networks. Uh, to do
+that you go to your profile voucher and
+you can enter the code mev.
+That's for this MEO workshop. Uh, I'm
+already on the developer tier. Um, but
+that's how you can get access to more
+endpoints. And then what you want to do
+is you want to copy your
+endpoint URL. Create an endpoint. Select
+your chain. We're working on Ethereum.
+Uh Sapolia
+the test nets. You have a choice between
+pruned or archive.
+uh archive is basically a historic
+a full historic
+uh version of the blockchain or pruned
+is just the most recent uh transactions
+depending on your needs. We can go
+archived. I already have this node. Um
+so it's just good to have that prepared.
+And then the final thing you'll need is
+your contact address. And I already have
+this on
+uh published on testn net. So you can
+use my contract address I've sent in the
+chat. Uh it's very basic contract. It's
+actually just like a fork of the
+storage. But um I added functions for
+adding tasks, getting tasks, completing
+tasks, and seeing who completed the
+tasks. So we'll get to that later. Um
+so once you have the repository
+um ready, uh we can look into it
+ourselves. We have the first
+the first project for web one is just a
+very basic page. Um not much to it. Uh
+just a basic to-do list. And with web
+one of of course there's no interaction.
+It's just read only. And this is how it
+was at the beginning. Um so not much to
+it. Uh so for web two it starts to add
+interactivity.
+Um, so people can interact with the
+with the DAP
+there. Uh, you can start to add tasks.
+Um,
+you can check them off. Um,
+uh,
+for example, I can add to the to pretty
+easy, straightforward to understand.
+What's interesting is the web 3 in
+integration and uh
+this is um
+where the real revolution of uh
+blockchain comes in. Uh this is a shared
+to-do list which is with the open
+network. I have connected my account. Uh
+you can do that too. And I've also added
+an RPC metrics um
+uh dashboard so you can see the success
+rate of our calls. Um so the first thing
+I'm going to do is just to showcase uh
+this do is uh to refresh and this is
+just going to compile do one single ETH
+call to spectrum nodes or through
+spectrum nodes
+um
+to our RPC. Um if you're not familiar
+with RPCs maybe it's good to explain
+that these are all basically endpoints.
+If you want to talk to any chain, you
+need to communicate through RPC. Uh it's
+a specification, a standard where you
+can, this is using the ETH call.
+Um but we're hosting it. We're doing
+this through our own infrastructure.
+We're independent. We're bare metal.
+We're based in Malta. We have uh
+failover in North America and also in
+Europe. Um
+and you get an idea. We can refresh
+multiple times. kind of get an idea of
+our latency. Um,
+and we can add tasks as well. So, say if
+I want to
+record a session, I'm going to click
+add. Um,
+I've been logged out.
+And this is on. Make sure you're on
+Sapia test net. uh and hit send.
+Um
+to get you might need some test net
+funds to do this to deploy. I can talk
+about deployment of the smart contract.
+If you want to deploy it for yourself,
+all you'd have to do is copy all this
+code
+um or write write it yourself and you
+can use Remix IDE, which is what I've
+used here. What you do is you compile.
+Um
+then you go to deploy. You choose your
+browser extension. It defaults to remix
+VM. You can choose your browser
+extension.
+Um
+choose my account. Make sure that the
+wallet is on testn net or else my
+default domainet. Uh choose a sufficient
+gas limit and hit deploy.
+And this is going to ask you to sign
+this transaction as well. It doesn't
+cost anything. You can see my sapoleia
+balance. Um
+if you don't have seapoleia this is
+something we can also support with at
+spectrum we can we have some faucets on
+base ethereum arbitum optimism monad and
+also on spectrum itself if you want
+extra RPC credits you can basically post
+uh this to claim through our faucet you
+basically post on Twitter on X um
+this post button, it sends you to a link
+here.
+Uh all you have to do is hit post.
+Uh I already did this earlier, so maybe
+if I did change it slightly.
+Uh you copy your URL,
+you go back to Spectrum. This is a
+progressive web app um that we've built.
+And you insert your wallet address as
+well. So I'm going to choose my wallet
+address
+and enter it in here. We have red and we
+hit claim.
+Um this is my first time
+uh claiming. Maybe I think it's because
+I deleted
+um this word, but this is the process.
+Uh and that'll arrive instantly in your
+in your account. So you can start
+testing away and not be stopped.
+Um
+then once you deploy, you get your
+contract address. That's that's what you
+need basically for
+um in your end file
+and you can start to add tasks and
+say we also want to
+toggle a to-do list as complete. You can
+hit send and
+you can see different methods are being
+used. Um all which you can inspect for
+yourselves. There is one wallet RPC here
+used. This is just in my wallet connect
+or in my encrypt signing. Um you can see
+this takes longer than ours. Our
+infrastructure is is very fast. Um, and
+we even have lower latency. If you're a
+developer needing higher uh amounts, we
+can give you dedicated nodes uh on
+higher tiers and we can even support you
+with say you have your own server, we
+can keep it in the same like across from
+the rack of your node for example. So
+you can have sub 10 millisecond latency.
+um
+if you want that we can you can we can
+be in touch but this is just a general
+overview of how it looks like to to
+build it up. Um
+if you have any questions you can let me
+know that all the code is there.
+Um and I hope you enjoyed the session.
+Does anybody have any questions?
+Um,
+we have um
+I see someone might be wondering if we
+have what our package, what our pricing
+is for our RPCs. We tend to be quite
+competitive. It's a very competitive
+space. So, we always keep our prices
+updated. Um, obviously we have our free
+tier. We even have a starter tier at $2
+a month uh all the way growing up to
+enterprise. And um we support we have
+some pretty prominent clients, some
+foundations um we have Polka Dot, Chain
+Link, Oasis, they all uh
+they use our they're some enterprise
+clients of ours that have been very
+happy with our services. Uh we've very
+strong uptime and a very good support
+system. Uh if you have any questions, we
+have 247 team ready to like a human team
+ready to work with you um at any stage
+and you can calculate
+say if we're on Bitcoin,
+we can see kind of what our tier might
+be. But if it it helps to
+give you an an idea of how many RPCs you
+might use in a month.
+Um
+yeah. Um
+did any questions come in? I've lost the
+the window for uh
+I see. Okay, I find the chat.
+What do we think of the crossover
+between web 3 and AI? Thank you,
+Carlton, for the question. Uh it's very
+interesting and I think um to be honest
+a lot of our clients tend to be tend to
+have less faces as time goes on. Um AI
+is
+uh advancing the speed of which we can
+develop. Um even to be honest like the
+docs here for this like it helped me
+to form format this um and any other
+developer can tell you that it it speeds
+up. Um we currently have our team are at
+Paris Blockchain Week. I'm not sure if
+anybody is here, but um
+uh our team is there's a a startup
+pitching
+um a pitching competition that our team
+is running with there's 100k in prizes.
+Now, we already have our four finalists
+selected, but it might be interesting to
+follow. And the track is called Defi,
+Defi. It's a combination of DeFi and AI.
+Uh so we're excited to see what projects
+are going to be
+um
+chosen selected as the winners tomorrow
+at Paris Blockchain Week. Um so anybody
+there definitely go down check it out.
+Um
+I think we even have it on our website.
+Uh
+yeah. Um
+you can see us here. This is our DeFi
+track. We got some prizes here.
+Uh which will be interesting to follow.
+Um
+what about next question? How many
+validators are there? Um
+we have a lot. We've been running
+validator services where Spectrum itself
+is only almost a year old now but we've
+been running validator infrastructure
+for
+eight years over eight years now under
+the company Simply Staking. Um and we
+have I think at the moment like 30
+validators. The validator
+as a service has become less profitable
+over recent years. Um but we do still
+maintain uptime and engagement with all
+these networks that we support. Uh we
+have this table if you're curious if we
+support any network let's say mezo you
+can see support mainet and test net
+um for meo but again we support over 200
+different networks. So it's um we do
+have a lot of uh services we're running.
+Um
+cheese balls thanks for your question.
+Why do I need to pay for an RPC in a
+hackathon? So, the idea is you're
+actually not paying for an RPC in this
+hackathon because we're sponsoring um
+with our code MESDEV.
+Um you can uh it'll give you more than
+enough credits you need for the
+hackathon. Basically, uh we would like
+if you uh enjoyed the service that you
+could stay on, but um we do have the
+free tier as well if if you're not as
+intensive. We just want to support
+developers building in this space. Um
+do I use codeex or opus? Uh I actually
+used um
+cursor for this which um might not be
+the most powerful now but uh I know some
+teammates of mine use some codecs.
+They're very impressed with the latest
+model. Uh I don't personally have opus
+experience yet. Um
+I'd be interested to hear if you have
+any comments on that. Where where am I
+based? Uh I'm currently based in Malta.
+Um this is where my company is based. I
+came here
+I came here four years ago to study a
+masters in blockchain. It's one of the
+two universities I saw at the time doing
+masters in blockchain. One here, one in
+Cyprus and I was happy to get my first
+reference here and uh feel passionate
+about my company that has independent
+infrastructure in the age of uh big
+cloud for example, Amazon Web Services,
+the way they've gone down multiple times
+in the last year. It's been nice to be
+supporting independent decentralized
+efforts. Uh, and we've maintained uptime
+throughout all of those down times that
+the world has experienced. Um, and in
+the context of blockchain,
+uh, it's it's vital that uptime is is
+always there. Um,
+is this just an RPC shield?
+Um it is uh I mean that that is the
+service that spectrum offers. Um but we
+do want to encourage people building in
+the space um and kind of educate. I hope
+somebody learned something. Um
+with this small demo I've made um how
+many transactions go through our RPC?
+That's a good question. Uh we actually
+have some live metrics on our website on
+our homepage.
+um
+or you can check it out for yourself.
+Um this is okay, I'll come back to this.
+Um
+but here's some live metrics. In the
+last five minutes, we've handled six
+million almost 7 million RPC requests
+um to our services, mostly arbitum, you
+can see um and you can check them out
+over the day as well. almost three we
+process almost three million a day which
+is uh quite a load across all of our
+networks and you can check some metadata
+as well. Um this is what people are
+calling the most through our services.
+Um so it's kind of interesting and if
+you're
+like new to RPC this is kind of this is
+a sample RPC that my help build um
+that you can use on our website. it.
+This is the format. You can do this in
+your terminal but you just run and this
+is the return you get back and you can
+check some other say if we want to learn
+the
+the latest block. So this is the like
+RPC call on Ethereum to get
+uh the block number. You can insert
+block number here if you want a specific
+block or choose latest. You can run this
+and you get all this data back.
+And this is what we're processing 3
+million of every day. So it's it's quite
+a substantial load as you can imagine,
+but we're we're more than capable. We've
+been in the business for a lot of years.
+Um
+yes, what do I think of Remix? That's a
+nice question. Um Remix is I find it a
+very helpful IDE for
+uh deploying smart contracts on
+Ethereum. Um it's very intuitive. It's
+what I've been taught selftaught and
+also in university.
+Um
+it can take a bit of practice to get
+used to. Uh like knowing for example to
+choose your browser extension if you
+want to self-deploy.
+Uh having your browser extension on test
+net not mainet. Just small things. Gas
+like I think it defaults to zero. So you
+need to like choose. It just takes a bit
+of playing around with but it's I I find
+it very helpful
+um for deploying. I also have experience
+with truffle and hard hat as well. Those
+are helpful by the command line
+especially for testing smart contracts
+too. Uh so I recommend checking those
+out
+as well.
+Uh welcome loopy to the call. Um,
+I don't even know how many people are
+here, but it's nice to see all these
+questions coming through.
+Um,
+I can
+let me see if I'm
+maybe if I log out, it'll be easier to
+show. Uh,
+oh, also maybe just to show uh with our
+faucet, we also have a leaderboard. So
+you can see
+uh how many people we have like 30 40
+different people using our faucet this
+month. It re it refreshes every month
+and the top three win prizes of uh where
+the top top person gets a free month dev
+plan and also we're giving out some
+credits as well. So, if you participate
+in our faucets drips, um you can do it
+hourly and uh
+yeah, you can join the join the fun.
+We've got lots of prizes giving out. Uh
+we want to make sure that every every
+dev has what they need to get started
+developing um and build their first
+apps.
+Maybe a question is how many people here
+have built is it their first time
+building a DAP? have you built in the
+space before? Be curious to
+to know some
+something about the audience. Um,
+yes, nice to hear.
+Um,
+Carlton hasn't. Okay, nice.
+Of course, Claudia, that's good to hear,
+Claudia.
+Um,
+very cool. We also support, so this is
+Mezo is obviously Bitcoin focused. So we
+have, um, not only do we support
+Bitcoin,
+uh, mainet and test nets, but we also
+support Mezo of course and even roottock
+if you're building on rootstock. One
+nice thing about our RPC services is
+that we always we put an emphasis on
+supporting test nets as well. A lot of
+RPC providers they might just support
+mainet but having testn net is important
+for
+developers to actually get engaged and
+learn uh
+learn um
+like it's important for anybody any
+developer to test their infrastructure
+before they deploy to uh production.
+Um
+very cool. So we have we have some
+experience in the chat. That's really
+nice. And is it Ethereum experienced or
+would it be Bitcoin? Any Mezzo
+um any Mezodaps I should be aware about.
+Um I'd love to see what you're building.
+Okay, some Ethereum. That's nice.
+Cheese balls is on Bitcoin. I wonder um
+I've been involved a little bit in the
+incription space although it's it's
+quite a topical or controversial space
+whether it's spam or not. Um
+uh
+I think they're they're adding to minor
+fees which is probably possibly healthy
+long term. Uh so a few more Ethereum
+experienced Polka Dot that's really
+nice. Um,
+I I'm also quite involved in the Polka
+Dot space. I've um been involved in
+their Polka Dot Academy. Um,
+and there was recently uh a little bit
+of misinformation about Polka Dot that
+um it was hacked and it wasn't the
+mainet that was hacked, but rather uh
+like an Ethereum pegging of the DOT
+token that was hacked.
+Um,
+might be interesting. Some Stark wear.
+That's cool. Um, very nice. Uh, I'd love
+to see I'd love to I'm curious about uh
+ZK technology if if um that starts to
+take off anytime soon.
+Um,
+but yeah, if anybody's curious to start
+building or like engage with this, it
+would be cool to see uh somebody add a
+task to this decentralized to-do list
+because this is it would prove the
+uh decentralized nature of this uh demo.
+Uh, and to do that you would uh
+just refresh.
+Um
+to do that you just interact with these
+uh this smart contract. I sent the link
+for the ether scan and I verified the
+contract on etherscan so you can see the
+functions involved um
+and audit it for yourself which is
+important. Um,
+you also might be able to you might be
+able to test with it in
+in uh remix as well.
+Let me see if there's
+uh
+Yeah. So you can in Remix if you're able
+to load the contract. Um
+you can actually add tasks in Remix IDE.
+So let's say
+let's say we want to
+what do we want to do? Somebody somebody
+give a a task in the chat. We can uh
+let's just say touch grass.
+Uh gas limit we're going to set to auto
+transact.
+Um
+it's going to cost nothing. So we hit
+send.
+We should see this come uh
+come through.
+Let me do an ETH call again to refresh.
+Maybe it's not there yet.
+H. Now it's there.
+So, let's refresh over here. Again,
+we're calling the latest block data. And
+there we go.
+You can touch grass, but I I can't quite
+do that yet until uh touch cheese. I
+like touch cheese.
+Uh I'd love to see somebody uh add this.
+We can explore how to
+to uh add this uh contract.
+What? So, if anybody else wants to do
+this, what you can do is through the
+link I sent, you can actually just copy
+all of this code.
+Um,
+and if you go to remix,
+you can go to your file explorer, hit
+create.
+Let's go new file
+and type it to-do lists
+solve for solidity. and we just
+new code past it.
+Maybe you want to review it for
+yourself. If you use AI agents, that's
+probably a wise use of AI to assess this
+code that um before you run anything,
+that's good practice.
+Don't don't trust verify as the age-old
+principle goes. We hit compile.
+It compiles well. Um,
+and then we go to deploy.
+Uh, well, we we've already um
+if you deploy, it's going to add um
+you're going to deploy to a new
+contract, something owned by yourself,
+and that's something that other people
+can engage with. Um,
+so actually there it is. If you instead
+take the easy route, you take my
+contract address
+and add deployed contract.
+Uh, so I already have it here, but if
+you do that then
+um you should be able to to add you will
+you will need some
+sepoleia test net tokens to
+sign the transaction. It's not going to
+cost you anything, but the gas fee is
+very minimal. Um,
+so if somebody wants to add touch
+cheese, that would be really cool to
+see.
+Um,
+if I remove my contract, maybe I can
+show you how to do it.
+Let's remove it
+and add it again.
+We're here.
+clear everything. Uh, and then you hit
+you click into the to-do list
+and you click one of these functions.
+So, if you want to add a task,
+you add the description
+um
+and hit the auto gas limit. Now, if I
+want to complete a task, that's another
+that's another task. Uh, I have done
+tasks by ID. I've sorted them by ID. So
+I need to get the tasks first.
+Uh and this should show me the task IDs.
+So say I want to tick off record
+session. I can see record session is
+task number three. So I'm going to say
+complete task number three. We're going
+to hit the custom and I'll double check
+I'm connected to my browser extension
+which is encrypt browser. You can use
+MetaMask or other any other with wallet
+connect. You can use any wallet pretty
+much. Um, and hit transact.
+And again, this is not going to we're
+not sending any money. We're only using
+the fee which is less than a cent. It's
+it's and this is all TestNet token. So,
+it's not real money.
+We're still in our testing phase.
+And it's going to take a minute to to
+come online. We'll wait for it to load
+here. Is anybody anybody testing this in
+the chat?
+Okay, let me know.
+Let me uh
+Okay, refresh.
+And we see it's done. I've ticked it
+off. And if you wanted to develop this
+app further, if you like the idea, um
+what I've done as well before is because
+it's decentralized, you can actually see
+who has completed these tasks. So maybe
+if you want to enhance the the UI, you
+can um
+you can maybe have links to check out
+who's done it. And that kind of has more
+accountability. Maybe you can see you
+can even see on the transactions here.
+Um,
+so 39 seconds ago was this this address.
+So this is all my address. I'd love to
+see another address, but you can see
+like who has completed these tasks on
+your smart contract.
+Um,
+and it's a complete task. Let's click
+into the transaction. Let's see.
+we can see
+uh we've used the complete task function
+and for the ID of three.
+Uh so this is a very very basic example
+but I think it teaches a lot about how
+smart contracts work. Um it's a nice
+introduction to building your first DAP.
+um and gives you context of
+like web 1, web two and web 3. When web
+one first came out, it was only read
+only as I mentioned. Web two you could
+interact but the user is never really in
+control of um
+of these tasks like it's for this to be
+decentralized for this to be on the
+internet it needs to be in a centralized
+server
+uh and that has control aspects. So even
+in this context only I can write chut
+cheese.
+This is not going to work.
+Yeah. Um, so this is like a
+obviously shows you web two and it's
+important to recognize the foundations
+of web one and two because the web one
+read only like it still applies that
+um we have like layout and toggles,
+buttons, even like moving stuff around.
+uh UI is still very relevant and any
+like web 2 dev still very much has a
+place in web 3. If if you're concerned
+about web 3 like daunting or like
+whether you can fit in you I can say you
+definitely can because it's web three
+it's it's nothing without web one
+without web two. So um don't don't let
+that stop you. Uh your skills are always
+welcome. Um,
+and yeah. Um,
+very cool. I can see some yeses. Uh,
+looks good. Thank you, Tracy. Tracy
+mine. Um, if anybody has any questions,
+I I hope I I'm guessing that the yes is
+for that you're trying with IDE. Um, if
+it's helpful, I can try again. We can
+reset everything. Uh,
+Remix doesn't want that. That's okay.
+Oh, I did. Um,
+but I also, um, appreciate your time. If
+you'd like me to do it again, just just
+let me know. Any questions, I'm very
+happy to help. Um,
+we do have some guides if people are
+interested. We have some docs coming out
+soon that are um we do have we do have
+some docs already actually. We have
+blogs if you're curious to learn more
+about the ecosystem.
+We're building out our docs if you're
+curious about how to like what is
+spectrum what is what is what is it that
+we do. Uh you can have a read through
+all here and we even have user guides
+for how to create your account, create
+your first endpoint. These are all
+step-by-step guides that I made. Um,
+uh, this is an important reminder that
+the link that you get is it's not it's
+important to keep it private because if
+you share it with anybody, they can
+start using your credits and
+um, exhausting your resources. So, just
+some helpful reminders, we also support
+cores um, cross origin resource sharing
+which is a security feature. Um, so if
+you want to basically if you want your
+RPC requests to come from a specific
+server or domain, you can limit those
+RPC requests just to a safe source
+basically. So in case anybody gets hold
+of your your URL, you still have course
+protection blocking that. Um,
+so requests can only be made from
+trusted domains. This is something that
+our foundations appreciate and is
+important especially for certifications.
+Uh our our services are sock 2
+certified. So, it's um
+uh it took a lot of work, but it
+basically gives foundations the the
+trust they need to know that when our
+services go down or if they ever do, not
+that they do, but if they do, that we
+have the right resources in place uh to
+report adequately or and like fall backs
+in place not to interrupt services.
+Um
+but yeah um we also support uh we added
+support for USDC.
+So not just dollars we we accept euro as
+well but USDC too. So if you want to pay
+with crypto we accept that. You can pay
+with your wallet. Just make sure you're
+on the right active network.
+Um,
+and if you have any questions, we have a
+ticket dashboard where you can add any
+problems you have. We'll have a human
+um, report to you. And I was showcasing
+our Spectrum app. It's a progressive web
+app. So, it's not necessarily a browser
+extension. It's a bit different. Um
+or um
+yeah, some people it's it saves you from
+logging in uh or um
+it it it's just can be more convenient
+for some people. You don't have to use
+it. Um then of course our faucets, we
+have guides for that. Uh and even credit
+usage. So if if you're curious what like
+credits
+each call might be. Um, so ETH call,
+which is what we're doing to get
+this list here to refresh our list,
+these cost 50 credits. Um, and most of
+our chains follow this Ethereum pricing.
+We do have some of our more intensive
+chains like Solana. Um, they cost a
+little bit more because of how intensive
+their nodes are. They like take
+terabytes
+like like it's nothing. So um
+be aware of that. But for all for all
+Bitcoin or Mezzo roottock any any
+developments you might be doing in the
+space I think it's safe to say you can
+follow these credit usage guides.
+Um
+and we also have guides for foundations.
+Uh
+because we allow teams. Uh if you want
+to have teams of users, you can invite
+users. You can have like a a quantity
+for your
+um for your whole team and allow maybe
+10 million requests to one user or
+infinite requests to another user.
+That's all on your control. And you can
+keep an eye on metrics of users as well
+to see how they're performing
+um over time.
+Uh, and then we have we're we're
+building out our API docs as well. Um,
+so if you want to
+learn about what are what APIs we
+support, um,
+you can have a read of them here.
+Uh, we're always building these out. So,
+um,
+you can see we support a lot of
+different pools.
+um
+protocols. We're working towards AI as
+well, supporting AI with X42 and 804,
+for example. These are things we're
+looking into because we do want to
+support agents as well as humans. Um
+so, so uh keep your eyes peeled. We'll
+be doing updates and all of our updates
+as well. They're we they're on our X
+page. Uh which is just spectrum nodes.
+Oops.
+Uh spectrum nodes. And we're currently
+at
+Paris blockchain week at the moment. Um
+yeah,
+there's no more questions. I might end
+the session. Um
+I can see
+I'll do one last check here.
+>> Okay, we I don't know if there are if
+there are any more questions. Um feel
+free to drop them in the in the Mezo
+Discord channel. Um and either Michael
+or someone else from the MEO team or
+Spectrum can get back to you um about
+all
+all of that. Um, thank you very much,
+Michael, for that learning a bit more
+about the spectrum dashboard and RPC
+calls. Um, we have another workshop
+tomorrow, um, which is at 5:30. Uh, so
+that's 5:30 BST. Um, oh no, sorry, it's
+not. It's at 5:00 p.m. BST. Um, so
+that's 5 p.m. UK time. And this is with
+Gold Sky. Um, so you're going to be
+learning basically how to master your
+data with Gold Sky and how to index Mezo
+and Bitcoin with zero friction. So, um,
+join back for that. Um, I'll share a
+link to it on the Discord tomorrow and,
+um, hope to see you guys there and thank
+you very much, Michael.
