@@ -22,9 +22,10 @@ describe("HomePage", () => {
 
   it("renders the Dashboard panel by default", () => {
     renderApp();
-    expect(screen.getByTestId("dashboard-panel")).toHaveTextContent(
-      /gauges, position, and yield/i,
-    );
+    expect(screen.getByTestId("dashboard-panel")).toBeInTheDocument();
+    // The panel mounts <GaugeBoard />; while wallet providers are still
+    // hydrating in tests, GaugeBoard renders its skeleton placeholder.
+    expect(screen.getByTestId("gauge-board-skeleton")).toBeInTheDocument();
   });
 
   it("switches to the Optimize panel when its tab is clicked", () => {
