@@ -1,0 +1,47 @@
+repos:
+  - repo: local
+    hooks:
+      # Root
+      - id: root-lint
+        name: "lint root"
+        entry: /usr/bin/env bash -c "npm run format"
+        exclude: (^solidity/)
+        language: script
+        description: "Checks code according to the package's linter configuration"
+      # Solidity
+      - id: solidity-lint-sol
+        name: "lint solidity sol"
+        entry: /usr/bin/env bash -c "npm --prefix ./solidity/ run lint:sol"
+        files: ^solidity/
+        types: [solidity]
+        language: script
+        description: "Checks solidity code according to the package's linter configuration"
+      - id: solidity-lint-ts
+        name: "lint solidity ts"
+        entry: /usr/bin/env bash -c "npm --prefix ./solidity/ run lint:ts"
+        files: ^solidity/
+        types_or: [ts, javascript]
+        language: script
+        description: "Checks TS code according to the package's linter configuration"
+      - id: solidity-lint-config
+        name: "lint solidity json/yaml"
+        entry: /usr/bin/env bash -c "npm --prefix ./solidity/ run lint:config"
+        files: ^solidity/
+        types_or: [json, yaml]
+        language: script
+        description: "Checks JSON/YAML code according to the package's linter configuration"
+      # dApp
+      - id: dapp-lint-eslint
+        name: "lint dapp ts/js"
+        entry: /usr/bin/env bash -c "npm --prefix ./dapp/ run lint:eslint"
+        files: ^dapp/
+        types_or: [ts, tsx, javascript, jsx]
+        language: script
+        description: "Checks TS/JS code according to the package's linter configuration"
+      - id: dapp-lint-config
+        name: "lint dapp json/yaml"
+        entry: /usr/bin/env bash -c "npm --prefix ./dapp/ run lint:config"
+        files: ^dapp/
+        types_or: [json, yaml]
+        language: script
+        description: "Checks JSON/YAML code according to the package's linter configuration"

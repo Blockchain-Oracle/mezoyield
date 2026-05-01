@@ -1,0 +1,346 @@
+Thank you so kindly.
+So, start in the Mezzo server.
+Um, yeah, head on into roles.
+Uh, guys, this is a very powerful uh
+tool for exploring how your server looks
+uh to various groups of users. Okay, so
+here's the Messo server. Welcome. Uh,
+this is where you land. Okay, currently
+we're viewing as the verified role.
+Okay. Um, like I said, very powerful
+tool. let you view your server from uh
+the eyes of various uh users. Um and
+those various users are a lot of what
+make um individual communities uh unique
+from one another. Okay. So this whole
+server follows two very simple rules.
+Okay. Um rule one, the Home Depot
+stocking principle. Okay. Uh and I
+promise this is relevant uh to app
+development as well. I'm a bit of an app
+uh developer myself,
+right? I I uh dipped my toes uh in
+engineering. Um just never uh been quite
+brave enough uh to have it be my career.
+Uh though most of my house does most of
+my my farmland does run on raspberry
+pies, okay? So I tinker a little bit. Um
+so uh the Home Depot stocking principle,
+guys, the more niche it is, okay, the
+deeper I have to dig, okay? Um that that
+Uh that applies especially uh to your
+channel bar here. Okay. Um Home Depot
+keeps the gum at the register. Okay. The
+screwdrivers in the aisles and the
+specialty lumber in the yard out back.
+All right. Um have you ever joined a
+Discord server um and read the rules?
+Probably not, right?
+Uh you click through as fast as
+possible, you find the general channel
+uh and then you get in there and you ask
+a question. Okay? Or you get forcefully
+redirected to the right place to ask the
+question. Okay? So with this in mind, uh
+you want to be organizing things very
+very similarly. Uh this is what MEO
+users are used to. Uh you've got
+announcements up at the top. Okay, this
+is the the hit me on the very top
+section there, Pike. Yeah, we've got
+announcements up at the top. Um this
+whole section is sort of an ungrouped
+section. Uh it's the only resources you
+will find in the messo server basically,
+right? And they are thin, right? A bit
+of an introduction, uh Twitter feed, a
+handful of links, okay? Um and then
+things just get nichier as we go down
+this channel bar. Uh it's worth noting
+for you guys that users also get more
+expert as we head down this channel bar.
+Okay. Um, the further down the y-axis on
+this bar users are willing to travel,
+um, for the most part, the more jank
+they're willing to put up with. Okay?
+If you want testers, if you want QAs,
+uh, you're going to find them in
+channels on the low end of this channel
+bar. Okay? So, we start in the
+community, very, very clean. We've got
+the general channel, etc., etc. Um,
+we've got Matsify, which is where users
+uh can play games and stuff, though it's
+a bit it's a bit uh dated at the moment.
+Then, of course, you've got your help
+desk support. Um, where users will
+complain about everything that you build
+in the hackathon. Uh, then finally, you
+land in the technical section. Okay. Um,
+bang, developers. Um, this is where a
+lot of you will probably end up. uh
+where you can engage with the team uh
+chat, ask questions. Um and also in the
+section just below it, Pike, scroll all
+the way up to the top of the channel bar
+and show me the event we have coming up.
+Pop that open. Click it open so it looks
+better.
+>> I like it cut off.
+>> Yeah, there we go. Ah, here's Mr. Rod.
+This is the perfect time for Mr. Rod. Uh
+guys, my session won't be too long. I'm
+going to let Rod talk to you in a moment
+here as well. But also um starting soon
+right I think at the end of this whole
+show um we're going to be hosting uh our
+weekly Devril office hours okay where
+you can come in and you can get sort of
+the after show hang out with me and Rod
+and Ryan Fox and Pike uh and all the
+folks and ask questions live right
+actually use your microphone um show us
+your apps we'll test them'll be a lot of
+fun okay uh moving on to the second
+principle probably close that down
+before we Move on the obfuscation
+proclamation guys. Okay. No information
+in the community means higher
+engagement. Okay. Uh the MEO community
+is deeply engaged. Um partly because we
+do not keep docs in here. Okay. Right.
+Um do we want quiet communities guys? Do
+we want fewer messages? Okay. Uh do we
+want less traffic to our resources or
+apps or protocols? No. Right. Probably
+not. This is why as a strong rule we
+keep guides out of the community. Okay.
+Uh we want mods, standout community
+members, etc. Uh learning the ins and
+outs of Mezo and the hackathon products
+uh and sharing knowledge with the rest
+of the users, right? Uh this drives
+traffic uh to our products uh to your
+ideas. Um it also inspires conversation
+around them uh which can lead to new
+ideas uh as well uh and potentially even
+um lifelong collaborators uh which is
+something that happens regularly uh in
+the encode server. Um and speaking of
+those up and cominging community
+members, uh Pike, can we quickly cover
+the various styles of ambassador program
+we have here uh that hackathon
+participants uh can use to their
+advantage? Um guys, we've got our doc
+crew. Pike, give yourself the doc crew
+roll really quickly up in that blue bar.
+Yeah, that doc crew. Bang. We see a new
+section appear. Okay, here we've got the
+doc crew, the threaders. Pop through
+threaders, etc.
+Right, scroll down.
+Excellent. There's also a handful of
+other uh doc crews in here. Give
+yourself the Malard Labs roll. You don't
+have to pop into the private channels,
+though. Yeah, there you go. So you can
+see the Mard Labs uh channel appears,
+right? Uh these are sort of like vibe
+coders. Pike, also give yourself the G6
+roll if you don't mind.
+Ladies and gents, these G6 folks um are
+going to be probably one of your
+strongest resources. Scroll down the
+user bar on the side there for me, Pike.
+The user bar so I can see some See,
+look, here's some G6s. Scroll up a bit.
+Pause in the A range. You're moving your
+[ __ ] a little too fast there. There we
+go. Look, you see even the wonderful
+Anthony Bowmont in there, right? Some
+DGEN guy none of you have probably ever
+heard of.
+Click his little click his profile there
+for me, Pike.
+See, there's some cool guys in G6,
+right? Some weird DGEN style folks in
+G6. Uh,
+so you'll be able to find lots of
+friends in there. uh a lot of founders
+um a lot of old school whales a lot of
+people who will tear your app to pieces
+in the best possible way. Okay. Uh huge
+amount of resources uh to be found
+within there. The G6, the G program in
+general is something like our first
+ambassador program, guys. It's a very
+natural um expanding ambassador program.
+There's no rules. There's no one way to
+get in. People have become G6 by
+trolling. Uh people have become G6 by by
+uh you know uh throwing death threats
+around to the team
+in fun ways of course right uh you know
+you you you you levy a meme-based death
+threat and then suddenly you know you're
+a core member of the community there are
+also security uh researchers in there um
+uh devs uh old Mezo employees uh scroll
+up see Mr. Ben is Mr. Ben online in
+there.
+Mr. Ben uh is actually responsible. He's
+he's the guy who wrote the proposal that
+resulted in the the the merger, the
+first onchain merger in history that led
+uh to the wonderful threshold that you
+will likely be building with uh
+throughout this hackathon. Okay. So, MEO
+community is pretty diverse. Okay.
+Pretty well structured uh and many of
+the users can get over heavy jank, my
+dudes. Okay. especially if they're
+willing to travel down the channel bar
+like we talked about. Okay. Um but
+ultimately throughout this hackathon uh
+you're going to want to be building uh
+for the users in the general channel.
+Okay. General channel that's where
+you're going to find your Bitcoiners.
+That's where you're going to find your
+aunt Linda. Okay. G6. This is your dens
+crew people who are willing to help. But
+general that's where you're going to
+find the Bitcoiners, the end user and
+your aunt Linda. Okay. So, um, and and
+really, if you're building for Mezzo,
+that's who we should be building for at
+first, right? In Mezo, you can you can
+find the users in the trenches, but
+we're technically all here to see crypto
+work for our mums. Okay? So, think
+clean. All right? Uh, think general
+channel. Um, but imagine ways to use
+these more advanced users uh as a
+springboard or a QA resource, okay? Or
+even uh as a distribution channel
+because everybody has a mum, right?
+Uh, and that's most of what I have for
+you today. Uh, Mr. Rod, would you like
+to tack anything on while I explore the
+chat uh, for some questions?
+>> Well, I'm glad you you gave just
+everyone the best tour of our server.
+Uh, just uh, can you hear me well? Is it
+good?
+>> Excellent. And you look great.
+>> See,
+I came prepared.
+>> Cool shirt.
+>> Showered. Uh
+so as you said we host every Tuesday the
+deval office hours hackathon edition
+today so for the next six weeks you can
+go there chat with us I'm not a judge so
+you have absolutely no pressure to give
+your best pitch ask for feedback my
+opinion doesn't matter so me and Pike we
+will be your concierge technically to
+walk you through the docs improve the
+docs based on your feedback tech and
+hopefully give you the assistant that
+you need to push your project or idea
+till the end. Um, we're here to stay.
+So, I this is the second time we're
+doing a hackathon with encode. I believe
+we have many more planned and uh
+>> wait this is my third time.
+>> I was a participant in one very early
+on.
+>> Okay. If it
+>> Yeah,
+>> I have I have also other experiences in
+my past uh uh job as well. but a second
+time with Mezo. Uh again, we have many
+more ahead.
+Even though this is a sprint, like your
+relationship with Mezo might be just
+beginning. So stick around. Go to the
+Mezo Discord as well to get feedback uh
+on the Encode server. The good thing is
+if you don't have a team, definitely
+find others that are also looking for
+teammates and uh assemble your own team.
+What else? Aside from the every Tuesday
+you have this dedicated office hours,
+the G6 and the developer channel or
+developer channel. It's like very very
+active. Uh please ask for their help in
+case I'm offline. Yes, I do sleep for
+those who see me online very often. What
+else? We do have another weekly show on
+Friday and hopefully some of you will be
+featured. Oh, I didn't even mention my
+own show.
+>> Yes,
+>> I'm so sorry. Yeah,
+>> Duck is the host and uh we have
+wonderful guests there like with
+interviews. We leak well, he leaks. I I
+can't leak. He has free pass to do it.
+Uh we leak some road map stuff and
+features that are upcoming and hopefully
+some of those things are going to be
+your project. So, I'm very looking
+forward for for this. And um yeah, what
+else do we have?
+Yeah, we we were just in Khan like two
+weeks ago for ETCC and I met hopefully
+some of you. I'm not sure if you were
+here in the chat. I don't know all your
+usernames, but uh but that's it. That's
+pretty much it. Hang around. Uh ping me,
+ping Mr. Pike. Let's build some great
+stuff together.
+Excellent. Uh let me do any questions uh
+for the wonderful Mr. Rod uh or for
+myself or for Mr. Pike. Let's see.
+>> Let's see. Can testnet BTC be bridged to
+Mezo?
+>> You missed that. That was a question for
+Dimmitri actually.
+>> Um
+>> Mr.
+>> The answer was no. Although Mr. Rod, we
+can we can address this question back
+here. How to get enough test bet uh test
+net BTC to handle the 2K required mint.
+Okay. Dmitri suggested maybe maybe
+talking to a duck man. Um, could we also
+potentially talk to a rodman?
+>> Yes, you can. Please talk to me. Um, I'm
+I'm getting also MUSD on testn net.
+We're working on improving the faucet as
+we speak. So, higher limits, both BTC
+and MUSD are coming. Um, by the end of
+the hackathon, we should have this
+fixed. But in the time being, if you're
+in a hurry, just being me, ping you, and
+Mr. like and we'll get you um up and
+running with your test net tokens.
+>> Excellent. Excellent.
+>> What else?
+>> I think we nailed it. I think we hit
+Guys, did we hit 30 minutes perfectly
+there? Somebody let me know if we hit
+>> We have three minutes left.
+>> Did we start past nine though? I don't
+remember.
+>> That was nicely done.
+>> Excellent. So, we did. Yeah, we did. All
+right. Ladies and gentlemen, please give
+me a round of applause because I'm the
+best.
+Thank you so much. Thank you so much.
+I'm so great.
+>> Thank you, Doug.

@@ -1,0 +1,14 @@
+solidity/build/
+solidity/cache/
+solidity/deployments/
+solidity/export.json
+solidity/export/
+solidity/external/
+solidity/typechain/
+solidity/typechain-types/
+solidity/artifacts/
+solidity/coverage
+solidity/coverage.json
+
+# Auto-generated files.
+pnpm-lock.yaml

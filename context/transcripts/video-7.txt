@@ -1,0 +1,1690 @@
+Right. Can people see my screen?
+Good. Right. Uh welcome everyone. Uh
+this is uh the our second uh Mezo
+hackathon. I'm Anthony Bowmont, the CEO
+of uh Inode. Um please do introduce
+yourselves in the chat. Um and on the
+Discord as well. We're going to use this
+opportunity uh to introduce the
+hackathon uh for me to go through all
+the details uh that you need to know
+before handing over uh to our two
+fantastic speakers Andre and then Ryan
+to talk about again the logistics uh and
+then the opportunities and the new
+technology you have to play with. I hope
+a number of you and I know a number of
+you attended uh the very successful
+event in CAN. Um so it was nice to meet
+you all uh there and uh um hopefully
+we're going to build fantastic things in
+the hackathon. Uh so hopefully you're
+all familiar with encode. Uh encode is a
+a technical educator an event organizer
+um a hackathon platform um and we are
+the venue uh uh for this uh program uh
+today. Um this is a virtual program
+hopefully that's not a surprise to most
+of you. uh running over the course of uh
+six weeks. It is launch day today on the
+13th. There is still time uh for you uh
+to take part uh and register if you
+haven't uh already. um got a number of
+themes we're going to be going across uh
+in today's uh event and also in the
+hackathon in general uh from banking on
+Bitcoin uh supernormal uh DAPs uh mezo
+utilization uh as well as uh looking at
+staking specifically uh prices are
+formatted uh to also educate you and on
+board you uh to the MEO uh staking uh uh
+infrastructure and uh ecosystem. One key
+point all projects must be using uh MUSD
+and mezo passport. Now you might be
+unfamiliar with those two things. So the
+workshops uh to come uh will educate you
+about uh that. Uh broadly our tracks uh
+in this event uh cover defy consumer
+apps and token utility. It's a slightly
+longer build period than normal. It is 6
+weeks. Um so plenty of time for you to
+build things. And I know from personal
+experience that the MEO team and the
+Mezo Devril team are amongst the very
+best um filled uh with talent we've
+worked with uh many times before and
+excellent uh individuals uh who will
+make sure uh you build uh brilliant
+things. Um uh all prizes so hopefully
+this is not uh uh uh news to you. Uh
+everything about the hackathon is on the
+encode uh platform. Um uh this is I'm
+looking at the public facing page. As
+soon as you register and you are
+approved for the event, you do need to
+be approved for the event. Uh you will
+see a separate back end uh which uh uh
+covers uh your submissions uh more
+information about all challenges and
+partners etc. But you can see in great
+detail uh all the prizes. Uh we also
+have uh tooling uh prizes uh available
+um provided by validation cloud and uh
+bore and spectrum um and tenderly uh all
+that you can uh include in your
+submissions as well. I'm pleased to say
+because uh MEO are good and thesis are
+good uh uh and supernormal are good
+conscientious uh partners uh we have a
+ton of workshops for you over the coming
+days. One additional one has actually
+been added. Uh that's going to be on
+Wednesday at uh 4:15. Uh that's uh
+separate. Um that we'll add uh uh
+hopefully um the next hour or so. Uh but
+we have workshop one today. Uh how how
+to create a DAP uh data made easy with
+gold sky. Um uh we have checkpoint one.
+Um if you're not familiar with
+checkpoints, I think a lot of you are
+from having taken part in our events. Uh
+checkpoints uh are your opportunity uh
+to uh um uh be held accountable first
+and foremost uh uh to the program that
+is uh uh to your hackathon's submission.
+Uh you will not be judged by it, but if
+you fail to make the deadline and the
+first one's very easy. You just need to
+create your project, add your team, and
+share your idea. If you were to miss
+that, um that does stop you preventing
+prevents you um participating in the
+rest of the events. Um we don't want
+ghost submissions that suddenly get
+going in the final week. We want you to
+be engaged throughout the content we
+provide. There is a second checkpoint um
+that is uh midway through uh where we
+ask for something closer to a final
+submission. Not the uh fullyfledged uh
+uh uh project, but stuff that gives us
+an indication that you're engaged and
+that you are treating um our partners'
+time, Mezo's time um and the investment
+we've put in you with with respect um by
+by meeting all the deadlines. Um you
+will then build and submit and uh upon
+submitting there'll be a judging period
+uh with us wrapping up uh just under two
+months time uh on the 5th of June uh
+with a presentation with many good
+guests, many good speakers, even more to
+uh add uh many good tooling partners and
+I uh just so you know um tomorrow I
+noticed it wasn't on schedule so we'll
+get that updated. Uh tomorrow is a bit
+of a pooa. Um you'll join us from 1:45
+BST. Um uh that's 12:45 UTC. We've got
+three workshops back to back. Um we've
+put it on one link um just for your ease
+because they are one off the other. How
+me works, introductions to the developer
+community and uh X42 uh Mezo um led by
+Ryan Rod and uh Dimiter uh and Duck as
+well who you know very well. Uh uh
+that'll be across uh tomorrow. Um uh
+then the how me earn event will be on
+Wednesday. How to create a DAP um
+Thursday gold sky and I've got a few
+more uh to come as well. Um you're on
+this link so you're already doing the
+job well. Um we have a pretty
+opinionated install of Zoom uh sitting
+within the platform um just so you can
+have the full platform experience and
+the resources uh contained um within it.
+um uh uh and the recordings are all
+going to be um uh within the platform.
+So if you turn to the platform uh you
+will get everything you need to know uh
+about uh the program specifically uh and
+um all the deadlines etc. ability to add
+your team and more. If you want to see
+what happened last time, uh we have it
+all on the website. Um uh there's
+different prizes, the winners, uh the
+challenges, uh and you can go back and
+watch the workshops as well uh if you so
+want uh uh uh and see what the best
+projects produced. Um cool. Uh I'm going
+to come back with some more information
+uh a little bit later, but I don't want
+to slow down the talks. Um, we have two
+as mentioned, uh, one, uh, from Andre
+and then another, uh, uh, uh, from Ryan.
+Um, so I'm going to invite Andre to to
+take the stage now and and tell us a
+little bit more.
+>> Hi, Anthony.
+Uh, hope you all can hear me. I'm Andre
+Coutinho. I, uh, lead the foundation on
+the Mezo site. So that's what we call
+the supernormal foundation. Um, and our
+mission working with Mezo is to make
+Bitcoin supernor normal so that everyone
+can use it and uh we can make the best
+out of this amazing asset. Now um today
+um I really want to go a little bit
+about uh the MEO ecosystem.
+So one of the things that I think it's
+interesting especially for this
+hackathon is you know more than just
+understanding what MEO does, what we do,
+what exists. It's also to get a view of
+what is already out there. What are some
+other teams that have already built on
+Mezo? What have they built and how can
+you um leverage what was already been
+done either as inspiration for you all
+or uh simply connecting to that to
+accelerate the builds and the problems
+that you want to solve.
+And so, um, I have a little
+presentation.
+Uh, let me just push it here.
+All right. You can see my screen. Let me
+just do a little bit better here. Um,
+yes. Okay.
+All right. So, what I was saying, this
+is a very, let's kick it off. Um it's a
+very simplified view of what Mezo is. Um
+if you think about it, Mezo is is a
+blockchain, right? Is at the most core
+and simplest way possible. It's a it's a
+blockchain. And so what do you actually
+do? Well, you can bridge in, you can uh
+you're on the MEO ecosystem and then you
+bridge out.
+What the core key key things that you
+have in mezo or what you call the core
+messo functionalities is borrow.
+So you can take a loan against your
+bitcoin. The loan you take it's against
+yourself. So uh there's no intermediary.
+There's no marketplace. There's no
+variable rates. It's a fixed rate loan.
+You park your bitcoin. You grab musd
+and there's no need of a market. There's
+no need of a counterparty because you're
+taking a loan against yourself.
+um you worry about you know just the
+price of bitcoin if it gets too low you
+may get liquidated
+so that's borrow right you get liquidity
+against your bitcoin and we do that
+through musd
+then we have mezo earn so this is the
+I'm going to go about this the last
+because this is the newest function we
+have um so you think about we have
+borrow now you can have vaults vaults
+mean um you can invest you can save you
+put your assets to work for you. And
+right now we have three vaults on Mezo,
+the what we call the MUSD savings rate
+vault. We have a stable coin vault that
+is managed by Persus and we have a
+Bitcoin vault that is managed by a
+curator called uh Sense Capital. This
+means you can come to Mezo, you can
+bring your MUSD, you put it to work,
+what you get out of the vault is more
+than what you get uh what you pay as
+interest on your loan.
+which means the loan basically can pay
+for itself. Or if you're looking for
+yield on your asset, you can also just
+deposit them on the vault and collect
+yield.
+And so final ones you have uh are pools
+and swaps, which means you can swap any
+asset on Mezo with any other asset. Uh
+we have concentrated liquidity pools and
+we have normal pools with a router. And
+so this allows you to swap, you know,
+between the Mezo token, MUSD, Bitcoin,
+and any other thing that you may want.
+And then finally, the newest one is what
+we call Mezo earn. So this is how
+revenue gets distributed on Mezo and how
+emissions get directed. So basically,
+you can stake your Mezo token, you can
+stake Bitcoin, you can earn yield, and
+you can vote on where emissions go on
+the protocol. You'll have a more
+dedicated session on how Mezowarn
+actually works, but for now, let's just
+assume it's a coordination layer that
+decides where Mezo token emissions go in
+our protocol and a way for Bitcoin to be
+locked or staked, vote on those
+emissions, and then grab yield from the
+pools which stake to get those
+emissions.
+And so if you think about it, um, one of
+the core things we have on Mezo is
+really banking on Bitcoin and building
+your own bank. And so Bitcoin is the
+core layer because everything you do on
+Mezo has Bitcoin as the gas token. So
+every activity that happens on Mezo
+generates some Bitcoin yield. And so you
+think about a bank, you can have loans,
+which is borrow, you can have savings
+and investments, which is vaults. And
+then you can um exchange or send away
+assets which is pools and swaps. And
+then finally
+um same way as a normal company or
+something like that you can basically
+direct where would you like commissions
+to go and participate on the revenue
+machine from MEO. So all these items
+right are the MEO core. And if you look
+at it overlaid on top of this, we have
+all of our partners in the broader
+ecosystem, which is, you know, where our
+validators come in, where all of our
+infrastructure comes in, but also where
+other DAPs that are built on top of Mezo
+come in. And this is really um where I
+believe everyone of you here can join
+and where your ideas will live. Which
+means you're building on Mezo. You're
+taking what it's there and you're using
+it. You're building on top of it. You're
+changing it. You're improving it to
+solve the problem that you're after.
+And so on on this time that we have
+together today, I really want to go over
+um a little bit more like the Meso
+system as a whole and um how it each
+part works together
+to get you the best solution and the
+most um
+the most
+sorry and the most amount of context so
+that you can build whatever solution
+that you want uh for your projects. And
+so
+if I start just going very slowly here,
+right,
+we have a ecosystem that is actually not
+just on the messo chain. It goes
+crosschain. If you've seen, we launched
+the Mezo token um two weeks ago on April
+1st. That was not an April Fool's Frank.
+That was at the actual token launch um
+on several centralized exchanges. And uh
+on the decentralized exchange side uh we
+have a massive partnership with
+Aerogone.
+And so if you look here right we have um
+not only our native Mezodex but building
+on top of that we have Curve and Unis
+swap and Ethereum which host uh some uh
+a lot of liquidity for our stable coin
+for MUSD.
+And then on base we have now Aerodrome
+which hosts both liquidity for MUSD and
+also liquidity for the Mezo token
+and um you know
+that allows and that allows like a lot
+of different variations and to get into
+the Messoex
+from Mezo to Aerodome and from Mezo to
+Curve or um unis swap on Ethereum. We
+use bridges and we have for the MEO
+token and form MUSD we use wormhole. Um
+you can either go to wormhole site and
+bridge through there or you can use our
+SDK which is embedded on the MEO
+interface that allows you to uh in a
+very convenient UI basically just move
+meo around. And so to the next question
+that I see in the chat which is what is
+protocol? Um protocol is a small bridge
+for Bitcoin. So even though you can
+bridge um through the threshold bridge,
+you can go and deposit Bitcoin on Mezo
+either through Bitcoin mainet or through
+Ethereum. Uh protocol is a cross Bitcoin
+bridge that uh usually works very well
+for smaller amounts of Bitcoin. So when
+you don't want to just go from native
+bitcoin to mezo or from mezo to eth if
+you want to go from say bsc to mezo or
+from stacks to mezo or some any other
+kind of like bitcoin layer 2 or other
+chains that you want protocol is very
+well connected those ecosystems and then
+it allows you to bridge um from those
+ecosystems directly to mezo and so yes
+it's um it's permissionless they charge
+their own uh fees for the for that
+bridge and and so on. So it's I I think
+that like to me protocol is interesting
+if you have a different wrapper of
+Bitcoin that you want to move somewhere
+else. Uh for the vast majority of people
+um you either have Bitcoin on the native
+chain and you move to Mezzo through our
+native bridge or you use um you move
+from TBTC on Ethereum to Mezo through
+our native deposit function. That is
+usually the simplest. But if you want to
+connect with different ecosystems on
+different chains for Bitcoin, usually
+protocol is a nice way uh to do that.
+And like I was saying, we have on the
+vault side, not only vaults on um on the
+messo chain, but we also have a MUSD
+vault that is focused on lending with
+Morpho on Ethereum. So the interesting
+thing of that vault is that you can um
+deposit MUSD, you mint the receipt token
+of that vault and then you can use that
+receipt token to mint USDC against that.
+And so it allows for some nice little
+looping strategies with curve and unis
+swap as well. Um, and all that happens
+on the Ethereum ecosystem, which is, you
+know, um, one that is, I believe, the
+closest between Mezo and, uh, another
+chain would be Ethereum. You can move in
+and out of Mezo natively,
+um, USC, USCT, TBTC, and a couple of
+other assets directly from Ethereum to
+Mezzo using our native bridge.
+So you know if you think about this um
+and you start thinking about well what
+exists on meo right the next thing that
+I want to mention is this is what you
+call like the core kind of defy
+um applications that allow us to move
+funds around. On top of that we have now
+already some um ecosystems building on
+top of meow. So I wanted to highlight
+three things here. Um, two of those were
+built by our community uh directly and
+so one thing one of those is Matchbox
+that is the matching marketplace. So on
+our Mezo earn to get the maximum voting
+power and yield for your Bitcoin you
+need to pair the locked Bitcoin which is
+called VB BTC with locked Mezo token
+called V Mezo. And matchbox allows
+people that say if you have VBTC but you
+don't have enough V mezzo you can let's
+say match or provide a marketplace to
+add incentives and also connect with say
+someone that has Vmezo but doesn't have
+VBTC and that allows those two parties
+to meet agree on a price and get
+together and that was a tool that's
+built by our community. Another tool
+that built by the community which was um
+one of the latest community bounties we
+we awarded was uh one a solo dev uh that
+you might know if you hang around in our
+discord called prael that built the ven
+marketplace. So this is um if you have V
+BTC or V mezzo and you want to get some
+liquidity out of that, you can put that
+to be sold um for liquid tokens uh for
+other users and then that allows someone
+that has a lock token but requires
+immediate liquidity to have a pathway to
+getting that immediate liquidity.
+We also have incentive platforms. This
+is more in case of whether you need um
+or you're interested in looking at like
+how you can incentivize your your um
+your users. We have worked with layer 3
+which is interesting for discovery and
+we do most of our incentives through
+Merkel
+um and um we also now are working with
+Merkel to distribute VNF tokens as
+incentives uh instead of doing it
+directly through our website. And then
+finally uh I added events defy to show
+two different tools and apps that are
+built. So one is um the MSD monitor or
+mezo tools which was built by Zo from
+our community and that has some very
+advanced statistics on how the MSD
+system is is working. Um, and it also
+allows you to redeem positions um for
+Bitcoin without having to interact with
+any code. So, you can just go and like
+uh fill the blanks if you know what I
+mean. And then finally, we have Bitfire,
+which is a lending platform. Um, they
+specialize in because Mezo will only do
+lending based on Bitcoin. So, you have
+Bitcoin, you can get a loan of MUSD.
+Bitfire allows you to grab loans for
+other assets on the Mezo ecosystem uh as
+long as there's enough liquidity on the
+pools for them to manage liquidations
+and so on. So if you think about um
+CBBTC on Mezo or Solve Bitcoin or other
+like Bitcoin rappers, Bitfire is a way
+to get um some liquidity by lending
+those assets there uh with their own
+rates and with their own um setup.
+And so finally, one that I had almost
+forgotten about is Bore Finance. And
+what they do is um given that the Mezo
+earn system, you have to vote.
+And for voting, you need to know what
+you're going to vote for, what is the
+strategy to optimize yield, uh they
+created a relayer. So for those of you
+who don't know what that means, um it's
+basically a vault for voting tokens. And
+so you can deposit your VB BTC NFT and
+then they will generate yield with
+voting strategies based on that NFT. And
+VBTC is the locked BTC. So you lock BTC
+for a week, two weeks, three weeks, four
+weeks um and then you get an NFT that
+represents that lock. So if you have
+seen uh V systems like curve or
+aerodrome um it's a similar system
+and vme stands for vote and escro token.
+Um
+so this is just to give you like a a
+flavor of what exists around me. Um
+there's a lot more on the ecosystem. Um
+I haven't mentioned specifically some of
+our partners that um have even dedicated
+sessions. So we have some of our
+validators that will um that are are
+offering discounts and custom RPCs. We
+have data providers um I believe that
+are that even that Anthony even
+mentioned they have a session coming up
+so that you can use their systems and
+embed data onto your DAPs and uh and
+other like infrastructure partners that
+we have um on Mezo but more importantly
+um serving this hackathon as well.
+So, let me before I jump more to more
+specifics, let me just take a look at
+the chat and say uh what else what is
+going on here? Hi chat. Um
+what DeFi protocols you like to see
+built on Mezo? Yeah, well um I guess
+that's the one you think solves the
+biggest problems for you. That's usually
+the the nicest approach to have. Uh
+protocol protocol any AI use cases we
+can explore. Um we have a session on X42
+that uh will show how we can use uh
+agentic payments on Mezo.
+Um
+Bitcoin's crypto bitcoin protocol
+experience hackathon. Um so I guess the
+the main challenge there if you're just
+if you just want to do everything on
+native Bitcoin is how you connect that
+back to Mezo, right? because you have
+you got to have a messo connection
+either with MUSD or the Mezo token, but
+it has to connect back to Mezzo. So, if
+you think about uh things you could
+build on a native Bitcoin experience, um
+you know, you could look into better
+ways of bridging in and out of Mezo, um
+how can we track, manage, and how can
+users, let's say, figure out what's
+happening when they move Bitcoin in and
+out of Mezo. um I guess that's the
+closest you could get to native Bitcoin
+experiences while still serving the the
+Mezo protocol
+uh prizes lock token for the hackathons.
+So what does that mean? That means you
+get a V NFT. So every epoch you can use
+that v mezzo. Um you can vote, you can
+boost other people's bitcoin position.
+You can um
+go to the marketplace and get uh yield
+on it every week um and more. So that's
+that's how that works. And then those
+tokens they that ven
+uh gets unlocked after a certain amount
+of time. Um, so that is already created
+in that NFT.
+Uh, options protocols. Options protocols
+are cool. Um, it's just hard sometimes
+to uh make them scale. But uh, yeah,
+options are super cool. Love options.
+Um, could be something interesting. I've
+seen some very like some nice uses of
+options for like helping people to DCA
+into Bitcoin. Um, to, you know, like
+protect against volatility. So there's a
+bunch of cool things you can do with
+options. Um crosschain you support. So
+yeah, Mezo is very small on gas. Um and
+we use uh TBTC as the representation of
+Bitcoin on Mezo. So that is um how
+Bitcoin gets bridged into MEO.
+Uh I guess I've covered all of them on
+chat.
+Yeah.
+Um, oh, I have no idea, but I know that
+uh with like $5 you can basically do
+everything you want on Mezo for a long
+time. Um, we to give you like a more
+example, we implemented what we called a
+gas station. So, if you have no gas fees
+on Mezo, but you have MEO token or MUSD,
+um, you can click a button and then we
+auto swap you $10 worth of tokens for
+gas. And that usually is enough gas for
+you to do stuff on Mezo for like weeks
+if not months depending on how you use
+it.
+So yeah. All right. So I want to switch
+gears a little bit and go uh more into
+the actual tracks that you want and
+share a couple of ideas that I have for
+you all on um things you could do. So
+first of all, right, our track on bank
+on Bitcoin. So I think all this all the
+goal here if you think about this track
+is how can I make um a full-on financial
+life based on bitcoin. So if you think
+about what I was talking about mezzo, if
+you're building a bank, you need a
+couple of core primitives, right? We
+have say borrowing and lending, say
+borrowing your bitcoin as a way to I
+have bitcoin. I want to get stable coin
+liquidity. That is what we've done with
+musd.
+Um meoworn exists where you lock your
+bitcoin. You get some yield, but you
+really maximize yield once you vote. So
+you can use the bore finance u example
+which is hey if someone already has
+locked bitcoin they've already let's say
+locked or staked their bitcoin they can
+deposit then on the bore vault which
+automates voting and that is a yield
+strategy for bitcoin and so there's a
+two there's two examples of hey if
+you're building a bank on bitcoin you
+need borrowing
+um you need yield
+but then you also need payments
+Treasury orchestration a lot more. So
+you think about like Fold is a company
+in the US um that went public last year.
+They do Bitcoin backed rewards. They do
+Bitcoin backed credit cards. Um is
+another way of looking into um
+building a whole bank and living your
+life on Bitcoin. Same thing if you think
+about Micro Strategy. you have a bunch
+of Bitcoin treasury companies that serve
+products and either collect Bitcoin or
+have a way for you as a user of Bitcoin
+would work. And so for the question
+here, how does bank on Bitcoin work? Is
+there fiat support? The fiat support is
+currently MUSD or current our stable
+coin. Um, and that is the most um
+like the simplest way for you to just
+use what the system already have to kind
+of like build a bank on Bitcoin.
+So here the idea is you know anything
+that you can do that facilitates
+people's lives to live on Bitcoin that
+is like the core idea of this track.
+Um, second track. Uh, and
+wow, that is a question of someone who
+never opened the MEO app. So, go to
+mezo.org. Um, and then we talk again.
+Um, moving then to supernormal DAPs. So,
+what does this mean? This means
+everything I talked about can be too
+complicated and too dauntful for a
+normal human being. uh for someone that
+uh you know may not be used to how
+crypto works who doesn't want to take
+the time to understand you know what is
+a bridge what is a stable coin what are
+all those things if you think about on
+the right hand side right you have just
+like simple good UI everyday finance
+apps that anyone can use u I've put here
+like cash app which is you know a very
+simple thing that everyone um or like
+It's more than the most popular ones in
+the US. You think about India, uh, a
+billion people, and I'm going to make up
+a number, but like I'm pretty sure that
+at least 100 million people have used
+UPI at some point.
+And then you have New Bank in Brazil,
+which is, you know, a lot of uh, one of
+the top tier NEO banks in the world that
+covers a lot of different use cases.
+Those are uh things that are made for
+really mass usage and a lot of different
+audiences.
+And so yeah, for this app, I guess
+you can build either uh directly
+something that solves a problem for an
+end consumer. Um if you want to build
+tooling, ideally you should say which um
+use cases that tooling would go for. And
+uh one of the things that is hard for us
+on the crypto world is that we tend to
+build products for ourselves and we love
+building infrastructure.
+And sometimes
+what you've seen a lot of times in the
+market is you just slap a nice little UI
+on something that already exists and you
+simplify the user journey to the max and
+generate that it becomes insanely
+valuable.
+just because crypto usually has so much
+complexity that is very hard for people
+to navigate that. Um,
+and so yeah, stable coin and stable coin
+mechanics, that's a very broad question.
+Um, I'll let Ryan that's going to cover
+more MSD in details answer that. Uh, but
+then if you go to the final track, it's
+all about Mezo. So if you think about we
+launched Mezo in uh two weeks ago. We
+have the whole of Mezowarn that we try
+to simplify already with uh community
+build tools like Matchbox or the V mezzo
+market. Um but if you look a little bit
+more on what exists in the world out
+there, right, you can have something
+that is much much much simpler. Think
+about like how stake now works. um you
+just send them your token like you got
+CRV rewards on curve you just deposit
+there and it like you just get yield you
+don't even know like they don't even
+need to care about what's going on
+we we currently don't have anything that
+is like simple way of getting yield on
+mezo today to get yield on meo token you
+need to um
+to participate on the system
+and you know you could either automate
+voting but you could just have like
+puron yield solutions on mezo
+U for instance, someone mentioned like
+options protocols and like futures and
+all that stuff. This could also be
+another use case for the Mezo token.
+Um
+and also,
+you know, think about uh of course we
+always start because we're in crypto, we
+always think about these like DeFi
+activities and things that already
+exist. How can I copy? How can I take
+the best out of them for for what we're
+building here?
+Um but in essence right you have the
+messo token where its core functionality
+is to participate on meo earn and this
+track is all about well what else can we
+do with the messo token right how can we
+be more creative uh with that how can we
+um see where there are trouble where
+there are gaps in the way that people
+are using the systems or in the way that
+um you're used to seeing these systems
+and for some reason it's not like that
+today. All those are good ideas for and
+good problems to solve to increase the
+value and increase utility for the messo
+token.
+Um and then let me look a little bit
+more in the question side. Any lessons
+learned from the first hackathon? Uh
+yes, bunch of them. Um I guess I'll I'll
+add more like Anthony and the rest of
+the team talking a little bit more about
+that. But to me, the the number one
+lesson is really to um
+not be afraid to just solve a problem
+that you have and not something that
+like I'm talking about here. Like some
+of the winners of the past hackathons
+were people that like had in their own
+communities or with the people they were
+working it with had a problem saw that
+say you know hey MUSD could be a great
+way to solve this and then just built
+that
+directly. Some other team had a had some
+I'm not going to say what they built so
+that you guys not going to be
+influenced. um some other teams had the
+same idea and you're like hey we want to
+do this with Bitcoin but it's very hard
+I think with Mezo and the infrastructure
+that you have here um that will actually
+work so they went and they built that
+and so I think that to me is the like
+best tip that I would have for for
+hackathon
+um
+yeah and so let's see what more from the
+chat um
+common patterns and submissions is that
+you'd prefer teams to move away from uh
+yes, common pattern is you just built a
+um oneshot clawed website build that has
+actually no real teeth or anything
+behind. It's just like a website or or a
+deck. Uh don't do that. Um incentives
+exist for projects post hackathon. So
+that's on the website page. Um do go on
+the chat if you're there. uh post as
+well those links on the chat so that
+people can see. Uh basically we have a
+whole kind of like what we call a
+founder program on supernormal
+foundation and uh this one is our let's
+say earliest build type program. As you
+move along, you may um for very good
+projects, you may decide to apply for
+our accelerator or you may want to build
+more things into TestNet, mainet and
+apply for a grant from the foundation.
+And so we have basically a full path
+that you can follow um as the your
+project matures
+the supernormal foundation can be there
+for you like along all the pathway that
+you're building.
+uh DAO tools developer infra. Um
+I don't know what you mean by that. Uh
+we I could say we have a lot of it and I
+you could also say we have none of it.
+Um that's always a good idea. Um I don't
+think Dows are a very hot topic right
+now. Um given what's going on with uh a
+unis swap and a lot of other OG
+projects, but you know developer infra
+is always good. Uh let's see. Can I
+deploy custom solidity vault? Um,
+sure you can do all that. Uh, offchain
+is a barrier for a lot of people. Um,
+one thing that we've done u with
+previous partners we've worked is that
+um
+uh a lot of crypto LPS and a lot of
+crypto funds, they are used to onchain
+risk and onchain performance. So it's
+hard for them to see uh to work with
+offchain because if it is offchain they
+cannot see where the risk lies and so
+the current risk parameters and current
+risk dynamics that they have uh are not
+always useful for off-chain risk. So uh
+if you're doing offchain risk you have
+to be a lot of uh have to
+overcommunicate
+and be very transparent with what is
+going on offchain.
+Um
+yeah um I don't know I don't understand
+that question but uh we have a lot of um
+we have a lot of um the criteria for to
+win the hackathon is pretty much well
+detailed on the on the page. Um, I think
+one of the things that we try to do is
+we keep uh the people that are going to
+be on the judging panel a little bit
+further away from teams so that we
+aren't um swayed or that we aren't how
+do you call it um biased one way or the
+other. uh but we keep uh Rod which is
+our devril at MEO and some other folks
+on our team off the judging panel so
+that they are like 100% available to you
+all to uh meet and to ask your
+questions. Um I believe that's all I
+wanted to cover. Um I want to say a
+couple of things before we wrap. First
+one is um
+go to our discord. So, we have Discord
+uh for Mezo. We have a channel there
+called the Developer channel. Um there's
+a big community of like people that are
+building on Mezo. If you have any
+questions, any issues, you can always
+just go um ask them out uh post there
+and then you'll get you get replies.
+We'll have folks on our team also
+hanging out on the Discord from uh anode
+from the hackathon. So you can tag them
+as well on one if you have any questions
+uh if you want to just like chat about
+what you're building and um we have also
+all of our docs listed out meod docs on
+that page and um we are always looking
+for more feedbacks to how can we improve
+our docs, how can you make things
+simpler, easier to understand. So, if
+you have any um question, if you can't
+find something in the docs, if it's not
+clear, if it's not right, uh we really
+appreciate if you tag us, post on the
+community discord, and that way we can
+quickly go out there and resolve them.
+Um yeah, so that's all I wanted to say.
+I'll move over to Ryan, um as I see
+we've covered all the questions on the
+chat. So, Ryan, over to you and Anthony.
+Yeah, Ryan, take it away.
+>> All right, let me share my screen real
+quick.
+I'm going to have to reconnect real
+quick.
+All right, I guess while Ryan
+reconnects, Anthony, how can people find
+information about the hackathon? Um, how
+can they join the Encode Discord?
+>> Uh, yes, you need to be on the Encode
+platform in general, guys, which you
+should be, but I'm going to I'm going to
+show you the inside look in a second.
+Too many things open.
+Okay, there we go.
+Uh,
+not you. You go.
+Come on. issue
+with running two accounts. I need to log
+in to my participant account
+which I have now. Okay. So, uh share
+screen guys. Once you register and you
+are approved,
+you will get a page like this.
+Uh, I'm still pending new
+cuz I haven't approved myself cuz I'm on
+the workshop.
+We go
+right. That also means I can approve the
+one chat Peter who has not been approved
+yet.
+You get the live approval.
+Okay, here we go.
+Come on. Prove me.
+I need to save. Okay.
+Okay. Last try.
+Come in. Right. Okay guys.
+So uh you will see that
+uh you have all information about the
+checkpoints that are coming up um uh
+each of the create project one and the
+checkpoint one midway checkpoint and the
+final submissions uh the full schedule
+accessing all of these programs all
+these workshops
+uh a couple of um lectures on how MEO
+works and MUSD
+uh all the links uh to all of the
+recordings and all the live workshops
+for you to view
+uh and uh all of the prices etc as well.
+So that is and I need to make Ryan a
+panelist.
+Give me that Ryan.
+Ryan is joining.
+Ryan
+and I will stop sharing.
+There we go.
+All right. Hopefully you can see my
+screen now.
+>> Over to you, sir.
+>> All right, perfect. Uh, hello everyone.
+Uh, so I'm Ryan Watts. I'm a lead
+developer at Thesis and more
+specifically one of the lead developers
+of MUSD, which is what we're going to be
+talking about today. Um,
+this talk is going to be a little more
+technical. Um, at a high level, I'm just
+going to give an overview of the system,
+go into some details about the economic
+model, so you can kind of see how it
+works from that end.
+Then uh I'll explain some of the system
+mechanics that are important
+implementation details so you can see
+how it works. And then finally we'll
+dive into some code examples and I'll
+try to get to questions at the end.
+So first off what is MUSD? Uh MUSD is a
+stable coin created by minting loans
+against the borrower's crypto assets
+specifically Bitcoin in this case. Um
+it's based off of threshold USD which is
+a fork of liquidity if you're familiar
+with that. uh the problem it's solving,
+letting people borrow against their
+Bitcoin, and then maintaining the MUSD
+peg as a stable coin, the key user
+actions that we're going to go over,
+opening, adjusting, and closing troves,
+which are the term that we use for
+loans. Uh then liquidations and
+redemptions, and I'll go through a code
+example for each one of these. Um but
+first, like a system overview. Uh so we
+have the MUSD
+stablecoin token contract and then I've
+organized these like core protocol
+contracts in the next level. So borrower
+operations uh that's the contract that
+contains the basic operations borrowers
+use to interact with their trove. So
+like
+opening, adjusting, closing all that
+happens through borrow operations. It
+interacts with this trove manager
+contract uh that contains the state of
+all the troves as well as uh like
+liquidations and redemptions
+specifically. Uh the stability pool
+comes into play with liquidations. I'll
+go into that in a little more detail
+later.
+Um these various asset pools just are
+contracts that track uh collateral and
+debt for different purposes that we'll
+we'll touch on as we go through the
+examples. And then uh the rest of just
+listed as supporting contracts uh that
+have kind of various um functionality.
+Some of those like hand helpers we'll go
+into later. Some of them um aren't super
+important for this so we'll skip over
+those. Um so a little bit on the
+economic model. Um one question of
+course is how do we maintain the peg? Um
+so there are two mechanisms for
+maintaining the peg. Uh the first is
+liquidations that maintain the price
+ceiling. Um, so we have this 110%
+minimum collateralization ratio. And
+just to review, that's the value of the
+collateral divided by the value of the
+debt. So we have a collateral amount,
+say like three bitcoin times the bitcoin
+price divided by the debt. That gives us
+the collateralization ratio or uh CR.
+Um, so under collateralized droves under
+110% CR eligible for liquidation.
+There's this public liquidate function
+that can be called by anyone. Uh, the
+caller gets a 200 MUSD flat fee as well
+as half a percent of the Tro's
+collateral as a reward. Uh, the
+stability pool that I mentioned earlier
+then burns MUSD to cover the Tro's debt
+and receives the remaining 99.5% of the
+Tro's collateral. Uh, in the case that
+the stability pool can't cover all of
+the debt, that remaining debt and
+collateral collateral will be
+distributed proportionally among open
+troves. Um, one thing to note though is
+that liquidations above 100% 100% CR
+profitable for the liquidator and the
+stability pool depositors or if it got
+redistributed everybody else because it
+is an over collateralized loan. And I'll
+show an example of this on the next
+slide. Redemptions are what we do for
+the uh to cover the price floor. So
+anyone can call this uh redeem
+collateral function on Trove Manager and
+uh they burn MUSD and receive Bitcoin $1
+for $1. So, a dollar worth of Bitcoin or
+a dollar worth of MUSD gives you a
+dollar worth of Bitcoin minus a small
+redemption fee of 75%. Um, the way these
+work, they target the trove with the
+lowest CR above 110% and that one uh
+that trove will have an equivalent
+amount of debt canled and that bitcoin
+gets transferred to the redeeming user
+and then troves are redeemed in sequence
+until the request is fulfilled. So, if
+you think about like if I'm redeeming
+$10,000 uh or 10,000 MUSD rather, and
+there's say five troves with $2,000
+each, I'm going to iterate through each
+one of those troves until I have all
+$10,000. Say the last trove in that
+sequence was like an $8,000 trove. I
+would just reduce that trove's debt by
+$2,000 and then it'd be left with uh the
+$6,000 remaining. um in the case that we
+do something like that where we redeem
+part of a trove but don't close it um
+called a partial redemption and then we
+have to reinsert that trove into the we
+have a sorted trove list that I
+mentioned earlier in the contracts page
+we have to reinsert that trove into the
+list in its new position uh which we'll
+go into some more detail on why that
+matters later
+um just to give some like concrete
+examples of these so like how the price
+floor would Um, let's say you have MUSD
+trading for 80 cents on an exchange.
+Let's just say Bitcoin selling for 100K
+to make the math easy. You could buy
+a,000 MUSD with 800 bucks, redeem a,000
+MUSD for 0.01 Bitcoin and then sell your
+0.01 Bitcoin for $1,000 and come up with
+a tiny profit. Um, on the flip side, if
+MUSD was trading for a$120 on an
+exchange, you could buy a Bitcoin for
+a,000 or $100,000, open a loan with that
+one Bitcoin collateral, and just max out
+your MUSD debt, sell the debt for
+dollars and then come up with again a
+pretty tidy profit. So, because these
+two arbitrage uh opportunities exist,
+that's what helps us maintain the PEG
+and MUSD stability.
+um custody. So the way this works,
+the user uh opens a position by calling
+open trove and providing bitcoin. Uh the
+msd gets sent to the user and the
+bitcoin gets routed to the active pool
+until the user either closes their trove
+by paying off their debt gets liquidated
+uh gets redeemed against or the user
+withdraws collateral if they have enough
+collateral to do so.
+the fee economics. So, first off, I just
+want to go into the fees that we do have
+in the system. So, there's a borrowing
+rate of 0.1% added as debt to the loan
+uh when you open it. Uh the redemption
+rate is 75% taken out of collateral
+being redeemed. Uh just one thing to
+note, this is specifically for that
+redeem collateral function. It's not for
+if you're like repaying your your own
+debt. Um the interest rate is currently
+1% fixed. Um, this is good for the life
+of the loan. So, if you were to open a
+loan today, you'd have 1% until you till
+you close the loan. The rate can be
+raised by governance. Some probes after
+it's raised, of course, we'll get the
+new rate. So, say tomorrow, the rate was
+raised to 5%, every loan after that
+would be 5%, but the current ones and
+the ones that have been opened before
+then would just have the 1% rate. There
+is a refinancing rate. So in the case
+that rates drop, like say you opened a
+loan at 5% and then 3 days later it
+dropped to 2%. You can refinance your
+loan by just paying 20% of the borrowing
+rate. So that's just going to be a
+function of that.1% or whatever the
+borrowing rate happens to be at the time
+you refinanced.
+Um
+the bootstrap loan has to do with the
+stability pool. So um wanted to go into
+that in a little bit of detail. So the
+stability pool uh it's initially
+populated with a bootstrap loan that we
+mint against future fees. Uh this can
+only leave the stability pool via
+liquidations until the debt gets paid.
+Um so any gains from liquidations uh can
+be reinvested in the stability pool by
+governance but it can't be pulled out.
+Um
+MUSD fees meaning fees that are paid in
+MUSD. So that's like borrowing fees,
+interest, refinancing.
+Um
+those are split between bootstrap loan
+repayment and a fee recipient that gets
+designated by governance. Um and they're
+split by like a percentage that gets
+decided on by government uh governance.
+Um Bitcoin fees are distributed
+separately to a Bitcoin yield recipient.
+So those um those are also set by
+governance. Um and this is all handled
+by the PCV. That's the protocol control
+value contract. So you might have seen
+that in the system diagram earlier.
+Um some system mechanics to cover for
+when you're going into implementation.
+Um gas compensation. So when an a user
+opens a trove, we add an extra flat 200
+MUSD uh that gets meed for gas
+compensation sent to the gas pool and
+added to the borrower's debt. Um this
+debt's included when calculating their
+uh collateralization ratio. And when a
+trove gets liquidated, the liquidator
+gets sent that 200 MUSD as compensation.
+In every other situation outside of
+liquidations though, like redemption,
+closing a trove, repaying debt, the last
+200 MUSD is paid from the gas pool. So
+you can think of it more of uh it's more
+like a hold on 200 MUSD that gets
+returned as long as your tro doesn't get
+liquidated.
+Uh so recovery mode
+the systems total collateral ratio or
+TCR ever falls below the
+critical collateralization ratio of
+150%. And just to review that TCR is the
+total amount of collateral divided by
+the total amount of debt. Um if that
+happens we enter into recovery mode
+which creates some restrictions. So for
+example, we require that newly opened
+troves have at least 150%
+collateralization ratio rather than the
+normal 110. We don't charge a borrowing
+fee and any actions a user take has to
+increase their collateralization ratio.
+So for example like a debt increase
+needs to be in combination with a
+collateral increase such that the
+improves and winds up above 150%.
+ending funds. This relates to the um
+liquidation scenario where the stability
+pool can't cover all of the debt uh and
+we end up redistributing the debt and
+collateral among active troves. Um in
+that case, all of the debt and
+collateral gets sent to the default pool
+where users ownership of the default
+pool is equal to their proportional
+ownership of all deposited collateral.
+Um for gas optimization, we track these
+funds as pending. So each borrower has
+like the pending collateral, pending
+principal, and pending interest which
+then get moved out of the default pool
+and back to the active pool the next
+time the borrower interacts with their
+um and in the documentation we have some
+more details on this.
+Um so some more concepts for integration
+when you're uh working on your projects
+uh hint generation is a big one. I'll
+show some examples of this but I
+mentioned we have this sorted troves
+list. um we keep troves sorted by
+collateralization ratio and a linked
+list and finding an insertion point in
+that when there are a lot of troves can
+get pretty expensive. So the solution
+for this is hints that narrow the search
+by giving us a bounded range. So instead
+of searching from trove 1 to 10,000
+we're searching from trove you know 50
+to 100 and we know that uh the spot
+we're looking for is somewhere in those
+range in that range. The uh key thing to
+remember here is to always generate
+fresh hints before you uh use a
+transaction that requires hints. And
+I'll show how to do that when we get
+into the code examples. Um pending
+rewards that I just covered. Um one sort
+of gotcha is just to remember that debt
+and collateral may not be recorded on
+the trove struck until the pending
+rewards are uh applied. So there's some
+functions that virtually acrue
+um or rather virtually apply the pending
+rewards and some don't. So like get
+trove debt for instance gives you the
+stored amounts. Get entire debt and call
+includes the pending amounts. So
+depending on what you're doing um you
+may want to use one or the other.
+Um interest acrruel we do s simple
+linear interest rather than compounding.
+Um the interest rate like I mentioned is
+set based on the global rate and kept
+for a trove lifetime. Uh the interest
+interest is recorded on the trove
+strruct on every user operation. So it's
+the same idea as penny rewards. Um and
+similarly there's functions that
+virtually acrew interest like uh for
+instance when you're redeeming uh
+collateral you need to know the actual
+total debt. So we virtually acrew
+interest before
+going to do any kind of CR calculations.
+Um, so now I'm actually going to
+switch to
+some code examples.
+Hopefully you all can see my IDE right
+now.
+Let me know if you can't see it. Um,
+but what I've done here, I created a
+branch with this. um it's a test file,
+but I mean it's not really a test. It's
+it's um
+examples of each one of these um
+scenarios and
+it will help to kind of get an idea of
+how our tests are set up. Um so I don't
+know whenever I look at a new codebase I
+like to go through the test to see how
+everything works and kind of play around
+with stuff. Um but in this case
+the setup for all of these tests is the
+same. We're setting a 0% interest rate
+just to make the math easier. We're
+opening a trove for Alice with a CR of
+400 for 5,000 MUSC. Bob gets a trove
+with
+500 for 50,000 MUSD.
+In our first one, uh we're just opening
+a trove this time without calculating
+hints.
+If you don't use hints, it'll cause the
+operation to take more gas and it can
+run out of gas that way. Um, but I just
+wanted to show it without hints first to
+uh make it more clear what was going on.
+Um, so we're borrowing 2,000 MUSD
+against and Bitcoin, so plenty of uh
+room there. Um,
+like I mentioned, hints, you can just
+pass in the zero address for both. um
+that just means it'll search through the
+whole list which could give it u a worst
+case gas cost of O of N if we're just
+like having to go through everything to
+find the insert position. Um but
+especially for tests and stuff sometimes
+this is just easier.
+Um so all we do is we call the open
+trove on borrow operations. Um
+actually run the tests.
+Um I have it scripted only this test but
+um one thing I wanted to show
+not super pretty output but we print out
+like Carol's um prostruct here and you
+can see she has
+slightly more debt than we would expect.
+Um it's 2,22
+uh MUSD. The reason of that is because
+uh there's that 200 comes from the gas
+compensation and then there's a $2 fee.
+That's that 0.1% borrowing fee. Um
+if we try to do it with hints um we're
+doing the same operation
+but this time I'll go through the hint
+generation. Um so first we compute the
+total expected debt by adding the gas
+compensation and the fee. So we
+basically calculate that $2,22.
+Um, next we're computing this value
+called NICR, which is nominal individual
+collateralization ratio. And that's just
+collateral times 120 divided by the
+total debt. Um, price is not included in
+this calculation because as you can
+imagine, if every trove is
+collateralized by Bitcoin, the price
+just factors out uh since it's the same
+for each one. Um, so we just multiply by
+120 for precision.
+Um, so the next step is getting an
+approximate hint address from the hint
+helpers contract. Um, I've got some like
+huristics in here. Um, and I'll share
+this branch afterwards, but um, on
+average, this is going to return a trove
+that is length divided by the number of
+trials away from the correct insert
+position. this numbum trials number
+we're just picking randomly in the list
+and seeing where our random pick is in
+terms of a distance from this NICR.
+Um so the more trials the closer you
+get. Um you can probably get away with
+15 times the square root of the length
+in trials. For this one, I'm just used
+15, but like if you need to optimize,
+uh, you have a lot of troves.
+This is sort of like the heristic number
+to use. Um, we take the num troves, num
+trials, and then we pass in a random
+seed. Obviously, this should actually be
+random in practice, but for test
+purposes, I just passed it in. We call
+get approximate.
+Once we have that,
+we can use the approximate hint to get
+exact upper and lower hints from the
+sorted troes. uh contract. So we call
+this find insert position with our nr
+and the approxim
+upper hint and lower hint. We just pass
+those in and um we'll wind up having the
+exact same probe uh situation
+afterwards. We're just more efficient
+with gas. And like I said, this starts
+to matter once there are a lot of troves
+in the system.
+Um next up, adjusting trove. adjusting
+troves. This function allows, it's kind
+of a Swiss Army knife. It allows the
+user to like adjust their collateral,
+repay their debt, uh, borrow more MUSD,
+uh, whatever. So, the parameters for
+what we're going to do here, a debt
+increase of 50 MUSD.
+We're not withdrawing any collateral.
+$50 debt change. It is a debt increase.
+We're going to do it with no hints.
+Again,
+if we call this,
+we'll find out
+down here. Bob's going to have to pay.
+Um, we look at like what his debt ends
+up being. It's what his debt was before
+plus his debt change times the borrowing
+rate. So, there is a fee applied to that
+additional borrow.
+One thing to note here,
+I mentioned this was like a Swiss Army
+knife function. There are convenience
+functions for this. So like there's a
+withdraw musd function that doesn't take
+you know this ton of parameters. Um
+likewise there's like repay musd
+collateral withdraw collateral that uh
+don't take this like sort of confusing
+list of parameters. This just is
+something that lets you do multiple
+operations in one. Um
+this is the same thing but in recovery
+mode. I just wanted to show like how
+that impacts things. So, we're going to
+try to increase our debt by 50 MUSD
+again. Um, but if we drop the price
+first to put the system in recovery mode
+and then we try to call adjust trove,
+we'll wind up with this revert saying
+the operation has to leave the trove
+with the collateralization ratio being
+higher than the critical
+collateralization ratio, which this is
+150%. So, Bob's not going to be able to
+adjust his trove without adding
+collateral in this case.
+Um,
+closing a trove. So, this is just where
+a user repays all their debt, withdraws
+their collateral, and closes out the
+trove. Uh, for the purpose of this, we
+need Bob to send Alice some MUSD since
+she'll have to pay back the fee. Um, so
+when I call close trove
+afterwards, we can check and see that
+her debt is equal to zero.
+The other thing I wanted to show was
+that if we check her uh MUSD balance in
+her wallet afterwards,
+um we has the same amount of MUSD before
+uh but it was her trove debt
+not counting her gas compensation. So
+she is refunded her this gas
+compensation.
+Um and her collateral gets returned to
+her wallet u which calls closed trobe as
+well.
+the
+liquidate function.
+So from a user's perspective, they're
+either the person getting liquidated or
+they're
+running a liquidation bot of some kind.
+So they're trying to profit off of
+liquidating users. Um this
+liquidate function just pass an Alice's
+address. Um
+I'm showing here in this case like Bob
+and Alice are the only ones in the pool.
+Um so you can see that Alice there is no
+stability pool. So uh the debt gets
+redistributed. So Bob receives Alice's
+principal as a pending reward. Um if
+there were multiple users this would be
+proportional to their stake but since
+there's just Bob he gets all of it. Um,
+he also receives 99.5% of the
+collateral. So, and again, this is like
+a pending reward. Um, so it's stored as
+pending collateral and pending
+principal. Um,
+and then because Bob was also the
+liquidator, he receives gas compensation
+for liquidating Alice and receives half
+a percent of Alice's collateral as
+additional compensation.
+Um if there was a stability pool this
+these two pieces would be distributed
+among them. Um but I just wanted to show
+it with uh redistribution for uh this
+demo.
+Redeem collateral.
+This one's a little more complex than
+the others. Um and it also involves
+hints. So we're redeeming 50 MUSD.
+This max iterations number I mentioned
+before like if we were redeeming 10,000
+MUSD and we have five troves of 2,000
+each, we'd have to iterate through all
+of them. This is a maximum the number of
+trobes you want to consider iterating
+for your redemption. So it uh
+you can also set to zero for no limit,
+but say I were to set it to four, we'd
+only redeem from the first four troves.
+Um
+the hints that we calculate for redeem
+collateral, we have the first redemption
+hint, which is supposed to point to the
+first trove in the system with an ICR
+greater than or equal to 110%.
+We have a lower and upper partial
+redemption hint. So if you think about
+the case where a trove isn't fully
+redeemed against, like say there's a
+$10,000 trove that only $2,000 is
+redeemed uh from, we need to put that
+back in the list somewhere. So these are
+hints pointing to the range of troves
+we're might need to insert there. And
+then this partial redemption hit NICR is
+what we expect the NICR of the final
+partially redeemed trove to be. Um we
+start out with calling this get
+redemption hints function from hint
+helpers. Um so we get our first
+redemption hint and our partial
+redemption hint and ICR. And then we
+kind of go through the same process. If
+you remember from uh the open trove
+example where we get an approximate
+partial or an approximate partial
+redemption hint
+using get approximate from hint helpers
+and then we use that to get our upper
+and lower partial redemption hints. And
+once we have those,
+we finally call redeem collateral.
+And we can see there's the collateral
+that is actually sent, which is the
+collateral that's drawn from Alice's
+trove. Um, that should be equal to the
+redemption amount over the price. Um the
+expected collateral that Bob's actually
+going to receive is going to be that
+that amount minus uh the fee of 75%.
+Um and then we can see that that is the
+case at the end. Um
+that's it for code examples. I know
+there was a lot kind of fast, but I
+wanted to make sure I get through all of
+them. Um so we went through opening a
+trove, adjusting a trove, closing,
+liquidation, redemption.
+Um, as far as the
+testing and development environment
+goes,
+um,
+I showed a little bit on our tests here,
+but most of everything in the MUSD, um,
+project that you'll want to see is in
+this solidity directory. Um, we have
+pretty extensive tests and they're
+structured similar to the one in this
+demo file. Uh so you'll have this and
+then also all the other tests that we
+have for the different contracts. And
+then um I think the only other thing to
+mention is if you're interacting with
+testn net you can find
+in this matsnet uh artifacts or
+deployment artifacts you can find all
+the contracts here. So you can find the
+contract addresses if you need those. Um
+the uh there's also a docs directory
+that has a lot of important information
+in there too if you need more uh stuff
+to reference.
+And so I've linked to both of those
+here. Um
+stop sharing now.
+Um, that's all that I had and then
+let me see through the questions
+to go through some of these questions.
+>> Yeah. And actually um
+I may take some of these questions and I
+can answer them in Discord. It might be
+easier to do it that way. And the slide
+deck will be shared on the um
+the slide deck is in the same branch as
+the uh that demo file that I was
+showing. So I have like the HTML for the
+slides as well if you want to take a
+look at those.
+>> Nice.
+Cool.
+Any other things you'd like to cover,
+Ryan?
+No, I think that's it. Let me just um
+grab a link to this one and I'll drop it
+in the chat.
+Good. In the meanwhile, uh thank you for
+joining us uh this afternoon. We have uh
+more workshops to come uh tomorrow uh
+afternoon between 12:45 and roughly 3:00
+just before uh UTC. That will be uh
+early morning for those west coast. Uh
+late morning at lunchtime for those on
+the east coast. Um pretty good for those
+folk in Asia and right bang in the
+middle of the day uh for us uh
+Europeans. Uh, in the meanwhile, you
+need to take things uh to the Zoom uh
+the Discord um uh my words failing me uh
+for any questions you may have of our
+speakers uh Andre Ryan um or um Mezzo in
+general. Um uh there's nothing you see
+on platform specifically. If you want to
+get ahead of uh things, please create
+your project um uh uh start uh uh
+crafting an idea and invite your
+teammates. Make sure everyone is on the
+platform and approved and come and talk
+to us uh if uh you've got any problems
+in that regard. Um our platform is
+opinionated. It forces you to do things
+uh for your greater good um and the good
+of the hackathon. Um hopefully all
+intuitive but perhaps around the edges
+um not not always going perfectly. So um
+just flag to us and we will help you
+through checkpoints I will tell you in
+advance are very different to any other
+hackathon. We actually care about you
+guys submitting something high quality
+and being engaged at the event um so we
+get a better results and you get a
+better results at the end of it. So
+please take those seriously um and talk
+to us if it's if it's too deeply
+confusing.
+Uh Ryan, anything else you'd like to
+add?
+No, I just posted the link to the branch
+with the demo and slides in the uh chat.
+So, if you need to reference that, it'll
+uh that'll be there.
+>> And then um
+yeah, I think that's uh I think that's
+all I have. I'm trying to look through
+some of these questions in the chat. Um,
+but yeah, I think yeah, probably easier
+to answer the questions in uh in Discord
+if you guys want to me there. I'll I'll
+be around.
+>> Lovely. Uh, all right guys. Uh, thank
+you very much. Uh, we look forward to
+seeing you. This a video um this will be
+uh beautifully automatically educated ed
+edited by our um wonderful AI and posted
+uh in about a couple of hours or so, one
+or two max. Uh so thank you very much.
+Uh have a wonderful evening, morning,
+afternoon wherever you are and see you
+later.
