@@ -54,6 +54,7 @@ contract MezoYieldOptimizer {
     error LengthMismatch();
     error EmptyAllocation();
     error ZeroAddress();
+    error CallerMustMatchUser();
 
     modifier onlyKeeper() {
         // Owner is implicitly a keeper so deployments don't deadlock if the
@@ -84,10 +85,19 @@ contract MezoYieldOptimizer {
         emit KeeperUpdated(address(0), _keeper);
     }
 
-    /// @notice Opt the caller's veMEZO into managed voting.
-    function delegate() external {
-        isDelegated[msg.sender] = true;
-        emit Delegated(msg.sender);
+    /**
+     * @notice Opt a user into managed voting.
+     * @param user The address being delegated. Must equal `msg.sender` —
+     *             a user can only opt themselves in. Carrying the
+     *             parameter (rather than implicit `msg.sender`) keeps the
+     *             ABI aligned with `context/docs/stories/story-003.md`
+     *             and `context/docs/architecture.md`, so callers encoding
+     *             `delegate(address)` hit the right selector.
+     */
+    function delegate(address user) external {
+        if (user != msg.sender) revert CallerMustMatchUser();
+        isDelegated[user] = true;
+        emit Delegated(user);
     }
 
     /**

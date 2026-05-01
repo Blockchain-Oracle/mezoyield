@@ -105,14 +105,21 @@ describe("MezoYieldOptimizer", () => {
     });
   });
 
-  describe("delegate()", () => {
-    it("flips isDelegated to true and emits Delegated", async () => {
+  describe("delegate(address)", () => {
+    it("flips isDelegated to true and emits Delegated when user opts themselves in", async () => {
       const { optimizer, user } = await loadFixture(deployFixture);
       expect(await optimizer.isDelegated(user.address)).to.equal(false);
-      await expect(optimizer.connect(user).delegate())
+      await expect(optimizer.connect(user).delegate(user.address))
         .to.emit(optimizer, "Delegated")
         .withArgs(user.address);
       expect(await optimizer.isDelegated(user.address)).to.equal(true);
+    });
+
+    it("reverts CallerMustMatchUser when caller tries to delegate another address", async () => {
+      const { optimizer, user, stranger } = await loadFixture(deployFixture);
+      await expect(
+        optimizer.connect(stranger).delegate(user.address),
+      ).to.be.revertedWithCustomError(optimizer, "CallerMustMatchUser");
     });
   });
 
