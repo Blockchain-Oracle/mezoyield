@@ -54,7 +54,7 @@ This repo runs **dual-lab review** because same-lab review (Claude reviewing Cla
    - **Block-class** (missing tests, swallowed errors, mock data in hot path, hardcoded secrets, sponsor IDs, doc/code drift): **always fix.**
    - **Flag-class** (premature abstraction, narrating comments, BC shims): fix if cheap, otherwise reply "noted, deferring."
    - **Stylistic opinions** (naming, comment frequency): ignore unless obviously right. Per Abu: "Codex is just an opinion, you are the developer."
-   - **Always read inline comments** via `gh api repos/Blockchain-Oracle/mezoyield/pulls/<n>/comments`. `gh pr view` only shows the headline review; per-line P1/P2 suggestions are easy to miss.
+   - **Use `.claude/scripts/codex-watch.sh <pr-number>`** as the canonical way to surface Codex feedback. It hits all three relevant endpoints — `/pulls/<n>/reviews` (headline), `/pulls/<n>/comments` (per-line P1/P2/P3 — the meat), `/issues/<n>/reactions` (eyes/+1) — filtered by `chatgpt-codex-connector[bot]` and head SHA. `gh pr view` alone only shows the headline review; per-line findings are on a separate API and trivially missed without the script. Pass `--watch` to poll every 30s until the head SHA is reviewed.
    - **Bot reactions:** `eyes` = reviewing, `+1` = approved, comments = issues to triage.
 3. After fixes, force-push or follow-up commit. Bot re-reviews on commit change.
 4. **Never merge while CI red or Codex blockers open.**

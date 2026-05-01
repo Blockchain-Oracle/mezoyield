@@ -99,6 +99,63 @@ describe("useClaimRewards: wallet switch reset", () => {
     expect(result.current.txHash).toBeUndefined();
   });
 
+  it("token guard: A's late resolution doesn't pollute B's freshly-started claim", async () => {
+    // Codex P2 round 3 (commit d0d3d01): a single shared abandoned flag is
+    // not enough. If A starts a claim (flag=false), wallet switches to B
+    // (flag=true via reset effect), then B starts a claim (which sets
+    // flag=false again at the start), A's still-pending writeContractAsync
+    // would now pass the `if (abandoned) return` check because B's claim
+    // re-opened the gate. Result: A's stale hash overwrites B's txHash and
+    // phase. Per-claim monotonic token fixes it: B's myToken !== A's myToken,
+    // and only the latest token wins.
+    let resolveA: (h: `0x${string}`) => void = () => {};
+    let resolveB: (h: `0x${string}`) => void = () => {};
+    writeContractAsync
+      .mockImplementationOnce(
+        () => new Promise<`0x${string}`>((res) => { resolveA = res; }),
+      )
+      .mockImplementationOnce(
+        () => new Promise<`0x${string}`>((res) => { resolveB = res; }),
+      );
+
+    const { result, rerender } = renderHook(
+      ({ user }: { user: `0x${string}` }) => useClaimRewards(user),
+      { initialProps: { user: A } },
+    );
+
+    // A starts claim → pending.
+    let claimA: Promise<void>;
+    act(() => { claimA = result.current.claim(); });
+    expect(result.current.status).toBe("writing");
+
+    // Switch to B; reset effect bumps token.
+    rerender({ user: B });
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+
+    // B starts a fresh claim → pending. Token bumps again. claimB owns the
+    // latest token; A's myToken is now two generations stale.
+    let claimB: Promise<void>;
+    act(() => { claimB = result.current.claim(); });
+    expect(result.current.status).toBe("writing");
+
+    // A's late resolution arrives — must NOT touch state because A's token
+    // is no longer current.
+    await act(async () => {
+      resolveA("0xstaleA");
+      await claimA;
+    });
+    expect(result.current.txHash).toBeUndefined();
+    expect(result.current.status).toBe("writing"); // still B's "writing"
+
+    // B's resolution then lands — must go through.
+    await act(async () => {
+      resolveB("0xliveB");
+      await claimB;
+    });
+    expect(result.current.txHash).toBe("0xliveB");
+    expect(result.current.status).toBe("confirming");
+  });
+
   it("does NOT reset when user stays the same across rerenders", async () => {
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),

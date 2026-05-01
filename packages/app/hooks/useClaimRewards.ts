@@ -63,18 +63,21 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
   // and we reset — wallet B never inherits wallet A's UI state or toast.
   // Codex P2 on PR #25 (round 1).
   const [claimUser, setClaimUser] = useState<Address | undefined>(undefined);
-  // Codex P2 on PR #25 (round 2): the reset effect handles state already
-  // committed via setTxHash/setPhase, but `writeContractAsync` is itself a
-  // suspension point — if the wallet switches *while it's pending* (before
-  // the hash returns), the resolved promise would still set txHash and
-  // phase="confirming" for the abandoned wallet after the reset ran. A ref
-  // is the only thing that survives across the await without triggering a
-  // rerender, so we read it post-await to drop late completions on the floor.
-  const abandonedRef = useRef(false);
+  // Codex P2 on PR #25 (round 3): a single shared "abandoned" flag is a
+  // 1-bit signal — it can't distinguish "stale promise from before a switch"
+  // from "live promise from a fresh claim". If A claims, switches to B, then
+  // B claims, the start-of-claim reset would re-open the gate for A's still-
+  // pending promise. Per-claim monotonic token solves this: each `claim()`
+  // invocation captures `++claimTokenRef.current`, and the post-await check
+  // `myToken === claimTokenRef.current` is true ONLY for the latest claim.
+  // Wallet switches bump the token to invalidate any in-flight prior claim;
+  // a new claim bumps it again and gets its own identity. Stale resolutions
+  // can never pass the equality check.
+  const claimTokenRef = useRef(0);
 
   useEffect(() => {
     if (claimUser && user && claimUser.toLowerCase() !== user.toLowerCase()) {
-      abandonedRef.current = true;
+      claimTokenRef.current += 1;
       setPhase("idle");
       setTxHash(undefined);
       setErrorMessage(undefined);
@@ -108,7 +111,7 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
     errorMessage,
     claim: async () => {
       if (!user) return;
-      abandonedRef.current = false;
+      const myToken = ++claimTokenRef.current;
       try {
         setPhase("writing");
         setErrorMessage(undefined);
@@ -119,20 +122,20 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
           functionName: "claimRewards",
           args: [user],
         });
-        // Wallet may have switched while the write was pending. The reset
-        // effect already cleared state for the new user; don't re-pollute it.
-        if (abandonedRef.current) return;
+        // Drop the result if a wallet switch (or a newer claim) has occurred
+        // since this invocation captured its token.
+        if (myToken !== claimTokenRef.current) return;
         setTxHash(hash);
         setPhase("confirming");
       } catch (err) {
-        if (abandonedRef.current) return;
+        if (myToken !== claimTokenRef.current) return;
         setPhase("error");
         const e = err as { shortMessage?: string; message?: string };
         setErrorMessage(e.shortMessage ?? e.message ?? "Claim failed");
       }
     },
     reset: () => {
-      abandonedRef.current = false;
+      claimTokenRef.current += 1;
       setPhase("idle");
       setTxHash(undefined);
       setErrorMessage(undefined);
