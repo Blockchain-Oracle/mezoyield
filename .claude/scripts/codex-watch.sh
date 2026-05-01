@@ -31,9 +31,15 @@ REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 BOT="chatgpt-codex-connector[bot]"
 
 check_once() {
-  local head_sha
+  local head_sha head_pushed_at
   head_sha="$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)"
-  echo "── PR #$PR · head=${head_sha:0:10} · repo=$REPO ──"
+  # Use the commit's committer date as a "head exists since" floor. Any
+  # Codex top-level approval comment/reaction with a timestamp AFTER this
+  # is a head-specific signal. Codex's "Chef's kiss / no major issues"
+  # path drops a top-level issue comment + a 👍 reaction without filing a
+  # formal Reviews API entry, so this is the only way to detect approval.
+  head_pushed_at="$(gh api "repos/$REPO/commits/$head_sha" --jq .commit.committer.date)"
+  echo "── PR #$PR · head=${head_sha:0:10} · pushed=$head_pushed_at · repo=$REPO ──"
 
   # 1. Headline reviews from Codex (filtered to head SHA).
   # Codex sometimes embeds findings IN the review body itself (with a deep
@@ -74,50 +80,54 @@ check_once() {
   carried_count="$(echo "$carried_json" | jq 'length')"
 
   # 3. Reactions on the PR-as-issue (Codex thumbs-up = approval).
-  local thumbs_up
-  thumbs_up="$(gh api "repos/$REPO/issues/$PR/reactions" \
-    --jq "[.[] | select(.user.login==\"$BOT\") | select(.content==\"+1\")] | length")"
-  local eyes
-  eyes="$(gh api "repos/$REPO/issues/$PR/reactions" \
-    --jq "[.[] | select(.user.login==\"$BOT\") | select(.content==\"eyes\")] | length")"
+  # Reactions are NOT commit-scoped — a 👍 from an earlier commit persists
+  # forever — so we filter by created_at > head_pushed_at to know whether
+  # the latest reaction is for the current head.
+  local thumbs_up_on_head
+  thumbs_up_on_head="$(gh api "repos/$REPO/issues/$PR/reactions" \
+    --jq "[.[] | select(.user.login==\"$BOT\") | select(.content==\"+1\") | select(.created_at > \"$head_pushed_at\")] | length")"
+  local eyes_on_head
+  eyes_on_head="$(gh api "repos/$REPO/issues/$PR/reactions" \
+    --jq "[.[] | select(.user.login==\"$BOT\") | select(.content==\"eyes\") | select(.created_at > \"$head_pushed_at\")] | length")"
+
+  # 4. Top-level issue comments posted AFTER head was pushed. Codex uses
+  # this for "no major issues" approvals (text body like "Chef's kiss" /
+  # "Didn't find any major issues") in lieu of a formal Reviews entry.
+  local approval_comment_count
+  approval_comment_count="$(gh api "repos/$REPO/issues/$PR/comments" \
+    --jq "[.[] | select(.user.login==\"$BOT\") | select(.created_at > \"$head_pushed_at\") | select(.body | test(\"(?i)didn't find any major issues|chef's kiss|no major issues\"))] | length")"
 
   echo "  Codex reviews filed on head: $reviews_on_head"
   echo "  Codex inline findings filed on head: $inline_count"
   echo "  Codex review-body findings on head (P-badge in body): $body_finding_count"
   echo "  Codex carried-forward findings (still anchor to head): $carried_count"
-  echo "  Codex reactions: 👍×$thumbs_up 👀×$eyes"
+  echo "  Codex reactions on head (post-push): 👍×$thumbs_up_on_head 👀×$eyes_on_head"
+  echo "  Codex \"no major issues\" approval comments on head: $approval_comment_count"
 
-  # No review yet against the head SHA. (Reactions on PR-as-issue do NOT
-  # signal head-specific approval — Codex doesn't dismiss old ones on push.
-  # The real "approved this commit" signal is a review filed against head.)
-  if [ "$reviews_on_head" -eq 0 ] && [ "$inline_count" -eq 0 ]; then
-    if [ "$eyes" -gt 0 ]; then
-      echo "  → STATUS: pending (Codex is reviewing $head_sha — 👀 reaction present)"
-    else
-      echo "  → STATUS: pending (Codex has not yet reviewed $head_sha)"
-    fi
-    if [ "$carried_count" -gt 0 ]; then
-      echo
-      echo "  ⚠ $carried_count earlier finding(s) still anchor to head — possibly unaddressed:"
-      echo "$carried_json" | jq -r '.[] | "    - [" + (.original_commit_id[0:10]) + "] " + .path + ":" + (.line|tostring) + " — " + (.body | split("\n") | .[0])'
-    fi
-    return 2
-  fi
-
-  # Print findings — both inline AND review-body (Codex uses both channels).
-  if [ "$inline_count" -gt 0 ]; then
-    echo
-    echo "── Codex inline findings filed against $head_sha ──"
-    echo "$inline_json" | jq -r '.[] | "[\(.created_at)] \(.path):\(.line)\n\(.body)\n---"'
-  fi
-  if [ "$body_finding_count" -gt 0 ]; then
-    echo
-    echo "── Codex review-body findings filed against $head_sha ──"
-    echo "$review_body_findings" | jq -r '.[] | . + "\n---"'
-  fi
+  # Findings on head — print both inline AND review-body (Codex uses both).
   if [ "$inline_count" -gt 0 ] || [ "$body_finding_count" -gt 0 ]; then
+    if [ "$inline_count" -gt 0 ]; then
+      echo
+      echo "── Codex inline findings filed against $head_sha ──"
+      echo "$inline_json" | jq -r '.[] | "[\(.created_at)] \(.path):\(.line)\n\(.body)\n---"'
+    fi
+    if [ "$body_finding_count" -gt 0 ]; then
+      echo
+      echo "── Codex review-body findings filed against $head_sha ──"
+      echo "$review_body_findings" | jq -r '.[] | . + "\n---"'
+    fi
     echo "  → STATUS: findings present — triage above."
     return 1
+  fi
+
+  # Approval signals on head:
+  #   (a) "no major issues" / "Chef's kiss" top-level comment posted after
+  #       the head SHA was pushed, AND/OR
+  #   (b) a 👍 reaction posted after the head SHA was pushed, AND/OR
+  #   (c) a Reviews API entry filed against head SHA with no findings.
+  if [ "$approval_comment_count" -gt 0 ] || [ "$thumbs_up_on_head" -gt 0 ]; then
+    echo "  → STATUS: approved (Codex left a no-findings comment / 👍 after head was pushed)."
+    return 0
   fi
 
   if [ "$reviews_on_head" -gt 0 ]; then
@@ -125,8 +135,18 @@ check_once() {
     return 0
   fi
 
-  echo "  → STATUS: indeterminate; inspect manually."
-  return 0
+  # Pending — Codex hasn't yet emitted any head-specific signal.
+  if [ "$eyes_on_head" -gt 0 ]; then
+    echo "  → STATUS: pending (Codex is reviewing $head_sha — 👀 reaction present)"
+  else
+    echo "  → STATUS: pending (Codex has not yet reviewed $head_sha)"
+  fi
+  if [ "$carried_count" -gt 0 ]; then
+    echo
+    echo "  ⚠ $carried_count earlier finding(s) still anchor to head — possibly unaddressed:"
+    echo "$carried_json" | jq -r '.[] | "    - [" + (.original_commit_id[0:10]) + "] " + .path + ":" + (.line|tostring) + " — " + (.body | split("\n") | .[0])'
+  fi
+  return 2
 }
 
 if [ "$WATCH" = "--watch" ]; then
