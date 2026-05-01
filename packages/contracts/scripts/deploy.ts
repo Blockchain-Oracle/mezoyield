@@ -5,21 +5,53 @@ import { resolve } from "path";
 /**
  * Deploys MockGaugeController, MockMatchbox, MezoYieldOptimizer to the
  * configured network and writes a canonical deployments JSON
- * (`deployments/mezo-testnet.json` for Mezo Testnet) that the app side
- * imports via `packages/app/lib/contracts.ts`.
+ * (`deployments/mezo-testnet.json` for chainId 31611, `mezo-mainnet.json`
+ * for 31612). The app side imports the right manifest via
+ * `packages/app/lib/contracts.ts`.
  *
  * Mocks ride along because Mezo hasn't published canonical gauge/matchbox
- * addresses (CONTEXT.md OQ #6); see the JSON's `notes` and the project
+ * addresses yet (CONTEXT.md OQ #6); see the JSON's `notes` and
  * `TESTNET_ADDRESSES.md` for the disclosure. STORY-005+ will introduce a
- * Tigris (`mezo-org/tigris`'s Voter.sol) adapter when subgraph data lands.
+ * Tigris adapter (`mezo-org/tigris`'s Voter.sol) when subgraph data lands.
  *
- * Slug map (network name → file name) matches story-004 spec which uses
- * kebab-case (mezo-testnet.json) regardless of the camelCase Hardhat
- * network name (mezoTestnet).
+ * Slug map (Hardhat network name → file slug) matches story-004 spec:
+ * kebab-case mezo-testnet.json regardless of the camelCase Hardhat name.
+ *
+ * STORY-005 addition: after deploying, the script seeds the gauge
+ * registry on MockGaugeController and the bribe pools on MockMatchbox
+ * with three realistic-feeling gauges (Stability Pool, MUSD Savings,
+ * BTC-MUSD LP). The seeded gauges + bribes are echoed into the manifest
+ * under `seededGauges` so the frontend test fixtures and TESTNET_ADDRESSES
+ * stay in sync.
  */
 const NETWORK_FILENAMES: Record<string, string> = {
   mezoTestnet: "mezo-testnet.json",
+  mezoMainnet: "mezo-mainnet.json",
 };
+
+type SeedGauge = {
+  name: string;
+  totalVeMezo: bigint;
+  bribeMUSD: bigint;
+};
+
+const SEED_GAUGES: SeedGauge[] = [
+  {
+    name: "Stability Pool",
+    totalVeMezo: ethers.parseUnits("12500000", 18),
+    bribeMUSD: ethers.parseUnits("8400", 18),
+  },
+  {
+    name: "MUSD Savings Rate",
+    totalVeMezo: ethers.parseUnits("9200000", 18),
+    bribeMUSD: ethers.parseUnits("4500", 18),
+  },
+  {
+    name: "BTC-MUSD LP",
+    totalVeMezo: ethers.parseUnits("6700000", 18),
+    bribeMUSD: ethers.parseUnits("5200", 18),
+  },
+];
 
 async function main() {
   const [deployer] = await ethers.getSigners();
@@ -31,6 +63,8 @@ async function main() {
   const chainIdRaw = network.config.chainId;
   console.log(`Network: ${network.name} (chainId ${chainIdRaw ?? "?"})`);
   console.log(`Deployer: ${deployer.address}`);
+
+  // -------- Deploy --------
 
   const GaugeFactory = await ethers.getContractFactory("MockGaugeController");
   const gaugeController = await GaugeFactory.deploy();
@@ -57,10 +91,30 @@ async function main() {
   const optimizerAddress = await optimizer.getAddress();
   console.log(`MezoYieldOptimizer: ${optimizerAddress}`);
 
+  // -------- Seed (STORY-005) --------
+
+  console.log("Seeding gauge registry + bribes...");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const gc: any = gaugeController;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mb: any = matchbox;
+  const seedReceipts: { name: string; gauge: string }[] = [];
+  for (const g of SEED_GAUGES) {
+    const tx = await gc.addGauge(g.name, g.totalVeMezo);
+    await tx.wait();
+    const gaugeAddress: string = await gc.gaugeAddressFor(g.name);
+    const bribeTx = await mb.setBribe(gaugeAddress, g.bribeMUSD);
+    await bribeTx.wait();
+    seedReceipts.push({ name: g.name, gauge: gaugeAddress });
+    console.log(`  ${g.name} → ${gaugeAddress}`);
+  }
+
   if (network.name === "hardhat") {
     console.log("(hardhat-network: ephemeral; skipping JSON emit)");
     return;
   }
+
+  // -------- Write manifest --------
 
   const filename = NETWORK_FILENAMES[network.name] ?? `${network.name}.json`;
   const dir = resolve(__dirname, "../deployments");
@@ -76,7 +130,11 @@ async function main() {
     network: network.name,
     rpcUrl: (network.config as { url?: string }).url,
     explorer:
-      network.name === "mezoTestnet" ? "https://explorer.test.mezo.org" : undefined,
+      network.name === "mezoTestnet"
+        ? "https://explorer.test.mezo.org"
+        : network.name === "mezoMainnet"
+          ? "https://explorer.mezo.org"
+          : undefined,
     deployer: deployer.address,
     deployedAt: new Date().toISOString(),
     contracts: {
@@ -96,8 +154,14 @@ async function main() {
         blockNumber: matchboxReceipt?.blockNumber,
       },
     },
+    seededGauges: SEED_GAUGES.map((g, i) => ({
+      name: g.name,
+      address: seedReceipts[i].gauge,
+      totalVeMezoWei: g.totalVeMezo.toString(),
+      bribeMUSDWei: g.bribeMUSD.toString(),
+    })),
     notes:
-      "MockGaugeController and MockMatchbox are testnet stand-ins because Mezo's real gauge/matchbox addresses aren't published yet (CONTEXT.md OQ #6). The real Mezo gauge system is mezo-org/tigris's Voter.sol (Solidly-style); STORY-005+ will introduce an adapter once subgraph data is wired. See TESTNET_ADDRESSES.md (STORY-010) for the full disclosure.",
+      "MockGaugeController and MockMatchbox are testnet stand-ins because Mezo's real gauge/matchbox addresses aren't published yet (CONTEXT.md OQ #6). The real Mezo gauge system is mezo-org/tigris's Voter.sol (Solidly-style); STORY-005+ will introduce an adapter once subgraph data is wired. Seeded gauges are deterministic addresses (keccak(name) truncated to 160 bits) — see TESTNET_ADDRESSES.md (STORY-010) for the full disclosure.",
   };
 
   writeFileSync(file, JSON.stringify(json, null, 2) + "\n");
