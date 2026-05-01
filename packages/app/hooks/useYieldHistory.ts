@@ -128,23 +128,26 @@ export function useYieldHistory(): UseYieldHistoryResult {
         buckets.set(epoch, (buckets.get(epoch) ?? 0n) + amount);
       }
 
-      // Anchor the X-axis. The first instinct is "anchor=now so Epoch 0
-      // is always right-now" — but Codex P1 round 2 on PR #27 caught the
-      // edge case: when latestClaim < now-7, anchor=now puts the user's
-      // claim OUTSIDE the trailing 8-epoch window and the chart shows 8
-      // zeros, hiding their actual history.
+      // Anchor the X-axis. Two prior rounds got this wrong:
+      //   - round 1: anchor=Math.max(now, latestClaim) collapsed to `now`
+      //     for dormant users (latestClaim in the past), hiding history.
+      //   - round 2: `latestClaim >= now-7` only checked the lower bound,
+      //     so a future-from-now claim (chain timestamp ahead of local
+      //     clock near an epoch boundary) still anchored on `now` and
+      //     fell outside the rendered window — chart of zeros even
+      //     though a recent claim existed (Codex P1 round 3).
       //
-      // Correct rule: if the latest claim falls inside the trailing
-      // 8-epoch window from now, anchor on now (current-relative labels,
-      // user sees recent activity vs zero-weeks). Otherwise the user is
-      // dormant — anchor on their latest claim instead so 8 weeks of
-      // historical activity are at least visible.
+      // Final rule: anchor=now ONLY when latestClaim is within both
+      // bounds [now-7, now]. Otherwise anchor=latestClaim so the chart
+      // always renders an 8-window that contains the user's most recent
+      // activity.
       const claimEpochs = [...buckets.keys()];
       const latestClaim =
         claimEpochs.length > 0 ? Math.max(...claimEpochs) : -Infinity;
       const nowEp = nowEpoch();
-      const anchor =
-        latestClaim >= nowEp - (MAX_BUCKETS - 1) ? nowEp : latestClaim;
+      const inNowWindow =
+        latestClaim >= nowEp - (MAX_BUCKETS - 1) && latestClaim <= nowEp;
+      const anchor = inNowWindow ? nowEp : latestClaim;
       return padContiguousEpochs(buckets, anchor);
     },
   });

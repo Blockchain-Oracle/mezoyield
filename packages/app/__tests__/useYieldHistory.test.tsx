@@ -167,6 +167,29 @@ describe("useYieldHistory", () => {
     }
   });
 
+  it("anchors on latestClaim when the latest claim is in the future relative to local clock (Codex P1 round 3)", async () => {
+    // Clock-skew edge case: chain timestamp lands in epoch (now + 1)
+    // because the indexer / RPC node's clock is slightly ahead of ours.
+    // The naive `latestClaim >= now-7` check (round 2) passed because
+    // (now+1) > (now-7), so we anchored on `now` and the future claim
+    // fell outside the rendered [now-7..now] window — chart of zeros.
+    // The fixed rule requires latestClaim to be in BOTH bounds
+    // [now-7, now]; future claims fall through to anchor=latestClaim.
+    const FUTURE_CLAIM_EPOCH = NOW_EPOCH + 1;
+    const ts = BigInt(FUTURE_CLAIM_EPOCH) * SECONDS_PER_EPOCH + 100n;
+    getLogsMock.mockResolvedValue([
+      { blockNumber: 200n, args: { user: USER, amount: 9n * 10n ** 18n } },
+    ]);
+    getBlockMock.mockResolvedValue({ number: 200n, timestamp: ts });
+
+    const { result } = renderHook(() => useYieldHistory(), { wrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.epochs).toHaveLength(8);
+    expect(result.current.epochs[7].epoch).toBe(FUTURE_CLAIM_EPOCH);
+    expect(result.current.epochs[7].musdWei).toBe(9n * 10n ** 18n);
+  });
+
   it("anchors on now when the latest claim is inside the trailing 8-epoch window", async () => {
     // Active user: claimed in current epoch. Anchor must be `now` so
     // "Epoch 0" is right-now and the claim lands in slot 7.

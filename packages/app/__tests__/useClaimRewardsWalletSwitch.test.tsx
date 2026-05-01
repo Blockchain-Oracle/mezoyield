@@ -193,6 +193,39 @@ describe("useClaimRewards: wallet switch reset", () => {
     });
   });
 
+  it("invalidates yield-history using claimUser even after wallet disconnects mid-confirm (Codex P2 round 3)", async () => {
+    // STORY-009 regression: if the user disconnects their wallet while
+    // the tx is confirming, `user` becomes undefined. An `if (user)`
+    // guard around the invalidation would skip it entirely — the chart
+    // then shows stale pre-claim data after the user reconnects within
+    // the 30s staleTime. claimUser is set at claim-init time and
+    // survives the disconnect, so we use it as the invalidation key.
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const { result, rerender } = renderHook(
+      ({ user }: { user: `0x${string}` | undefined }) => useClaimRewards(user),
+      { initialProps: { user: A as `0x${string}` | undefined }, wrapper },
+    );
+    await act(async () => {
+      await result.current.claim();
+    });
+    expect(result.current.status).toBe("confirming");
+
+    // Wallet disconnects mid-confirmation — user becomes undefined.
+    // claimUser remains A (set at claim init).
+    rerender({ user: undefined });
+
+    // Receipt confirms.
+    receiptState.isSuccess = true;
+    rerender({ user: undefined });
+    await waitFor(() => expect(result.current.status).toBe("success"));
+
+    // Invalidation must still target ['yield-history', A] — the
+    // initiating wallet — not skip because user is now undefined.
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ["yield-history", A],
+    });
+  });
+
   it("does NOT reset when user stays the same across rerenders", async () => {
     const { result, rerender } = renderHook(
       ({ user }: { user: `0x${string}` }) => useClaimRewards(user),

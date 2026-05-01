@@ -115,11 +115,19 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
     if (receipt.isSuccess) {
       setPhase("success");
       void pendingQuery.refetch();
-      // Invalidate the user-scoped yield history so the chart reflects
-      // the just-confirmed claim without waiting for a remount or
-      // 30-second staleTime expiration.
-      if (user) {
-        void queryClient.invalidateQueries({ queryKey: ["yield-history", user] });
+      // Invalidate the yield-history query for the address that
+      // *initiated* this claim — not necessarily the currently-connected
+      // address. Codex P2 round 3 on PR #27: if the wallet disconnects
+      // while the tx is still confirming, `user` becomes undefined and
+      // an `if (user)` check would skip invalidation entirely; the chart
+      // would then show stale pre-claim data after the user reconnects
+      // within the 30s staleTime. `claimUser` is already tracked through
+      // the writing → confirming transitions for the wallet-switch reset
+      // logic, so we already know who owns this claim.
+      if (claimUser) {
+        void queryClient.invalidateQueries({
+          queryKey: ["yield-history", claimUser],
+        });
       }
     } else if (receipt.isError) {
       setPhase("error");
