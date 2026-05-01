@@ -36,6 +36,15 @@ vi.mock("@/app/providers", () => ({
 }));
 vi.mock("wagmi", () => ({
   useAccount: () => accountState.value,
+  // ClaimButton (rendered inside PositionCard) calls useClaimRewards which
+  // pulls these wagmi hooks. Stub so tests don't need a real wagmi context.
+  useReadContract: () => ({ data: 0n, isLoading: false, refetch: () => {} }),
+  useWriteContract: () => ({ writeContractAsync: async () => "0x" }),
+  useWaitForTransactionReceipt: () => ({
+    isSuccess: false,
+    isError: false,
+    error: null,
+  }),
 }));
 
 import { PositionCard } from "@/components/Dashboard/PositionCard";
