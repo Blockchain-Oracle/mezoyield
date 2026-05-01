@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import HomePage from "@/app/page";
 import { Providers } from "@/components/Providers";
 
@@ -20,10 +20,29 @@ describe("HomePage", () => {
     expect(screen.getByRole("tab", { name: "Optimize" })).toBeInTheDocument();
   });
 
-  it("renders the Dashboard panel content by default", () => {
+  it("renders the Dashboard panel by default", () => {
     renderApp();
     expect(screen.getByTestId("dashboard-panel")).toHaveTextContent(
       /gauges, position, and yield/i,
     );
+  });
+
+  it("switches to the Optimize panel when its tab is clicked", () => {
+    renderApp();
+    fireEvent.click(screen.getByRole("tab", { name: "Optimize" }));
+    expect(screen.getByTestId("optimize-panel")).toHaveTextContent(
+      /choose your strategy/i,
+    );
+  });
+
+  it("renders the Connect call-to-action in the header by default", () => {
+    renderApp();
+    // ConnectButton's loading skeleton — the dynamic({ssr:false}) loader —
+    // also says "Connect" while the chunk loads. RainbowKit's mounted=false
+    // path then takes over.
+    const header = screen.getByRole("banner");
+    expect(
+      within(header).getByRole("button", { name: /connect/i }),
+    ).toBeInTheDocument();
   });
 });

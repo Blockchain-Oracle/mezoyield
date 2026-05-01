@@ -1,19 +1,37 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { ReactNode } from "react";
+import { ComponentType, ReactNode, useEffect, useState } from "react";
 
-// Mezo Passport pulls in styletron-engine-monolithic which touches `document`
-// at module load — incompatible with Next.js SSR/prerender. Mount the entire
-// wagmi/Passport/RainbowKit stack on the client only.
-const ClientProviders = dynamic(
-  () => import("@/components/Providers").then((m) => m.Providers),
-  {
-    ssr: false,
-    loading: () => null,
-  },
-);
+// `@mezo-org/passport` pulls in `styletron-engine-monolithic`, which reads
+// `document` at module load — incompatible with any SSR pass. So we lazy-import
+// the wallet stack only on the client (after hydration) and let `children`
+// render unwrapped during SSR. This preserves SSR'd HTML for the page chrome
+// while keeping the wallet bundle out of the server runtime.
+//
+// Components that need wagmi context (ConnectButton + later wagmi-hook
+// callsites) must be safe to render WITHOUT context for one render — we do
+// this by wrapping them in `next/dynamic({ ssr: false })` so they're null
+// until the client mounts the stack.
+
+type StackComponent = ComponentType<{ children: ReactNode }>;
+let cachedStack: StackComponent | null = null;
 
 export function Providers({ children }: { children: ReactNode }) {
-  return <ClientProviders>{children}</ClientProviders>;
+  const [Stack, setStack] = useState<StackComponent | null>(cachedStack);
+
+  useEffect(() => {
+    if (cachedStack) return;
+    let cancelled = false;
+    import("@/components/Providers").then((mod) => {
+      if (cancelled) return;
+      cachedStack = mod.Providers as StackComponent;
+      setStack(() => mod.Providers as StackComponent);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!Stack) return <>{children}</>;
+  return <Stack>{children}</Stack>;
 }
