@@ -43,7 +43,7 @@ export function NextActionCard() {
     label = "Active";
     title = "Set & Forget is active";
     description =
-      "MezoYield's keeper votes for the highest-APY gauge for you every Sunday. You can claim rewards any time below.";
+      "MezoYield's keeper votes for the highest-APY gauge for you at every weekly epoch boundary. You can claim rewards any time below.";
     cta = { href: "/app/strategies", text: "Switch strategy" };
   } else if (position.allocation.length > 0) {
     icon = <Vote aria-hidden className="h-5 w-5 text-mezo" />;

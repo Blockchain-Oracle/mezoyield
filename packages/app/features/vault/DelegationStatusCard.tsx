@@ -72,7 +72,7 @@ export function DelegationStatusCard() {
             </span>
             <span className="text-sm text-muted-foreground">
               {isDelegated
-                ? "MezoYield's keeper votes for the highest-APY gauge for you every Sunday at 00:00 UTC."
+                ? "MezoYield's keeper votes for the highest-APY gauge for you at every Mezo epoch boundary (~7 days)."
                 : "Activate Set & Forget on the Strategies tab to delegate voting power and have the keeper handle weekly rebalancing."}
             </span>
           </div>

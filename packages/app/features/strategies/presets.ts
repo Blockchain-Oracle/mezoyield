@@ -95,7 +95,7 @@ export const STRATEGY_PRESETS: readonly StrategyPreset[] = [
     name: "Set & Forget",
     tagline: "MezoYield votes for you each epoch",
     description:
-      "MezoYield votes for the highest-APY gauge for you each epoch. Re-balances automatically every Sunday. You never have to come back unless you want to claim rewards or change strategy.",
+      "MezoYield votes for the highest-APY gauge for you each epoch. The keeper bot re-balances automatically at every weekly epoch boundary (Unix-aligned, 604_800 seconds — currently lands ~Thursday 00:00 UTC). You never have to come back unless you want to claim rewards or change strategy.",
     riskLabel: "Medium",
     riskTone: "medium",
     execution: { mode: "delegate" },
