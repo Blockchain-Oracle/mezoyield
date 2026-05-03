@@ -19,6 +19,14 @@ const SECONDS_PER_EPOCH = 604_800n;
 
 const getLogsMock = vi.fn();
 const getBlockMock = vi.fn();
+// useYieldHistory now goes through getLogsChunked which calls
+// getBlockNumber() to bound `toBlock: "latest"`. Return a value
+// equal to the deployment block so the chunked loop runs exactly
+// once per test (cursor === head, end === head, single getLogs call).
+// Pulling the constant from lib/contracts keeps this aligned with
+// any future bump.
+import { OPTIMIZER_DEPLOYMENT_BLOCK as DEPLOY_BLOCK } from "@/lib/contracts";
+const getBlockNumberMock = vi.fn(async () => DEPLOY_BLOCK);
 const accountState: { value: { address?: `0x${string}` } } = { value: {} };
 
 vi.mock("wagmi", () => ({
@@ -26,6 +34,7 @@ vi.mock("wagmi", () => ({
   usePublicClient: () => ({
     getLogs: getLogsMock,
     getBlock: getBlockMock,
+    getBlockNumber: getBlockNumberMock,
   }),
 }));
 

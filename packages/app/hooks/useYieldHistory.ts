@@ -7,6 +7,7 @@ import {
   OPTIMIZER_DEPLOYMENT_BLOCK,
 } from "@/lib/contracts";
 import { optimizerAbi } from "@/lib/abi";
+import { getLogsChunked } from "@/lib/getLogsChunked";
 import type { Address } from "@/lib/types";
 
 /**
@@ -98,13 +99,21 @@ export function useYieldHistory(): UseYieldHistoryResult {
     staleTime: 30_000,
     queryFn: async () => {
       if (!address || !client || !REWARDS_CLAIMED_EVENT) return [];
-      const logs = await client.getLogs({
-        address: OPTIMIZER_ADDRESS,
-        event: REWARDS_CLAIMED_EVENT,
-        args: { user: address as Address },
-        fromBlock: OPTIMIZER_DEPLOYMENT_BLOCK,
-        toBlock: "latest",
-      });
+      // Chunked because Mezo testnet RPC caps eth_getLogs at 10k blocks.
+      type RewardsClaimedLog = {
+        blockNumber: bigint | null;
+        args: { user?: Address; amount?: bigint };
+      };
+      const logs = await getLogsChunked<RewardsClaimedLog>(
+        client,
+        {
+          address: OPTIMIZER_ADDRESS,
+          event: REWARDS_CLAIMED_EVENT,
+          args: { user: address as Address },
+        },
+        OPTIMIZER_DEPLOYMENT_BLOCK,
+        "latest",
+      );
       if (logs.length === 0) return [];
 
       // Resolve each unique block's timestamp once.

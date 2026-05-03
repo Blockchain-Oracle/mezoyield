@@ -7,6 +7,7 @@ import {
   OPTIMIZER_DEPLOYMENT_BLOCK,
 } from "@/lib/contracts";
 import { optimizerAbi } from "@/lib/abi";
+import { getLogsChunked } from "@/lib/getLogsChunked";
 import type { Address } from "@/lib/types";
 
 const REWARDS_CLAIMED_EVENT = optimizerAbi.find(
@@ -45,12 +46,13 @@ export function useLeaderboard(limit = 20): UseLeaderboardResult {
     staleTime: 30_000,
     queryFn: async (): Promise<LeaderboardEntry[]> => {
       if (!client || !REWARDS_CLAIMED_EVENT) return [];
-      const logs = await client.getLogs({
-        address: OPTIMIZER_ADDRESS,
-        event: REWARDS_CLAIMED_EVENT,
-        fromBlock: OPTIMIZER_DEPLOYMENT_BLOCK,
-        toBlock: "latest",
-      });
+      type RewardsClaimedLog = { args: { user?: Address; amount?: bigint } };
+      const logs = await getLogsChunked<RewardsClaimedLog>(
+        client,
+        { address: OPTIMIZER_ADDRESS, event: REWARDS_CLAIMED_EVENT },
+        OPTIMIZER_DEPLOYMENT_BLOCK,
+        "latest",
+      );
       const totals = new Map<Address, { wei: bigint; count: number }>();
       for (const log of logs) {
         const args = log.args as { user?: Address; amount?: bigint };
