@@ -26,10 +26,10 @@ function ConnectSkeleton() {
   return (
     <Button
       disabled
-      className="bg-[#F7931A] text-black opacity-60"
+      className="bg-mezo text-primary-foreground opacity-60"
       aria-busy="true"
     >
-      Connect
+      Connect wallet
     </Button>
   );
 }

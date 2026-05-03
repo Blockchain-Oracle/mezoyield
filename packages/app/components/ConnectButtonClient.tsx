@@ -14,10 +14,10 @@ export function ConnectButtonClient() {
           return (
             <Button
               onClick={openConnectModal}
-              className="bg-[#F7931A] text-black hover:bg-[#FFA640]"
+              className="bg-mezo text-primary-foreground hover:bg-mezo-hover"
               disabled={!ready}
             >
-              Connect
+              Connect wallet
             </Button>
           );
         }
