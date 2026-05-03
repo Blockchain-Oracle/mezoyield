@@ -10,11 +10,10 @@ import {
 } from "lucide-react";
 
 /**
- * MezoYield V2 sidebar destinations. Order is the visual order in the
- * left-rail. Active-route detection lives in `Sidebar.tsx`.
- *
- * Adapted from `context/refs/repos/neko/.../sidebarConfig.ts` — same
- * shape (label + href + icon), pruned to our 7 destinations.
+ * Adapted verbatim from Neko's `sidebarConfig.ts` — same shape (label
+ * + href + icon), same exported style constants. Pruned to our 7
+ * destinations and swapped Neko's blue (#229EDF) accent for the Mezo
+ * brand color (#FF004D, sourced from mezo-org/tigris).
  */
 export type NavItem = {
   label: string;
@@ -32,4 +31,9 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: "Settings", href: "/app/settings", icon: Settings },
 ] as const;
 
-export const SIDEBAR_WIDTH = 270;
+/** Used by ConnectedCard / SetupCard. Matches Neko's CARD_STYLES. */
+export const CARD_STYLES = "rounded-[20px] bg-[#D3D3D3] p-5" as const;
+
+/** Used by ConnectedCard / SetupCard. Matches Neko's CARD_BUTTON_STYLES. */
+export const CARD_BUTTON_STYLES =
+  "flex w-full items-center justify-between rounded-full bg-[#0F0F0F] px-5 py-3 text-sm font-semibold text-white cursor-pointer" as const;

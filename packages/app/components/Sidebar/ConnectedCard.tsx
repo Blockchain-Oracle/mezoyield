@@ -1,39 +1,92 @@
 "use client";
 
-import { useDisconnect } from "wagmi";
-import { LogOut } from "lucide-react";
-import type { Address } from "@/lib/types";
-
-interface ConnectedCardProps {
-  address: Address;
-}
+import React from "react";
+import { ArrowRight, LogOut } from "lucide-react";
+import { truncateAddress } from "@/lib/utils";
+import { CARD_STYLES, CARD_BUTTON_STYLES } from "./sidebarConfig";
+import { MEZO_CHAIN_ID } from "@/lib/contracts";
 
 /**
- * Sidebar bottom card shown while a wallet is connected. Truncated
- * address + disconnect button. The disconnect uses wagmi's
- * `useDisconnect` directly (not RainbowKit's) so it works regardless
- * of which wallet adapter the user opened.
+ * Adapted from Neko's `ConnectedCard.tsx` — same gray card + black
+ * pill button + expanding details panel + Feedback CTA at the bottom.
+ *
+ * Differences from Neko:
+ *   - Stellar TESTNET env check replaced with chainId comparison
+ *     against our deployed contracts (31611 = testnet, 31612 = mainnet).
+ *   - Feedback button color: Neko's blue (#229EDF) → Mezo (#FF004D).
  */
-export function ConnectedCard({ address }: ConnectedCardProps) {
-  const { disconnect } = useDisconnect();
-  const truncated = `${address.slice(0, 6)}…${address.slice(-4)}`;
+
+const IS_TESTNET = MEZO_CHAIN_ID === 31611;
+
+interface ConnectedCardProps {
+  address: string;
+  onDisconnect: () => void;
+}
+
+export function ConnectedCard({ address, onDisconnect }: ConnectedCardProps) {
+  const [open, setOpen] = React.useState(false);
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-sidebar-border bg-card/40 px-4 py-3">
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          Connected
-        </span>
-        <span className="font-mono text-xs text-foreground">{truncated}</span>
-      </div>
+    <div className={CARD_STYLES}>
+      <p className="mb-4 text-base font-bold leading-snug text-black">
+        You&apos;re
+        <br />
+        connected with:
+      </p>
+
       <button
         type="button"
-        onClick={() => disconnect()}
-        aria-label="Disconnect wallet"
-        className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-mezo"
+        onClick={() => setOpen((v) => !v)}
+        className={CARD_BUTTON_STYLES}
       >
-        <LogOut aria-hidden className="h-3.5 w-3.5" />
+        <span className="truncate">{truncateAddress(address)}</span>
+        <ArrowRight
+          className={`ml-2 h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+        />
       </button>
+
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          open ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+        }`}
+      >
+        <div className="flex flex-col gap-2 rounded-2xl bg-black/10 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2 w-2 rounded-full ${IS_TESTNET ? "bg-yellow-400" : "bg-green-400"}`}
+            />
+            <span className="text-xs font-semibold text-black/60">
+              {IS_TESTNET ? "Testnet" : "Mainnet"}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onDisconnect}
+            className="flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700 transition-colors cursor-pointer"
+          >
+            <LogOut className="h-4 w-4" />
+            Disconnect
+          </button>
+        </div>
+      </div>
+
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={() =>
+            window.open(
+              "https://github.com/Blockchain-Oracle/mezoyield/issues/new",
+              "_blank",
+              "noopener,noreferrer",
+            )
+          }
+          className="flex w-full items-center justify-between rounded-full bg-mezo px-5 py-3 text-sm font-semibold text-white cursor-pointer transition-colors hover:bg-mezo-hover"
+        >
+          <span>Feedback</span>
+          <ArrowRight className="ml-2 h-4 w-4 shrink-0" />
+        </button>
+      </div>
     </div>
   );
 }

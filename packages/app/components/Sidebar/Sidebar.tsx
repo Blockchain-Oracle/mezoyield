@@ -1,60 +1,62 @@
 "use client";
 
+import React, { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { useAccount } from "wagmi";
-import { useWalletReady } from "@/app/providers";
-import { NAV_ITEMS, SIDEBAR_WIDTH } from "./sidebarConfig";
-import { NavItem } from "./NavItem";
+import { useAccount, useDisconnect } from "wagmi";
+import { NAV_ITEMS } from "./sidebarConfig";
 import { SidebarLogo } from "./SidebarLogo";
+import { NavItem } from "./NavItem";
 import { ConnectedCard } from "./ConnectedCard";
 import { SetupCard } from "./SetupCard";
-import type { Address } from "@/lib/types";
+
+export const SIDEBAR_WIDTH = "270px";
 
 /**
- * Left rail navigation. 270px fixed on lg+, hidden under lg (the
- * MobileHeader handles small screens — Phase 1.5 if we need it).
- *
- * Active-route detection: a destination is active when the current
- * pathname IS that href OR starts with `${href}/` (covers nested
- * routes like /app/strategies/[strategyId] when those land).
+ * Adapted from Neko's `Sidebar.tsx` — same fixed-left rail, same
+ * 270px width, same border-r `border-white/5` on `bg-[#121212]`,
+ * same logo / nav / wallet-card composition. Stellar `useStellarWallet`
+ * + `useWalletType` hooks are replaced with wagmi's `useAccount` +
+ * `useDisconnect`.
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const walletReady = useWalletReady();
   const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
 
-  const isActive = (href: string): boolean => {
-    if (!pathname) return false;
-    return pathname === href || pathname.startsWith(`${href}/`);
+  const activeAddress = address ?? "";
+  const navItems = useMemo(() => NAV_ITEMS, []);
+
+  const handleDisconnect = () => {
+    disconnect();
   };
 
+  const isActive = (href: string) =>
+    href === "/app/dashboard"
+      ? pathname === "/app/dashboard"
+      : pathname === href || pathname?.startsWith(`${href}/`);
+
   return (
-    <aside
-      aria-label="Primary"
-      className="fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-sidebar-border bg-sidebar lg:flex"
-      style={{ width: `${SIDEBAR_WIDTH}px` }}
-    >
+    <aside className="hidden lg:flex fixed left-0 top-0 z-40 h-screen w-[270px] flex-col border-r border-white/5 bg-[#121212]">
       <SidebarLogo />
 
-      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-4">
-        {NAV_ITEMS.map((item) => (
+      <nav className="flex flex-1 flex-col gap-1 px-3 min-h-0 overflow-y-auto">
+        {navItems.map(({ label, href, icon }) => (
           <NavItem
-            key={item.href}
-            label={item.label}
-            href={item.href}
-            icon={item.icon}
-            isActive={isActive(item.href)}
+            key={href}
+            label={label}
+            href={href}
+            icon={icon}
+            isActive={isActive(href)}
           />
         ))}
       </nav>
 
-      <div className="border-t border-sidebar-border p-4">
-        {/* Render SetupCard during SSR / wallet-ready hydration so the
-         * disconnected branch never throws inside RainbowKit. Once
-         * walletReady is true and wagmi reports a connected account we
-         * swap to ConnectedCard. */}
-        {walletReady && isConnected && address ? (
-          <ConnectedCard address={address as Address} />
+      <div className="p-4 pt-6 overflow-y-auto">
+        {isConnected && activeAddress ? (
+          <ConnectedCard
+            address={activeAddress}
+            onDisconnect={handleDisconnect}
+          />
         ) : (
           <SetupCard />
         )}

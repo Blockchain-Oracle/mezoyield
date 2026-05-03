@@ -1,21 +1,33 @@
-import { ConnectButton } from "@/components/ConnectButton";
+"use client";
+
+import React from "react";
+import { ArrowRight } from "lucide-react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { CARD_STYLES, CARD_BUTTON_STYLES } from "./sidebarConfig";
 
 /**
- * Sidebar bottom card shown when no wallet is connected. Mirrors
- * Neko's SetupCard pattern: a tight value-prop blurb above the connect
- * CTA so the disconnected sidebar isn't dead weight.
+ * Adapted from Neko's `SetupCard.tsx` — same gray card + black pill
+ * button. Stellar's `useStellarWallet().connect` is replaced with
+ * RainbowKit's `useConnectModal().openConnectModal` since we're EVM.
  */
 export function SetupCard() {
+  const { openConnectModal } = useConnectModal();
+
   return (
-    <div className="rounded-xl border border-sidebar-border bg-card/40 p-4">
-      <p className="text-xs font-medium text-foreground">Connect to start</p>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-        Set your MEZO yield on autopilot — pick a strategy, delegate once,
-        and we handle the weekly vote.
+    <div className={CARD_STYLES}>
+      <p className="mb-6 text-base font-bold leading-snug text-black">
+        Connect your wallet
+        <br />
+        to get started!
       </p>
-      <div className="mt-3">
-        <ConnectButton />
-      </div>
+      <button
+        type="button"
+        onClick={() => openConnectModal?.()}
+        className={CARD_BUTTON_STYLES}
+      >
+        Connect Account
+        <ArrowRight className="h-4 w-4 shrink-0" />
+      </button>
     </div>
   );
 }

@@ -1,21 +1,16 @@
 import Link from "next/link";
 
 /**
- * Wordmark + tagline at the top of the sidebar. Clicking it goes home
- * (the landing page), matching the convention from Neko / Tigris where
- * the brand mark in the rail returns you to the marketing surface.
+ * Wordmark in the sidebar top. Neko's version uses an SVG image
+ * (`/Neko.svg`); we don't have a logo asset yet, so a styled wordmark
+ * stands in. Same outer Link + flex shape, same padding rhythm
+ * (`pt-12 pb-6`).
  */
 export function SidebarLogo() {
   return (
-    <Link
-      href="/"
-      className="flex flex-col gap-0.5 px-5 py-6 transition-opacity hover:opacity-80"
-    >
-      <span className="font-sans text-lg font-semibold tracking-tight text-foreground">
-        MezoYield
-      </span>
-      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-mezo">
-        Set & Forget MUSD
+    <Link href="/" className="flex items-center pt-12 pb-6 px-5">
+      <span className="font-sans text-3xl font-semibold tracking-tight text-white">
+        Mezo<span className="text-mezo">Yield</span>
       </span>
     </Link>
   );

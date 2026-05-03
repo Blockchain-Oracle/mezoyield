@@ -1,39 +1,42 @@
+import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
 interface NavItemProps {
   label: string;
   href: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   isActive: boolean;
 }
 
 /**
- * Sidebar nav item — pill row with icon + label.
- * Active state: filled mezo background; inactive: muted text that
- * lights up on hover. Adapted from Neko's NavItem with our palette.
+ * Adapted from Neko's `NavItem.tsx` — same pill structure, same active
+ * state (#222222 background, full pill radius, white text). No color
+ * change needed: Neko uses neutral grays here, not blue.
  */
 export function NavItem({ label, href, icon: Icon, isActive }: NavItemProps) {
   return (
     <Link
       href={href}
-      aria-current={isActive ? "page" : undefined}
       className={cn(
-        "group flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+        "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors duration-150",
         isActive
-          ? "bg-mezo-soft text-mezo"
-          : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
+          ? "text-white"
+          : "text-white/35 hover:text-white/65",
       )}
+      style={
+        isActive
+          ? { background: "#222222", borderRadius: "84px" }
+          : { borderRadius: "84px" }
+      }
     >
       <Icon
-        aria-hidden
         className={cn(
-          "h-4 w-4 shrink-0 transition-colors",
-          isActive ? "text-mezo" : "text-muted-foreground group-hover:text-foreground",
+          "h-5 w-5 shrink-0",
+          isActive ? "text-white" : "text-white/35",
         )}
       />
-      <span>{label}</span>
+      {label}
     </Link>
   );
 }
