@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useAccount, useDisconnect } from "wagmi";
+import { useWalletReady } from "@/app/providers";
 import { NAV_ITEMS } from "./sidebarConfig";
 import { SidebarLogo } from "./SidebarLogo";
 import { NavItem } from "./NavItem";
@@ -14,21 +15,18 @@ export const SIDEBAR_WIDTH = "270px";
 /**
  * Adapted from Neko's `Sidebar.tsx` — same fixed-left rail, same
  * 270px width, same border-r `border-white/5` on `bg-[#121212]`,
- * same logo / nav / wallet-card composition. Stellar `useStellarWallet`
- * + `useWalletType` hooks are replaced with wagmi's `useAccount` +
- * `useDisconnect`.
+ * same logo / nav / wallet-card composition.
+ *
+ * Wagmi hooks (useAccount / useDisconnect) live in `WalletStateCard`
+ * which only renders when `useWalletReady()` is true. The lazy-loaded
+ * provider stack in `app/providers.tsx` mounts WagmiProvider on the
+ * client AFTER hydration; calling wagmi hooks before that throws
+ * `WagmiProviderNotFoundError`. The gate prevents the race.
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-
-  const activeAddress = address ?? "";
+  const walletReady = useWalletReady();
   const navItems = useMemo(() => NAV_ITEMS, []);
-
-  const handleDisconnect = () => {
-    disconnect();
-  };
 
   const isActive = (href: string) =>
     href === "/app/dashboard"
@@ -52,15 +50,44 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 pt-6 overflow-y-auto">
-        {isConnected && activeAddress ? (
-          <ConnectedCard
-            address={activeAddress}
-            onDisconnect={handleDisconnect}
-          />
-        ) : (
-          <SetupCard />
-        )}
+        {walletReady ? <WalletStateCard /> : <SetupCardSkeleton />}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Inner wallet card — only mounted once the wallet provider stack is
+ * live, so wagmi hooks won't throw. Connected → ConnectedCard;
+ * disconnected → SetupCard (which itself uses `useConnectModal`,
+ * also requiring the provider stack).
+ */
+function WalletStateCard() {
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+
+  if (isConnected && address) {
+    return (
+      <ConnectedCard
+        address={address}
+        onDisconnect={() => disconnect()}
+      />
+    );
+  }
+  return <SetupCard />;
+}
+
+/**
+ * Visual placeholder for the wallet card while the provider stack is
+ * still resolving. Same outer geometry as SetupCard (rounded gray
+ * rectangle) so the sidebar layout doesn't jump on hydration.
+ */
+function SetupCardSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="rounded-[20px] bg-[#D3D3D3]/40 p-5 animate-pulse"
+      style={{ minHeight: 140 }}
+    />
   );
 }

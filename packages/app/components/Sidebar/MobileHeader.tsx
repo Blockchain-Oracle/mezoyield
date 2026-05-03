@@ -7,6 +7,7 @@ import { X, Menu, LogOut, ChevronDown } from "lucide-react";
 import { useAccount, useDisconnect } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { cn, truncateAddress } from "@/lib/utils";
+import { useWalletReady } from "@/app/providers";
 import { NAV_ITEMS } from "./sidebarConfig";
 import { MEZO_CHAIN_ID } from "@/lib/contracts";
 
@@ -19,8 +20,29 @@ const IS_TESTNET = MEZO_CHAIN_ID === 31611;
  * hooks swapped for wagmi + RainbowKit.
  *
  * Connect-pill background: Neko's blue (#229EDF) → Mezo (#FF004D).
+ *
+ * Wagmi/RainbowKit hooks are isolated in `MobileHeaderInner` and only
+ * mounted when `useWalletReady()` is true. Same race-prevention
+ * pattern as `Sidebar.tsx`.
  */
 export function MobileHeader() {
+  const walletReady = useWalletReady();
+  if (!walletReady) {
+    return <MobileHeaderSkeleton />;
+  }
+  return <MobileHeaderInner />;
+}
+
+function MobileHeaderSkeleton() {
+  return (
+    <header
+      aria-hidden
+      className="lg:hidden fixed top-0 left-0 right-0 z-50 h-20 border-b border-white/5 bg-[#121212]"
+    />
+  );
+}
+
+function MobileHeaderInner() {
   const [isOpen, setIsOpen] = useState(false);
   const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
   const pathname = usePathname();
