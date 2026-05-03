@@ -1,10 +1,21 @@
+import { PreferencesCard } from "@/features/settings/PreferencesCard";
+
 export default function SettingsPage() {
   return (
-    <div className="space-y-2">
-      <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-      <p className="text-sm text-muted-foreground">
-        Wallet preferences, gas defaults, MUSD compound %, notifications — content lands in Phase 8.
-      </p>
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-mezo">
+          Settings
+        </p>
+        <h1 className="font-display text-4xl font-medium tracking-tight text-foreground">
+          Your MezoYield preferences
+        </h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Auto-compound %, gas-fee boost, optional notifications. Stored in
+          your browser; nothing leaves the client.
+        </p>
+      </header>
+      <PreferencesCard />
     </div>
   );
 }
