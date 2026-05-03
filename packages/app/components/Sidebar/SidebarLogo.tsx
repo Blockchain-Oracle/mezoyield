@@ -9,7 +9,7 @@ import Link from "next/link";
 export function SidebarLogo() {
   return (
     <Link href="/" className="flex items-center pt-12 pb-6 px-5">
-      <span className="font-sans text-3xl font-semibold tracking-tight text-white">
+      <span className="font-display text-3xl font-medium tracking-tight text-white">
         Mezo<span className="text-mezo">Yield</span>
       </span>
     </Link>

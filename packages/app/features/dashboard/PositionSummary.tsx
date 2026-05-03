@@ -42,7 +42,7 @@ export function PositionSummary() {
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
               Your veMEZO
             </span>
-            <span className="font-mono text-3xl font-semibold text-foreground">
+            <span className="font-display text-4xl font-medium tracking-tight text-foreground">
               {position.isConnected ? veMezoFormatted : "—"}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -60,7 +60,7 @@ export function PositionSummary() {
             <span className="text-xs uppercase tracking-wide text-muted-foreground">
               Projected reward
             </span>
-            <span className="font-mono text-3xl font-semibold text-mezo">
+            <span className="font-display text-4xl font-medium tracking-tight text-mezo">
               {position.isConnected && hasAllocation
                 ? `≈ ${weeklyMusd.toFixed(2)}`
                 : "—"}

@@ -61,7 +61,7 @@ function StrategiesPageInner() {
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-mezo">
           Strategies
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-display text-4xl font-medium tracking-tight text-foreground">
           Pick a yield strategy
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">

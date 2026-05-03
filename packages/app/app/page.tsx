@@ -15,7 +15,7 @@ export default function RootPlaceholder() {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-mezo">
           MezoYield · V2 in progress
         </p>
-        <h1 className="font-sans text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+        <h1 className="font-display text-5xl font-medium tracking-tight text-foreground sm:text-6xl">
           Set your MEZO yield on autopilot
         </h1>
         <p className="mx-auto max-w-xl text-sm text-muted-foreground">

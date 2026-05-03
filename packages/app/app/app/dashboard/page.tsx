@@ -46,7 +46,7 @@ function DashboardInner() {
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-mezo">
           Dashboard
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        <h1 className="font-display text-4xl font-medium tracking-tight text-foreground">
           Your MEZO yield, at a glance
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">

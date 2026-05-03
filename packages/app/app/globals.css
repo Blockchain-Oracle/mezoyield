@@ -8,9 +8,14 @@
  * Dark mode is the default; light mode kept under .light for future use.
  */
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --font-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    /* Type stack — Fraunces (variable serif) for display, Geist Sans
+     * for body, JetBrains Mono for addresses/numbers. CSS vars are
+     * injected by next/font (Fraunces, JetBrains_Mono) and the geist
+     * npm package (GeistSans → --font-geist-sans) in app/layout.tsx. */
+    --font-display: var(--font-display);
+    --font-heading: var(--font-display);
+    --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);

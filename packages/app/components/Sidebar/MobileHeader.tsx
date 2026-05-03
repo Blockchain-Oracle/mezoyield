@@ -98,7 +98,7 @@ function MobileHeaderInner() {
               className="flex shrink-0 items-center pl-3"
               aria-label="MezoYield home"
             >
-              <span className="font-sans text-lg font-semibold tracking-tight text-white">
+              <span className="font-display text-xl font-medium tracking-tight text-white">
                 Mezo<span className="text-mezo">Yield</span>
               </span>
             </Link>
