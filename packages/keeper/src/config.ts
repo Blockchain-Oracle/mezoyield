@@ -35,6 +35,15 @@ export const GAUGE_CONTROLLER_ADDRESS = deployments.contracts
 export const MATCHBOX_ADDRESS = deployments.contracts.MockMatchbox
   .address as `0x${string}`;
 
+// Lower bound for backwards-walking eth_getLogs queries against the
+// optimizer (see `lastVoteEpoch.ts`). Mezo testnet RPC caps getLogs at
+// 10_000 blocks per call; bounding to the deploy block keeps the walk
+// finite and matches the only window in which VoteCast events for this
+// address could exist.
+export const OPTIMIZER_DEPLOYMENT_BLOCK = BigInt(
+  deployments.contracts.MezoYieldOptimizer.blockNumber,
+);
+
 export const KEEPER_KEY = KEEPER_PRIVATE_KEY as `0x${string}`;
 export const RPC_URL = KEEPER_RPC_URL;
 export const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL ?? "";

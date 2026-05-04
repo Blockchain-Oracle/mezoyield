@@ -4,10 +4,17 @@ import pino from "pino";
 import {
   KEEPER_KEY,
   OPTIMIZER_ADDRESS,
+  OPTIMIZER_DEPLOYMENT_BLOCK,
   RPC_URL,
   mezoTestnet,
 } from "./config.js";
 import { computeOptimalAllocation, loadGauges } from "./computeOptimalAllocation.js";
+import { getLastVote } from "./lastVoteEpoch.js";
+import {
+  runKeeperFlow,
+  type RunOnceOptions,
+  type RunOnceResult,
+} from "./keeperFlow.js";
 import { notify } from "./notifier.js";
 
 const logger = pino({
@@ -27,15 +34,22 @@ const optimizerAbi = [
   },
 ] as const;
 
+// Public re-exports — the flow types live in `./keeperFlow.js` so they
+// can be imported by tests without dragging in `./config.js` (which
+// throws at load when KEEPER_PRIVATE_KEY is absent — codex P1 round 4).
+export type { RunOnceResult, RunOnceOptions } from "./keeperFlow.js";
+
 /**
- * Single-shot keeper run. Loads live gauge state, computes the optimal
- * allocation, signs and submits `castOptimalVote(gauges, weights)`,
- * waits for receipt, fires the notifier.
+ * Single-shot keeper run. Builds the viem clients, signer, and dependency
+ * adapters, then defers to `runKeeperFlow` for the actual flow logic
+ * (which is unit-tested with stubbed deps). All side-effecting IO lives
+ * in this shim; the decision logic lives in `runKeeperFlow` and the
+ * pure helpers it composes.
  *
  * Used for the demo (manual `pnpm --filter @mezoyield/keeper run once`)
  * and as the inner loop body of `index.ts`'s cron loop.
  */
-export async function runOnce(): Promise<{ txHash: string }> {
+export async function runOnce(opts: RunOnceOptions = {}): Promise<RunOnceResult> {
   const account = privateKeyToAccount(KEEPER_KEY);
   const publicClient = createPublicClient({
     chain: mezoTestnet,
@@ -47,59 +61,64 @@ export async function runOnce(): Promise<{ txHash: string }> {
     transport: http(RPC_URL),
   });
 
-  logger.info({ keeper: account.address }, "loading live gauge state");
-  const gauges = await loadGauges(publicClient);
-  if (gauges.length === 0) {
-    logger.warn("no gauges registered — nothing to vote on");
-    throw new Error("no gauges registered on the controller");
-  }
+  logger.info({ keeper: account.address }, "keeper run starting");
 
-  const allocation = computeOptimalAllocation(gauges);
-  logger.info(
+  return runKeeperFlow(
     {
-      gauges: allocation.gauges.length,
-      breakdown: allocation.gauges.map((g, i) => {
-        const meta = gauges.find((x) => x.address === g);
-        return {
-          name: meta?.name ?? g,
-          weightBps: Number(allocation.weights[i]),
-          apy: meta
-            ? estimateApyPercent(meta.bribeMUSDWei, meta.totalVeMezoWei)
-            : null,
-        };
-      }),
+      getHeadTimestamp: async () => {
+        const head = await publicClient.getBlock({ blockTag: "latest" });
+        return head.timestamp;
+      },
+      findLastVote: (earliestRelevantTimestamp) =>
+        getLastVote(
+          publicClient,
+          {
+            address: OPTIMIZER_ADDRESS,
+            deploymentBlock: OPTIMIZER_DEPLOYMENT_BLOCK,
+          },
+          earliestRelevantTimestamp,
+        ),
+      loadGauges: () => loadGauges(publicClient),
+      computeAllocation: (gauges) => {
+        const allocation = computeOptimalAllocation(gauges);
+        logger.info(
+          {
+            gauges: allocation.gauges.length,
+            breakdown: allocation.gauges.map((g, i) => {
+              const meta = gauges.find((x) => x.address === g);
+              return {
+                name: meta?.name ?? g,
+                weightBps: Number(allocation.weights[i]),
+                apy: meta
+                  ? estimateApyPercent(meta.bribeMUSDWei, meta.totalVeMezoWei)
+                  : null,
+              };
+            }),
+          },
+          "computed optimal allocation",
+        );
+        return allocation;
+      },
+      submitVote: async (allocation) => {
+        logger.info("submitting castOptimalVote…");
+        const txHash = await walletClient.writeContract({
+          address: OPTIMIZER_ADDRESS,
+          abi: optimizerAbi,
+          functionName: "castOptimalVote",
+          args: [allocation.gauges, allocation.weights],
+        });
+        logger.info({ txHash }, "submitted; waiting for receipt");
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+        logger.info(
+          { txHash, blockNumber: receipt.blockNumber, status: receipt.status },
+          "confirmed",
+        );
+        return { txHash, blockNumber: receipt.blockNumber };
+      },
+      notify,
     },
-    "computed optimal allocation",
+    opts,
   );
-
-  logger.info("submitting castOptimalVote…");
-  const txHash = await walletClient.writeContract({
-    address: OPTIMIZER_ADDRESS,
-    abi: optimizerAbi,
-    functionName: "castOptimalVote",
-    args: [allocation.gauges, allocation.weights],
-  });
-  logger.info({ txHash }, "submitted; waiting for receipt");
-
-  const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-  logger.info(
-    { txHash, blockNumber: receipt.blockNumber, status: receipt.status },
-    "confirmed",
-  );
-
-  await notify({
-    txHash,
-    blockNumber: receipt.blockNumber.toString(),
-    allocation: allocation.gauges.map((g, i) => {
-      const meta = gauges.find((x) => x.address === g);
-      return {
-        name: meta?.name ?? g,
-        weightBps: Number(allocation.weights[i]),
-      };
-    }),
-  });
-
-  return { txHash };
 }
 
 function estimateApyPercent(
@@ -112,14 +131,28 @@ function estimateApyPercent(
   return Number(formatUnits(ratio, 18)) * 52 * 100;
 }
 
-// Direct invocation: `tsx src/runOnce.ts`
+// Direct invocation: `tsx src/runOnce.ts` (or `pnpm --filter
+// @mezoyield/keeper once`). Defaults to `force: true` so the manual
+// demo invocation always emits a fresh receipt — useful when judges
+// want to see a live tx hash on the landing's ProofLedger even though
+// the cron loop already voted earlier in the epoch. Override with
+// `KEEPER_FORCE=0` to honor the epoch guard during manual runs (e.g.
+// in CI checks).
 if (
   import.meta.url === `file://${process.argv[1]}` ||
   process.argv[1]?.endsWith("runOnce.ts")
 ) {
-  runOnce()
-    .then(({ txHash }) => {
-      logger.info({ txHash }, "done");
+  const force = process.env.KEEPER_FORCE !== "0";
+  runOnce({ force })
+    .then((result) => {
+      if (result.status === "submitted") {
+        logger.info({ txHash: result.txHash, epoch: result.epoch }, "done");
+      } else {
+        logger.info(
+          { reason: result.reason, epoch: result.epoch },
+          "no-op (already voted this epoch)",
+        );
+      }
       process.exit(0);
     })
     .catch((err) => {
