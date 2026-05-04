@@ -1,5 +1,4 @@
 import { PreferencesCard } from "@/features/settings/PreferencesCard";
-import { AutoCompoundExplainer } from "@/features/settings/AutoCompoundExplainer";
 
 export default function SettingsPage() {
   return (
@@ -16,9 +15,8 @@ export default function SettingsPage() {
           your browser; nothing leaves the client.
         </p>
       </header>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="max-w-2xl">
         <PreferencesCard />
-        <AutoCompoundExplainer />
       </div>
     </div>
   );

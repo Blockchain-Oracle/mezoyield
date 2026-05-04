@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { Save, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const STORAGE_KEY = "mezoyield:settings:v1";
 
@@ -78,11 +79,15 @@ export function PreferencesCard() {
             </p>
           </div>
 
-          {/* Auto-compound % slider */}
-          <div className="space-y-2">
+          {/* Auto-compound % slider — explainer is INLINE so the
+           * control and the consequence sit visually together. When
+           * the % is 0 the explainer collapses to keep the card calm;
+           * any non-zero value reveals the 3-step flow + chip + the
+           * Preview disclosure. */}
+          <div className="space-y-3">
             <label
               htmlFor="auto-compound"
-              className="flex items-baseline justify-between text-sm text-foreground"
+              className="flex flex-wrap items-baseline justify-between gap-2 text-sm text-foreground"
             >
               <span>Auto-compound MUSD → veMEZO</span>
               <span className="font-mono text-mezo">
@@ -104,10 +109,67 @@ export function PreferencesCard() {
               }
               className="w-full accent-[--color-mezo]"
             />
-            <p className="text-xs text-muted-foreground">
-              When you claim MUSD, this share is swapped to MEZO via Tigris and
-              locked as additional veMEZO. The rest goes to your wallet.
-            </p>
+            {prefs.autoCompoundPct === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Drag above 0% to route a share of each MUSD claim into
+                veMEZO via Tigris. The rest still goes to your wallet.
+              </p>
+            ) : (
+              <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-xs font-medium text-foreground">
+                    What this does
+                  </span>
+                  <Badge className="bg-amber-500/10 text-amber-400">
+                    Preview
+                  </Badge>
+                </div>
+                <ol className="space-y-2 text-xs text-muted-foreground">
+                  {[
+                    <>
+                      Click <span className="text-foreground">Claim</span> on the
+                      Dashboard. Your pending MUSD splits into{" "}
+                      <span className="text-foreground">wallet</span> and{" "}
+                      <span className="text-mezo">compound</span> per the % above.
+                    </>,
+                    <>
+                      The compound share is swapped{" "}
+                      <span className="text-foreground">MUSD → MEZO</span> via the
+                      Tigris router and re-locked as additional veMEZO.
+                    </>,
+                    <>
+                      Your voting power grows without you topping up. Wallet
+                      share lands in your address as usual.
+                    </>,
+                  ].map((body, i) => (
+                    <li key={i} className="flex items-start gap-2.5">
+                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-mezo-soft font-mono text-[10px] font-semibold text-mezo">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 flex-1 break-words">{body}</span>
+                    </li>
+                  ))}
+                </ol>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-2 text-[11px] text-muted-foreground">
+                  <span>Pending MUSD</span>
+                  <ArrowRight aria-hidden className="h-3 w-3" />
+                  <span className="text-foreground">Wallet</span>
+                  <span>+</span>
+                  <span className="text-mezo">Compound</span>
+                  <ArrowRight aria-hidden className="h-3 w-3" />
+                  <span className="text-foreground">veMEZO</span>
+                  <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.18em]">
+                    Tigris router
+                  </span>
+                </div>
+                <p className="text-[10px] leading-snug text-muted-foreground">
+                  <span className="text-amber-400">Preview note:</span> the split
+                  is computed and surfaced everywhere you claim. The actual
+                  swap call ships in a follow-up — manual claim today routes
+                  100% to your wallet.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Gas-fee boost radio */}
