@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useVeMezoPosition } from "@/hooks/useVeMezoPosition";
-import { estimateWeeklyMusdWei, TOTAL_BPS } from "@/lib/optimize";
+import { autoAllocate, estimateWeeklyMusdWei, TOTAL_BPS } from "@/lib/optimize";
 import { useActivateStrategy } from "./useActivateStrategy";
 import { type StrategyPreset, SET_AND_FORGET_ID } from "./presets";
 import type { Address, Gauge } from "@/lib/types";
@@ -64,14 +64,24 @@ export function StrategyDetailModal({
   if (!preset) return null;
 
   const isDelegate = preset.execution.mode === "delegate";
+  // Manual presets carry their own allocation function. Delegate (Set &
+  // Forget) defers to the keeper, which runs `autoAllocate` against live
+  // gauges every epoch — so for the activation projection we run the
+  // same algorithm here. Codex P2: previously fed `activation.preview`
+  // (which is `[]` for delegate mode) into `estimateWeeklyMusdWei`, so
+  // the recommended strategy always rendered "≈ 0.00 MUSD/wk" no matter
+  // the user's veMEZO balance — silently lied to the user about the
+  // best path.
   const allocationPreview =
     preset.execution.mode === "manual"
       ? preset.execution.allocation(gauges)
-      : [];
+      : isDelegate
+        ? autoAllocate(gauges)
+        : [];
 
   const weeklyWei = estimateWeeklyMusdWei(
     position.balanceWei,
-    isDelegate ? activation.preview /* unused for delegate */ : allocationPreview,
+    allocationPreview,
     gauges,
   );
   const weeklyMusd = Number(formatUnits(weeklyWei, 18));
@@ -137,10 +147,13 @@ export function StrategyDetailModal({
             </div>
           </div>
 
-          {!isDelegate && allocationPreview.length > 0 && (
+          {allocationPreview.length > 0 && (
             <div className="space-y-1.5 rounded-lg border border-border bg-card/40 p-3">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                Allocation
+              <div className="flex items-baseline justify-between text-xs uppercase tracking-wide text-muted-foreground">
+                <span>Allocation</span>
+                {isDelegate && (
+                  <span className="text-mezo">re-balanced each epoch</span>
+                )}
               </div>
               {allocationPreview.map((entry) => {
                 const g = gauges.find((x) => x.address === entry.gauge);

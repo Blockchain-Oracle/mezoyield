@@ -174,9 +174,14 @@ export function PreferencesCard() {
 
           {/* Gas-fee boost radio */}
           <div className="space-y-2">
-            <label className="block text-sm text-foreground">
-              Gas-fee boost
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="block text-sm text-foreground">
+                Gas-fee boost
+              </label>
+              <span className="rounded-full border border-border bg-card/60 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                Coming next
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {([100, 110, 125, 150] as const).map((b) => (
                 <button
@@ -194,8 +199,10 @@ export function PreferencesCard() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Multiplier applied to viem&rsquo;s default fee suggestion. 100% =
-              estimated; 150% = aggressive (pays more to land faster).
+              Saved as a preference now; the multiplier wires into wagmi&rsquo;s
+              <code className="mx-1 font-mono">maxFeePerGas</code> /
+              <code className="ml-1 font-mono">maxPriorityFeePerGas</code> in a
+              follow-up commit. Same pattern as the notification email below.
             </p>
           </div>
 
