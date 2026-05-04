@@ -6,6 +6,7 @@ import { DelegationStatusCard } from "@/features/vault/DelegationStatusCard";
 import { ActiveStrategyCard } from "@/features/vault/ActiveStrategyCard";
 import { EarningsCard } from "@/features/vault/EarningsCard";
 import { YieldChartCard } from "@/features/vault/YieldChartCard";
+import { SimulatorPanel } from "@/features/simulator/SimulatorPanel";
 
 /**
  * Vault — your delegation state, current allocation, lifetime
@@ -60,6 +61,8 @@ function VaultInner() {
       </div>
 
       <YieldChartCard />
+
+      <SimulatorPanel />
     </div>
   );
 }
