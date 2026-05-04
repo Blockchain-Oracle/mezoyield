@@ -95,4 +95,13 @@ export const optimizerAbi = [
     ],
     anonymous: false,
   },
+  {
+    type: "event",
+    name: "VoteCast",
+    inputs: [
+      { name: "gauges", type: "address[]", indexed: false },
+      { name: "weights", type: "uint256[]", indexed: false },
+    ],
+    anonymous: false,
+  },
 ] as const;
