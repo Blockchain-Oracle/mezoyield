@@ -15,7 +15,7 @@ import { useIsDelegated } from "@/hooks/useIsDelegated";
  * State machine
  *   - Disconnected            → "Connect wallet to start"
  *   - Connected, no delegation, no allocation → "Pick a strategy → /app/strategies"
- *   - Connected, delegated    → "Set & Forget active. Keeper votes for you each Sunday."
+ *   - Connected, delegated    → "Set & Forget active. Keeper votes at every weekly epoch boundary."
  *   - Connected, has allocation (manual) → "X gauges allocated. Switch any time."
  */
 export function NextActionCard() {

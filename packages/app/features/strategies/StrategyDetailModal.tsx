@@ -180,7 +180,7 @@ export function StrategyDetailModal({
               <span>
                 {activation.isDelegated
                   ? "You're already delegated. Confirming again is a no-op but doesn't hurt."
-                  : "On confirm, you'll sign one tx to delegate voting power. The keeper bot then re-votes for you each Sunday — no further action from you."}
+                  : "On confirm, you'll sign one tx to delegate voting power. The keeper bot then re-votes for you at every weekly epoch boundary — no further action from you."}
               </span>
             </div>
           )}

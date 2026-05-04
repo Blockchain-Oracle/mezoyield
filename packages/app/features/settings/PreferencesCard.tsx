@@ -73,9 +73,10 @@ export function PreferencesCard() {
               Preferences
             </h2>
             <p className="text-sm text-muted-foreground">
-              Stored locally in your browser. Phase 7 wires the auto-compound
-              setting into the claim flow; gas boost ships with the next vote
-              you submit.
+              Stored locally in your browser. The auto-compound percentage
+              is wired into the claim preview today; gas-fee boost is saved
+              now and reads into wagmi&rsquo;s fee overrides in a follow-up
+              commit (see the Coming next badge below).
             </p>
           </div>
 
