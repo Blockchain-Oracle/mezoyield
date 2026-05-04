@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import type { Log, LogDescription, Wallet } from "ethers";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import "dotenv/config";
@@ -86,8 +87,8 @@ describeReads("Mezo testnet proof-of-functionality (live txs)", function () {
   const matchboxAbi = ["function bribeForGauge(address) view returns (uint256)"];
 
   // ---- Lazily-built signer (only needed for write tests) ----
-  let wallet: ethers.Wallet | null = null;
-  function getWallet(): ethers.Wallet {
+  let wallet: Wallet | null = null;
+  function getWallet(): Wallet {
     if (wallet) return wallet;
     const key = process.env.DEPLOYER_PRIVATE_KEY;
     if (!key) {
@@ -127,10 +128,13 @@ describeReads("Mezo testnet proof-of-functionality (live txs)", function () {
     // because Mezo's RPC sometimes returns logs without the named field
     // populated by ethers' high-level helpers.
     const iface = new ethers.Interface(optimizerAbi);
-    const events = (receipt?.logs ?? [])
-      .filter((l) => l.address.toLowerCase() === optimizerAddr.toLowerCase())
-      .map((l) => iface.parseLog({ topics: [...l.topics], data: l.data }))
-      .filter((e): e is NonNullable<typeof e> => e != null && e.name === "Delegated");
+    const events = ((receipt?.logs ?? []) as readonly Log[])
+      .filter((l: Log) => l.address.toLowerCase() === optimizerAddr.toLowerCase())
+      .map((l: Log) => iface.parseLog({ topics: [...l.topics], data: l.data }))
+      .filter(
+        (e: LogDescription | null): e is LogDescription =>
+          e != null && e.name === "Delegated",
+      );
     expect(events).to.have.length(1, "expected exactly one Delegated event");
     expect((events[0].args.user as string).toLowerCase()).to.equal(
       signer.address.toLowerCase(),
@@ -170,10 +174,10 @@ describeReads("Mezo testnet proof-of-functionality (live txs)", function () {
       // arrays as non-indexed args, so the parser hands them back as the
       // tuple we passed in.
       const iface = new ethers.Interface(optimizerAbi);
-      const evt = (receipt?.logs ?? [])
-        .filter((l) => l.address.toLowerCase() === optimizerAddr.toLowerCase())
-        .map((l) => iface.parseLog({ topics: [...l.topics], data: l.data }))
-        .find((e) => e?.name === "ManualAllocationSet");
+      const evt = ((receipt?.logs ?? []) as readonly Log[])
+        .filter((l: Log) => l.address.toLowerCase() === optimizerAddr.toLowerCase())
+        .map((l: Log) => iface.parseLog({ topics: [...l.topics], data: l.data }))
+        .find((e: LogDescription | null) => e?.name === "ManualAllocationSet");
       expect(evt, "expected ManualAllocationSet event").to.exist;
       expect((evt!.args.user as string).toLowerCase()).to.equal(
         signer.address.toLowerCase(),
@@ -211,10 +215,10 @@ describeReads("Mezo testnet proof-of-functionality (live txs)", function () {
       expect(receipt?.status).to.equal(1);
 
       const iface = new ethers.Interface(optimizerAbi);
-      const evt = (receipt?.logs ?? [])
-        .filter((l) => l.address.toLowerCase() === optimizerAddr.toLowerCase())
-        .map((l) => iface.parseLog({ topics: [...l.topics], data: l.data }))
-        .find((e) => e?.name === "VoteCast");
+      const evt = ((receipt?.logs ?? []) as readonly Log[])
+        .filter((l: Log) => l.address.toLowerCase() === optimizerAddr.toLowerCase())
+        .map((l: Log) => iface.parseLog({ topics: [...l.topics], data: l.data }))
+        .find((e: LogDescription | null) => e?.name === "VoteCast");
       expect(evt, "expected VoteCast event").to.exist;
       expect((evt!.args.gauges as string[]).map((a) => a.toLowerCase())).to.deep.equal(
         gaugesIn.map((a) => a.toLowerCase()),
