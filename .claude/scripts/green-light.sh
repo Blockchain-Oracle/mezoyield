@@ -181,6 +181,13 @@ fi
 
 pm_has impeccable && { echo "▶ slop"; pm_exec . impeccable detect --strict || fail "slop"; }
 
+# Validate the deploy contract — nixpacks.toml ↔ workspace package.json
+# files. Catches drift before it surfaces during a Coolify deploy.
+if [ -f nixpacks.toml ] && [ -x .claude/scripts/nixpacks-check.sh ]; then
+  echo "▶ deploy"
+  .claude/scripts/nixpacks-check.sh || fail "deploy"
+fi
+
 # Playwright runs only for UI stories — gate on .claude/.story-type written by story-start.sh
 # (Finding 1 — fixes the 3,021-retry case where a non-UI story tripped Playwright webServer)
 if [ -f "playwright.config.ts" ]; then
