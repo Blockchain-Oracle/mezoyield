@@ -35,11 +35,15 @@ const VOTE_CAST_EVENT = optimizerAbi.find(
 
 const CHUNK_SIZE = 9_999n;
 // Hard ceiling on backward chunks — protects against a degenerate case
-// where no VoteCast has ever been emitted. ~30 chunks × 10k blocks
-// covers ~300k blocks of testnet history (months of uptime). If the
-// keeper has never fired in that window, we surface "—" rather than
-// hammer the RPC for every block since deploy.
-const MAX_CHUNKS = 30;
+// where no VoteCast has ever been emitted. Codex P2 (PR #29): the prior
+// 30-chunk cap = ~300k blocks. Mezo testnet runs ~4s/block today, so
+// 30 chunks covered ~14 days — fine for 2 epochs but tight on faster
+// chains (a 1–2s mainnet would collapse this window below one epoch
+// and the ProofLedger would show empty for a recently-fired keeper).
+// 120 chunks = ~1.2M blocks: ~57 days on Mezo testnet, ~14 days even
+// at 1s/block. If the keeper has never fired in that window, we
+// surface "—" rather than hammer the RPC for every block since deploy.
+const MAX_CHUNKS = 120;
 
 export type LastVote = {
   txHash: `0x${string}`;
