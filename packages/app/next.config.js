@@ -16,6 +16,15 @@ const nextConfig = {
     // wagmi / WalletConnect pull node-only modules in some code paths.
     // Stub them so the browser bundle compiles cleanly.
     config.externals = [...(config.externals ?? []), "pino-pretty", "encoding"];
+    // @metamask/sdk's browser bundle conditionally imports a React Native
+    // AsyncStorage module that's not present in browser/Next contexts.
+    // The import path resolves at module load time even though the branch
+    // is never taken — alias it to `false` so webpack stubs it out.
+    config.resolve = config.resolve ?? {};
+    config.resolve.alias = {
+      ...(config.resolve.alias ?? {}),
+      "@react-native-async-storage/async-storage": false,
+    };
     return config;
   },
 };

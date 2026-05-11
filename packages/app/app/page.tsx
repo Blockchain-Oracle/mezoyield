@@ -1,47 +1,42 @@
-"use client";
+import { AppHeader } from "@/components/AppHeader/AppHeader";
+import { Hero } from "@/features/landing/Hero";
+import { Ticker } from "@/features/landing/Ticker";
+import { HowItWorks } from "@/features/landing/HowItWorks";
+import { ProofLedger } from "@/features/landing/ProofLedger";
+import { Comparison } from "@/features/landing/Comparison";
+import { LiveDataStrip } from "@/features/landing/LiveDataStrip";
+import { ProtocolEarningsChart } from "@/features/landing/ProtocolEarningsChart";
+import { FeatureGrid } from "@/features/landing/FeatureGrid";
+import { Footer } from "@/features/landing/Footer";
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { Header } from "@/components/Header";
-import { ConnectButton } from "@/components/ConnectButton";
-import { GaugeBoard } from "@/components/Dashboard/GaugeBoard";
-import { PositionCard } from "@/components/Dashboard/PositionCard";
-import { EpochCountdown } from "@/components/Dashboard/EpochCountdown";
-import { YieldChart } from "@/components/Dashboard/YieldChart";
-import { OptimizeModal } from "@/components/OptimizeModal";
-
-const TAB_TRIGGERS = (
-  <TabsList variant="line">
-    <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-    <TabsTrigger value="optimize">Optimize</TabsTrigger>
-  </TabsList>
-);
-
-export default function HomePage() {
+/**
+ * V2 landing — editorial-fintech, Bitcoin-noir energy. Composed in
+ * the order judges/visitors will read it:
+ *
+ *   1. Hero — maximalist Fraunces statement, status pulse, dual CTAs.
+ *   2. Ticker — continuously-scrolling on-chain numbers (no teeth=no win).
+ *   3. HowItWorks — 3 Fraunces-numeral steps, asymmetric staircase.
+ *   4. ProofLedger — receipts. The most recent on-chain VoteCast from
+ *      the keeper, pulled live. Replaces the old JudgeQuotes section
+ *      (quotes are soft signals, tx hashes are hard signals).
+ *   5. Comparison — Yearn-class vs MezoYield (vote-optimizer model).
+ *   6. LiveDataStrip — three live-number tiles + contract address link.
+ *   7. FeatureGrid — 4 product pillars (bento layout, lead spans 2x2).
+ *   8. Footer.
+ */
+export default function LandingPage() {
   return (
-    <Tabs defaultValue="dashboard" className="min-h-screen">
-      <Header tabs={TAB_TRIGGERS} connectSlot={<ConnectButton />} />
-
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        <TabsContent value="dashboard">
-          <div data-testid="dashboard-panel" className="space-y-6">
-            <EpochCountdown />
-            <PositionCard />
-            <YieldChart />
-            <GaugeBoard />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="optimize">
-          <div data-testid="optimize-panel" className="space-y-6">
-            <OptimizeModal />
-          </div>
-        </TabsContent>
-      </main>
-    </Tabs>
+    <div className="flex min-h-screen flex-col">
+      <AppHeader variant="landing" />
+      <Hero />
+      <Ticker />
+      <HowItWorks />
+      <ProofLedger />
+      <Comparison />
+      <LiveDataStrip />
+      <ProtocolEarningsChart />
+      <FeatureGrid />
+      <Footer />
+    </div>
   );
 }

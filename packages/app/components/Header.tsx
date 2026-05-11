@@ -9,7 +9,7 @@ export function Header({ tabs, connectSlot }: HeaderProps) {
   return (
     <header className="flex items-center justify-between border-b border-border px-6 py-4">
       <div className="flex items-baseline gap-2">
-        <span className="text-xl font-semibold tracking-tight text-[#F7931A]">
+        <span className="text-xl font-semibold tracking-tight text-mezo">
           MezoYield
         </span>
         <span className="hidden text-xs text-muted-foreground sm:inline">

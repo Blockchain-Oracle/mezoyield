@@ -77,7 +77,7 @@ export function ClaimButton() {
       className={
         noRewards
           ? "bg-muted text-muted-foreground"
-          : "bg-[#10B981] text-black hover:bg-[#22C99B]"
+          : "bg-success text-background hover:opacity-90"
       }
     >
       {label}

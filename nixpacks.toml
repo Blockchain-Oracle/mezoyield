@@ -1,0 +1,83 @@
+# MezoYield monorepo — Nixpacks build config for Coolify / Railway / Render
+#
+# Two deployable services from one repo. Set APP_NAME per Coolify
+# service so each deploy targets the right workspace:
+#
+#   app    → APP_NAME=@mezoyield/app    (Next.js 14 landing + dApp,
+#                                        Next.js auto-binds to $PORT)
+#   keeper → APP_NAME=@mezoyield/keeper (long-running cron loop that
+#                                        fires castOptimalVote weekly;
+#                                        no port — Coolify keeps the
+#                                        process alive and restarts on
+#                                        exit)
+#
+# Build-time only (NOT a separate service):
+#   @mezoyield/contracts — Hardhat + typechain. Always built first
+#   because the app's tsc walks the workspace graph and resolves
+#   typechain types (without them, CI fails before the build even
+#   starts; we hit this on PR #29 7c8d44d).
+#
+# In Coolify: set "Base Directory" to / (repo root), NOT
+# packages/<name>. Nixpacks needs the workspace root so pnpm can
+# resolve the full monorepo graph. APP_NAME picks the target.
+
+# Node version is pinned via `engines.node` in the root package.json
+# (>=20 <23). Nixpacks reads `engines.node` natively and resolves it
+# to the matching nodejs_X nix package. We deliberately do NOT define
+# a `[phases.setup]` block here — using `nixPkgs = ["...", "nodejs_20"]`
+# *extends* the auto-detected packages instead of replacing them, which
+# can leave both nodejs_18 and nodejs_20 in the closure (codex P1 on
+# round 2 of this PR). pnpm@10.33.0 comes via corepack from
+# `packageManager` in package.json.
+
+# ── Install phase ───────────────────────────────────────────────
+# onlyIncludeFiles narrows cache busting: nixpacks only rebuilds the
+# install layer when a manifest/lockfile changes, not on source
+# edits. List every workspace member's package.json — adding a path
+# that doesn't exist on disk causes Docker COPY to fail before the
+# build phase runs.
+#
+# NODE_ENV=development is required because pnpm prunes
+# devDependencies in production mode, but the build needs them
+# (typescript, vitest, hardhat, etc.).
+[phases.install]
+cmds = ["NODE_ENV=development pnpm install --frozen-lockfile"]
+cacheDirectories = [".pnpm-store"]
+onlyIncludeFiles = [
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "packages/app/package.json",
+  "packages/contracts/package.json",
+  "packages/keeper/package.json"
+]
+
+# ── Build phase ─────────────────────────────────────────────────
+# Always build contracts first — typechain types must exist before
+# the app's `next build` can resolve `@mezoyield/contracts` types.
+# Cheap (~15s) and harmless when the target is keeper, so we do it
+# unconditionally to keep the config simple.
+#
+# Then build the target workspace.
+#   app    → next build  (emits .next/)
+#   keeper → tsc -p tsconfig.json  (typecheck-only; tsx runs from
+#            src/ at start time)
+[phases.build]
+dependsOn = ["install"]
+cmds = [
+  "pnpm --filter @mezoyield/contracts --fail-if-no-match run build",
+  "pnpm --filter ${APP_NAME:-@mezoyield/app} --fail-if-no-match run build"
+]
+
+# ── Start ───────────────────────────────────────────────────────
+# Defers to each workspace's own `start` script:
+#   app    → `next start` (binds to $PORT automatically)
+#   keeper → `tsx src/index.ts` (long-running cron loop)
+#
+# `--fail-if-no-match` makes pnpm error out (instead of exiting 0
+# with "No projects matched") when APP_NAME is misspelled in
+# Coolify. Codex P2 on round 3 of this PR — without it, a typoed
+# service config would deploy as "successful" while building
+# nothing and starting no process.
+[start]
+cmd = "pnpm --filter ${APP_NAME:-@mezoyield/app} --fail-if-no-match run start"

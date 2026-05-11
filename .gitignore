@@ -26,3 +26,9 @@ packages/contracts/typechain-types/
 # treat new clones the kite-style stub-pointer way to avoid further repo bloat.)
 context/refs/repos/tigris/
 context/refs/repos/chains/
+
+# Local screenshot loops + reviewer artifacts. Anchors live in
+# screenshots/anchor/ (committed); ad-hoc runs/ and theme-*.png are not.
+runs/
+theme-dark-*.png
+theme-light-*.png

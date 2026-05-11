@@ -3,126 +3,242 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* MezoYield V2 palette — Neko-style dark surfaces with Mezo brand accent
+ * (#FF004D, sourced from mezo-org/tigris/dapp/app/page.tsx:14).
+ *
+ * Dual-mode palette: dark is the default (matches the prior look on disk),
+ * light is anchored on Mezo.org's own marketing site — white-base with
+ * the same pink #FF004D accent. next-themes is configured with
+ * `attribute="class"` so the runtime toggles between `<html class="dark">`
+ * and `<html class="light">`; we expose semantic tokens that map to the
+ * active mode via the .dark / .light selectors on :root below.
+ */
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
+    /* Type stack — Fraunces (variable serif) for display, Geist Sans
+     * for body, JetBrains Mono for addresses/numbers. CSS vars are
+     * injected by next/font (Fraunces, JetBrains_Mono) and the geist
+     * npm package (GeistSans → --font-geist-sans) in app/layout.tsx. */
+    --font-display: var(--font-display);
+    --font-heading: var(--font-display);
+    --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
     --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Extra semantic surfaces — these are referenced directly by
+     * components that previously hardcoded #121212 / #1C1C1C / #222222
+     * / etc. Mapped through CSS vars so the dark / light palettes can
+     * override them independently. */
+    --color-surface-elevated: var(--surface-elevated);
+    --color-surface-raised: var(--surface-raised);
+    --color-surface-overlay: var(--surface-overlay);
+    --color-nav-active: var(--nav-active);
+    --color-pill-base: var(--pill-base);
+
+    /* Mezo brand color — single accent. Use sparingly: active CTAs,
+     * sidebar active-item, chart accent bars, hero metric highlights.
+     * Mezo brand is the same #FF004D across modes; the soft halo
+     * lightens in light mode so it sits cleanly on white. */
+    --color-mezo: var(--mezo);
+    --color-mezo-hover: var(--mezo-hover);
+    --color-mezo-soft: var(--mezo-soft);
+
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) * 1.4);
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-}
-
+/* :root = dark mode default. next-themes lands `class="dark"` on <html>
+ * once mounted; CLAUDE.md's existing baseline already ships dark by
+ * default so this also covers the SSR pass before next-themes hydrates. */
+:root,
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --background: #0d0d0d;
+    --foreground: #f3f4f6;
+    --card: #1a1a1a;
+    --card-foreground: #f3f4f6;
+    --popover: #141414;
+    --popover-foreground: #f3f4f6;
+    --primary: #FF004D;
+    --primary-foreground: #0d0d0d;
+    --secondary: #1a1a1a;
+    --secondary-foreground: #f3f4f6;
+    --muted: #1a1a1a;
+    --muted-foreground: #9ca3af;
+    --accent: #FF004D;
+    --accent-foreground: #0d0d0d;
+    --destructive: #ef4444;
+    --border: #2a2a2a;
+    --input: #1f1f1f;
+    --ring: #FF004D;
+    --chart-1: #FF004D;
+    --chart-2: #10B981;
+    --chart-3: #F59E0B;
+    --chart-4: #6366f1;
+    --chart-5: #14b8a6;
+    --radius: 0.625rem;
+    --sidebar: #121212;
+    --sidebar-foreground: #f3f4f6;
+    --sidebar-primary: #FF004D;
+    --sidebar-primary-foreground: #0d0d0d;
+    --sidebar-accent: rgba(255, 255, 255, 0.04);
+    --sidebar-accent-foreground: #f3f4f6;
+    --sidebar-border: rgba(255, 255, 255, 0.05);
+    --sidebar-ring: #FF004D;
+
+    /* Extra semantic surfaces — referenced from components that used
+     * to hardcode raw hex. Keeps the brand palette consistent across
+     * Sidebar, MobileHeader, NavItem, Providers (toaster), etc. */
+    --surface-elevated: #121212;  /* sidebar / mobile header background */
+    --surface-raised: #1C1C1C;    /* dropdown menu surface */
+    --surface-overlay: #222222;   /* active nav-item pill background */
+    --nav-active: #222222;
+    --pill-base: #0F0F0F;
+    --mezo: #FF004D;
+    --mezo-hover: #FF2666;
+    --mezo-soft: rgba(255, 0, 77, 0.12);
+}
+
+/* Light palette — Mezo.org's marketing site is white-base with the same
+ * pink accent. Trigger via next-themes' default `class="light"` on <html>. */
+.light {
+    --background: #FFFFFF;
+    --foreground: #0D0D0D;
+    --card: #F7F7F8;
+    --card-foreground: #0D0D0D;
+    --popover: #FFFFFF;
+    --popover-foreground: #0D0D0D;
+    --primary: #FF004D;
+    --primary-foreground: #FFFFFF;
+    --secondary: #F7F7F8;
+    --secondary-foreground: #0D0D0D;
+    --muted: #F1F2F4;
+    --muted-foreground: #5B616E;
+    --accent: #FF004D;
+    --accent-foreground: #FFFFFF;
+    --destructive: #DC2626;
+    --border: #E5E7EB;
+    --input: #F1F2F4;
+    --ring: #FF004D;
+    --chart-1: #FF004D;
+    --chart-2: #059669;
+    --chart-3: #D97706;
+    --chart-4: #4F46E5;
+    --chart-5: #0D9488;
+    /* Sidebar intentionally stays dark in light mode — Linear / Vercel /
+     * GitHub "dashboard chrome" convention. Frames the light main content
+     * like a Mac menubar. Tokens mirror the dark-mode definitions above. */
+    --sidebar: #121212;
+    --sidebar-foreground: #f3f4f6;
+    --sidebar-primary: #FF004D;
+    --sidebar-primary-foreground: #0d0d0d;
+    --sidebar-accent: rgba(255, 255, 255, 0.04);
+    --sidebar-accent-foreground: #f3f4f6;
+    --sidebar-border: rgba(255, 255, 255, 0.05);
+    --sidebar-ring: #FF004D;
+
+    --surface-elevated: #F7F7F8;
+    --surface-raised: #FFFFFF;
+    --surface-overlay: #ECEDF0;
+    --nav-active: #ECEDF0;
+    --pill-base: #ECEDF0;
+    --mezo: #FF004D;
+    --mezo-hover: #E50045;
+    --mezo-soft: #FFE5EC;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+    html {
+        @apply font-sans;
     }
-  html {
-    @apply font-sans;
+    html.dark {
+        color-scheme: dark;
+    }
+    html.light {
+        color-scheme: light;
+    }
+    body {
+        @apply bg-background text-foreground antialiased;
+    }
+}
+
+/* Landing ticker — continuous-scroll marquee. The duplicated content
+ * lives inside the same flex row so we just translate -50% to seamlessly
+ * loop. Slightly faster than typical (60s) since the row is short and
+ * we want the eye to feel motion without distraction. */
+@keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+.animate-ticker {
+    animation: ticker-scroll 45s linear infinite;
+    will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+    .animate-ticker { animation: none; }
+}
+
+/* Landing hero reveal — staggered fade-up on first paint. The skill
+ * called this out: "one well-orchestrated page load with staggered
+ * reveals creates more delight than scattered micro-interactions." */
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-fade-up {
+    animation: fade-up 0.7s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-up {
+        animation: none;
+        opacity: 1;
+        transform: none;
     }
 }
