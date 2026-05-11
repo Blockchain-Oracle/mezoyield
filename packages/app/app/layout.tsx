@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
+import { ThemeProviderClient } from "@/components/ThemeProviderClient";
 
 /**
  * Type system — committed to aesthetic, not defaults.
@@ -44,8 +45,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn(
-        "dark font-sans",
+        "font-sans",
         fraunces.variable,
         GeistSans.variable,
         jetbrains.variable,
@@ -64,7 +66,13 @@ export default function RootLayout({
           aria-hidden
           className="pointer-events-none fixed inset-0 -z-10 opacity-[0.035] mix-blend-overlay [background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><filter id=%22n%22><feTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%222%22 stitchTiles=%22stitch%22/></filter><rect width=%22120%22 height=%22120%22 filter=%22url(%23n)%22 opacity=%220.6%22/></svg>')]"
         />
-        <Providers>{children}</Providers>
+        {/* ThemeProvider sits OUTSIDE the lazy wagmi/Passport stack so
+         * it can take effect on the SSR pass + first paint. Toggling
+         * the theme class on <html> never depends on the wallet stack
+         * being mounted. */}
+        <ThemeProviderClient>
+          <Providers>{children}</Providers>
+        </ThemeProviderClient>
       </body>
     </html>
   );

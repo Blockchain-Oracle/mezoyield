@@ -22,7 +22,7 @@ export function Ticker() {
     return (
       <div
         aria-hidden
-        className="flex h-9 items-center justify-center border-y border-white/5 bg-black/40 font-mono text-[11px] uppercase tracking-[0.18em] text-white/30"
+        className="flex h-9 items-center justify-center border-y border-foreground/5 bg-black/40 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground"
       >
         booting on-chain feed…
       </div>
@@ -61,15 +61,15 @@ function TickerInner() {
   return (
     <div
       aria-hidden
-      className="relative isolate flex h-9 items-center overflow-hidden border-y border-white/5 bg-black/40"
+      className="relative isolate flex h-9 items-center overflow-hidden border-y border-foreground/5 bg-black/40"
     >
       <div className="flex shrink-0 animate-ticker gap-12 whitespace-nowrap px-6 font-mono text-[11px] uppercase tracking-[0.18em]">
         {[...items, ...items].map((item, i) => (
           <span key={i} className="flex items-center gap-2">
             <span
-              className={`h-1 w-1 rounded-full ${item.tone === "mezo" ? "bg-mezo" : "bg-white/30"}`}
+              className={`h-1 w-1 rounded-full ${item.tone === "mezo" ? "bg-mezo" : "bg-foreground/30"}`}
             />
-            <span className="text-white/40">{item.label}</span>
+            <span className="text-muted-foreground">{item.label}</span>
             <span className={item.tone === "mezo" ? "text-mezo" : "text-foreground"}>
               {item.value}
             </span>

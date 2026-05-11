@@ -15,7 +15,7 @@ export function SetupCard() {
 
   return (
     <div className={CARD_STYLES}>
-      <p className="mb-6 text-base font-bold leading-snug text-black">
+      <p className="mb-6 text-base font-bold leading-snug text-card-foreground">
         Connect your wallet
         <br />
         to get started!

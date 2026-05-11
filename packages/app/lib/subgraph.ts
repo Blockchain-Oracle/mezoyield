@@ -70,6 +70,84 @@ export async function fetchGaugesFromSubgraph(): Promise<Gauge[] | null> {
 }
 
 /**
+ * Protocol-aggregate yield history fetched from Goldsky. Returns the
+ * total MUSD claimed across ALL accounts on the optimizer, bucketed by
+ * Unix-aligned epoch, plus the count of unique claimants.
+ *
+ * Endpoint env: `NEXT_PUBLIC_GOLDSKY_PROTOCOL_URL`. Unset by default,
+ * same posture as `NEXT_PUBLIC_GOLDSKY_GAUGES_URL` — the protocol
+ * subgraph isn't published yet, so the RPC fallback in
+ * `useProtocolYieldHistory` is the primary path on the demo build. Drop
+ * the URL into `.env.local` once a subgraph is published; the hook
+ * picks it up without a code change.
+ *
+ * Returns `null` to signal "no endpoint configured" (so the hook falls
+ * through cleanly), `[]` for "configured but no events yet", and throws
+ * for network/HTTP errors.
+ */
+export type ProtocolYieldSubgraphResponse = {
+  /** Per-epoch totals (epoch index = floor(ts / 604_800)). */
+  epochs: Array<{ epoch: number; musdWei: bigint }>;
+  /** Distinct claimants observed across the indexed window. */
+  uniqueClaimants: number;
+  /** Latest claim's blockTimestamp (Unix seconds). Anchor input. */
+  anchorTimestamp: bigint;
+};
+
+export async function fetchProtocolYieldHistoryFromSubgraph(): Promise<ProtocolYieldSubgraphResponse | null> {
+  const endpoint = process.env.NEXT_PUBLIC_GOLDSKY_PROTOCOL_URL;
+  if (!endpoint) return null;
+
+  const query = /* GraphQL */ `
+    query ProtocolYieldHistory {
+      rewardsClaimedAggregates(first: 200, orderBy: epoch, orderDirection: desc) {
+        epoch
+        totalMusd
+      }
+      protocolStats(id: "stats") {
+        uniqueClaimants
+        latestClaimTimestamp
+      }
+    }
+  `;
+
+  type Row = { epoch: string | number; totalMusd: string };
+  type Stats = { uniqueClaimants: string | number; latestClaimTimestamp: string | number };
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Goldsky returned ${res.status} ${res.statusText} for the protocol-yield query.`,
+    );
+  }
+  const body = (await res.json()) as {
+    data?: {
+      rewardsClaimedAggregates?: Row[];
+      protocolStats?: Stats | null;
+    };
+    errors?: unknown[];
+  };
+  if (body.errors?.length) {
+    throw new Error(
+      `Goldsky subgraph returned errors: ${JSON.stringify(body.errors)}`,
+    );
+  }
+  const rows = body.data?.rewardsClaimedAggregates ?? [];
+  const stats = body.data?.protocolStats ?? null;
+  return {
+    epochs: rows.map((r) => ({
+      epoch: Number(r.epoch),
+      musdWei: BigInt(r.totalMusd),
+    })),
+    uniqueClaimants: stats ? Number(stats.uniqueClaimants) : 0,
+    anchorTimestamp: stats ? BigInt(stats.latestClaimTimestamp) : 0n,
+  };
+}
+
+/**
  * APY formula from story-005:
  *   apyAnnualized = (bribeMUSD / totalVeMezo) * 52
  * Returned as a percentage (0–∞) rounded to one decimal. `null` when

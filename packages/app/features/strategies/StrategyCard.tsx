@@ -17,6 +17,7 @@ import {
   TOTAL_BPS,
 } from "@/lib/optimize";
 import type { Gauge } from "@/lib/types";
+import { useProtocolStrategyMix } from "@/hooks/useProtocolStrategyMix";
 import {
   type StrategyPreset,
   CUSTOM_ID,
@@ -38,7 +39,7 @@ const RISK_BADGE: Record<
   low: { className: "bg-emerald-500/10 text-emerald-400" },
   medium: { className: "bg-amber-500/10 text-amber-400" },
   high: { className: "bg-red-500/10 text-red-400" },
-  neutral: { className: "bg-white/10 text-white/70" },
+  neutral: { className: "bg-foreground/10 text-foreground/70" },
 };
 
 const BASELINE_VEMEZO_WEI = 1000n * 10n ** 18n;
@@ -71,6 +72,13 @@ export function StrategyCard({
   const isFeatured = preset.id === SET_AND_FORGET_ID;
   const isCustom = preset.id === CUSTOM_ID;
 
+  // Protocol-aggregate share of veMEZO routed through this strategy. The
+  // hook returns `[]` and `null` below the noise floor — when that
+  // happens, hide the share line entirely rather than rendering "0%".
+  const { mix, mostUsedStrategyId } = useProtocolStrategyMix();
+  const share = mix.find((m) => m.strategyId === preset.id);
+  const isMostUsed = mostUsedStrategyId === preset.id;
+
   return (
     <Card
       className={cn(
@@ -83,13 +91,25 @@ export function StrategyCard({
           <CardTitle className="text-lg font-semibold text-foreground">
             {preset.name}
           </CardTitle>
-          <Badge className={RISK_BADGE[preset.riskTone].className}>
-            {preset.riskLabel}
-          </Badge>
+          <div className="flex items-center gap-1.5">
+            {isMostUsed && (
+              <Badge className="bg-mezo/15 text-mezo">
+                most used
+              </Badge>
+            )}
+            <Badge className={RISK_BADGE[preset.riskTone].className}>
+              {preset.riskLabel}
+            </Badge>
+          </div>
         </div>
         <CardDescription className="text-sm text-muted-foreground">
           {preset.tagline}
         </CardDescription>
+        {share && (
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            {share.percent}% of protocol veMEZO routes here
+          </p>
+        )}
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col gap-4">

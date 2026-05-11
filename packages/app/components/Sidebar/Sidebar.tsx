@@ -9,12 +9,13 @@ import { SidebarLogo } from "./SidebarLogo";
 import { NavItem } from "./NavItem";
 import { ConnectedCard } from "./ConnectedCard";
 import { SetupCard } from "./SetupCard";
+import { ThemeToggle } from "@/components/AppHeader/ThemeToggle";
 
 export const SIDEBAR_WIDTH = "270px";
 
 /**
  * Adapted from Neko's `Sidebar.tsx` — same fixed-left rail, same
- * 270px width, same border-r `border-white/5` on `bg-[#121212]`,
+ * 270px width, same border-r `border-border` on `bg-sidebar`,
  * same logo / nav / wallet-card composition.
  *
  * Wagmi hooks (useAccount / useDisconnect) live in `WalletStateCard`
@@ -34,7 +35,7 @@ export function Sidebar() {
       : pathname === href || pathname?.startsWith(`${href}/`);
 
   return (
-    <aside className="hidden lg:flex fixed left-0 top-0 z-40 h-screen w-[270px] flex-col border-r border-white/5 bg-[#121212]">
+    <aside className="hidden lg:flex fixed left-0 top-0 z-40 h-screen w-[270px] flex-col border-r border-border bg-sidebar">
       <SidebarLogo />
 
       <nav className="flex flex-1 flex-col gap-1 px-3 min-h-0 overflow-y-auto">
@@ -49,7 +50,11 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-4 pt-6 overflow-y-auto">
+      <div className="px-4 pb-3">
+        <ThemeToggle />
+      </div>
+
+      <div className="p-4 pt-3 overflow-y-auto">
         {walletReady ? <WalletStateCard /> : <SetupCardSkeleton />}
       </div>
     </aside>
@@ -86,7 +91,7 @@ function SetupCardSkeleton() {
   return (
     <div
       aria-hidden
-      className="rounded-[20px] bg-[#D3D3D3]/40 p-5 animate-pulse"
+      className="rounded-[20px] bg-muted/60 p-5 animate-pulse"
       style={{ minHeight: 140 }}
     />
   );

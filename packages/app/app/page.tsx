@@ -1,9 +1,11 @@
+import { AppHeader } from "@/components/AppHeader/AppHeader";
 import { Hero } from "@/features/landing/Hero";
 import { Ticker } from "@/features/landing/Ticker";
 import { HowItWorks } from "@/features/landing/HowItWorks";
 import { ProofLedger } from "@/features/landing/ProofLedger";
 import { Comparison } from "@/features/landing/Comparison";
 import { LiveDataStrip } from "@/features/landing/LiveDataStrip";
+import { ProtocolEarningsChart } from "@/features/landing/ProtocolEarningsChart";
 import { FeatureGrid } from "@/features/landing/FeatureGrid";
 import { Footer } from "@/features/landing/Footer";
 
@@ -25,12 +27,14 @@ import { Footer } from "@/features/landing/Footer";
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col">
+      <AppHeader variant="landing" />
       <Hero />
       <Ticker />
       <HowItWorks />
       <ProofLedger />
       <Comparison />
       <LiveDataStrip />
+      <ProtocolEarningsChart />
       <FeatureGrid />
       <Footer />
     </div>

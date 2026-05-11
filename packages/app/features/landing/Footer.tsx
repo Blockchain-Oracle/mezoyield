@@ -60,6 +60,14 @@ export function Footer() {
                   Bribe market
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/docs"
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Docs
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -28,7 +28,7 @@ export function ConnectedCard({ address, onDisconnect }: ConnectedCardProps) {
 
   return (
     <div className={CARD_STYLES}>
-      <p className="mb-4 text-base font-bold leading-snug text-black">
+      <p className="mb-4 text-base font-bold leading-snug text-card-foreground">
         You&apos;re
         <br />
         connected with:
@@ -50,12 +50,12 @@ export function ConnectedCard({ address, onDisconnect }: ConnectedCardProps) {
           open ? "max-h-40 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
         }`}
       >
-        <div className="flex flex-col gap-2 rounded-2xl bg-black/10 px-4 py-3">
+        <div className="flex flex-col gap-2 rounded-2xl bg-muted/40 px-4 py-3">
           <div className="flex items-center gap-2">
             <span
               className={`h-2 w-2 rounded-full ${IS_TESTNET ? "bg-yellow-400" : "bg-green-400"}`}
             />
-            <span className="text-xs font-semibold text-black/60">
+            <span className="text-xs font-semibold text-muted-foreground">
               {IS_TESTNET ? "Testnet" : "Mainnet"}
             </span>
           </div>
@@ -63,7 +63,7 @@ export function ConnectedCard({ address, onDisconnect }: ConnectedCardProps) {
           <button
             type="button"
             onClick={onDisconnect}
-            className="flex items-center gap-2 text-sm font-semibold text-red-600 hover:text-red-700 transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-sm font-semibold text-destructive hover:opacity-80 transition-opacity cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             Disconnect
@@ -81,7 +81,7 @@ export function ConnectedCard({ address, onDisconnect }: ConnectedCardProps) {
               "noopener,noreferrer",
             )
           }
-          className="flex w-full items-center justify-between rounded-full bg-mezo px-5 py-3 text-sm font-semibold text-white cursor-pointer transition-colors hover:bg-mezo-hover"
+          className="flex w-full items-center justify-between rounded-full bg-mezo px-5 py-3 text-sm font-semibold text-primary-foreground cursor-pointer transition-colors hover:bg-mezo-hover"
         >
           <span>Feedback</span>
           <ArrowRight className="ml-2 h-4 w-4 shrink-0" />

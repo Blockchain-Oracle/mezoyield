@@ -11,8 +11,9 @@ interface NavItemProps {
 
 /**
  * Adapted from Neko's `NavItem.tsx` — same pill structure, same active
- * state (#222222 background, full pill radius, white text). No color
- * change needed: Neko uses neutral grays here, not blue.
+ * state (overlay surface, full pill radius). Now token-driven via
+ * `bg-nav-active` so the pill stays legible in both light and dark
+ * mode.
  */
 export function NavItem({ label, href, icon: Icon, isActive }: NavItemProps) {
   return (
@@ -21,19 +22,15 @@ export function NavItem({ label, href, icon: Icon, isActive }: NavItemProps) {
       className={cn(
         "flex items-center gap-3 px-4 py-3 text-base font-medium transition-colors duration-150",
         isActive
-          ? "text-white"
-          : "text-white/35 hover:text-white/65",
+          ? "bg-sidebar-accent text-sidebar-foreground"
+          : "text-sidebar-foreground/60 hover:text-sidebar-foreground",
       )}
-      style={
-        isActive
-          ? { background: "#222222", borderRadius: "84px" }
-          : { borderRadius: "84px" }
-      }
+      style={{ borderRadius: "84px" }}
     >
       <Icon
         className={cn(
           "h-5 w-5 shrink-0",
-          isActive ? "text-white" : "text-white/35",
+          isActive ? "text-sidebar-foreground" : "text-sidebar-foreground/60",
         )}
       />
       {label}

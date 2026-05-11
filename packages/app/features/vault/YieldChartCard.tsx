@@ -87,29 +87,30 @@ export function YieldChartCard() {
               margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
             >
               <CartesianGrid
-                stroke="#2A2A2A"
+                stroke="var(--color-border)"
                 strokeDasharray="3 3"
                 vertical={false}
               />
               <XAxis
                 dataKey="label"
-                stroke="#9CA3AF"
+                stroke="var(--color-muted-foreground)"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                stroke="#9CA3AF"
+                stroke="var(--color-muted-foreground)"
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: number) => v.toFixed(2)}
               />
               <Tooltip
-                cursor={{ fill: "rgba(255, 255, 255, 0.04)" }}
+                cursor={{ fill: "var(--color-muted)" }}
                 contentStyle={{
-                  backgroundColor: "#0d0d0d",
-                  border: "1px solid #2a2a2a",
+                  backgroundColor: "var(--color-background)",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-foreground)",
                   fontSize: 12,
                 }}
                 formatter={(value) => {
@@ -117,7 +118,7 @@ export function YieldChartCard() {
                   return [`${n.toFixed(2)} MUSD`, "Earned"];
                 }}
               />
-              <Bar dataKey="musd" fill="#FF004D" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="musd" fill="var(--color-mezo)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

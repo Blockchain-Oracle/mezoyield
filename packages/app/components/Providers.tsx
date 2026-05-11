@@ -6,11 +6,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 import { Toaster } from "sonner";
+import { useTheme } from "next-themes";
 
 import { wagmiConfig, mezoTestnet } from "@/lib/wagmi";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
+  const { resolvedTheme } = useTheme();
+  // Sonner's `theme` prop drives its built-in palette. Mirror next-themes'
+  // resolved value so toasts track the rest of the UI without us reaching
+  // for hardcoded hex.
+  const toasterTheme = resolvedTheme === "light" ? "light" : "dark";
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -18,13 +24,13 @@ export function Providers({ children }: { children: ReactNode }) {
         <RainbowKitProvider initialChain={mezoTestnet}>
           {children}
           <Toaster
-            theme="dark"
+            theme={toasterTheme}
             position="top-right"
             toastOptions={{
               style: {
-                background: "#1A1A1A",
-                border: "1px solid #2A2A2A",
-                color: "#FFFFFF",
+                background: "var(--color-card)",
+                border: "1px solid var(--color-border)",
+                color: "var(--color-foreground)",
               },
             }}
           />

@@ -1,11 +1,13 @@
 "use client";
 
+import { useAccount } from "wagmi";
 import { useWalletReady } from "@/app/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PositionSummary } from "@/features/dashboard/PositionSummary";
 import { EpochCountdownStrip } from "@/features/dashboard/EpochCountdownStrip";
 import { NextActionCard } from "@/features/dashboard/NextActionCard";
 import { PendingClaimCard } from "@/features/dashboard/PendingClaimCard";
+import { ExampleUserRow } from "@/features/dashboard/ExampleUserRow";
 
 /**
  * Dashboard — at-a-glance view: hero metrics, epoch countdown, next
@@ -40,6 +42,7 @@ function DashboardSkeleton() {
 }
 
 function DashboardInner() {
+  const { isConnected } = useAccount();
   return (
     <div className="space-y-6">
       <header className="space-y-2">
@@ -55,6 +58,8 @@ function DashboardInner() {
           autopilot.
         </p>
       </header>
+
+      {!isConnected && <ExampleUserRow />}
 
       <PositionSummary />
       <EpochCountdownStrip />

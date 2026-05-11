@@ -9,7 +9,9 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { cn, truncateAddress } from "@/lib/utils";
 import { useWalletReady } from "@/app/providers";
 import { NAV_ITEMS } from "./sidebarConfig";
+import { NetworkPill } from "./NetworkPill";
 import { MEZO_CHAIN_ID } from "@/lib/contracts";
+import { ThemeToggle } from "@/components/AppHeader/ThemeToggle";
 
 const IS_TESTNET = MEZO_CHAIN_ID === 31611;
 
@@ -37,7 +39,7 @@ function MobileHeaderSkeleton() {
   return (
     <header
       aria-hidden
-      className="lg:hidden fixed top-0 left-0 right-0 z-50 h-20 border-b border-white/5 bg-[#121212]"
+      className="lg:hidden fixed top-0 left-0 right-0 z-50 h-20 border-b border-border bg-sidebar"
     />
   );
 }
@@ -90,9 +92,9 @@ function MobileHeaderInner() {
 
   return (
     <>
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 flex flex-col border-b border-white/5 bg-[#121212] pt-6">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 flex flex-col border-b border-border bg-sidebar pt-6">
         <div className="flex h-14 min-h-14 justify-between items-center pr-1.5 sm:px-4">
-          <div className="min-w-0 items-center justify-start">
+          <div className="flex min-w-0 flex-col items-start justify-center gap-1">
             <Link
               href="/"
               className="flex shrink-0 items-center pl-3"
@@ -102,6 +104,9 @@ function MobileHeaderInner() {
                 Mezo<span className="text-mezo">Yield</span>
               </span>
             </Link>
+            <div className="hidden sm:block sm:pl-3">
+              <NetworkPill />
+            </div>
           </div>
 
           <div className="relative min-w-0 mr-6" ref={walletButtonRef}>
@@ -110,7 +115,7 @@ function MobileHeaderInner() {
                 <button
                   type="button"
                   onClick={() => setWalletDropdownOpen((v) => !v)}
-                  className="flex max-w-full items-center justify-center gap-1.5 rounded-full bg-mezo px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-mezo-hover transition-colors sm:min-w-[100px] sm:gap-2 sm:px-3"
+                  className="flex max-w-full items-center justify-center gap-1.5 rounded-full bg-mezo px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-mezo-hover transition-colors sm:min-w-[100px] sm:gap-2 sm:px-3"
                 >
                   <span
                     className="h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400"
@@ -123,11 +128,11 @@ function MobileHeaderInner() {
                 </button>
                 {walletDropdownOpen && (
                   <div
-                    className="absolute left-1/2 top-full z-50 mt-1.5 w-max -translate-x-1/2 rounded-lg border border-white/10 bg-[#1C1C1C] px-3 py-2 shadow-xl"
+                    className="absolute left-1/2 top-full z-50 mt-1.5 w-max -translate-x-1/2 rounded-lg border border-border bg-surface-raised px-3 py-2 shadow-xl"
                     role="menu"
                   >
                     <div className="flex items-center gap-3 whitespace-nowrap text-xs">
-                      <span className="font-medium text-white/50">
+                      <span className="font-medium text-muted-foreground">
                         {IS_TESTNET ? "Testnet" : "Mainnet"}
                       </span>
                       <button
@@ -136,7 +141,7 @@ function MobileHeaderInner() {
                           disconnect();
                           setWalletDropdownOpen(false);
                         }}
-                        className="flex items-center gap-1.5 font-medium text-red-400 hover:text-red-300 transition-colors"
+                        className="flex items-center gap-1.5 font-medium text-destructive hover:opacity-80 transition-opacity"
                         role="menuitem"
                       >
                         <LogOut className="h-3.5 w-3.5 shrink-0" />
@@ -150,19 +155,20 @@ function MobileHeaderInner() {
               <button
                 type="button"
                 onClick={() => openConnectModal?.()}
-                className="whitespace-nowrap rounded-full self-center bg-mezo px-3 py-1.5 text-xs font-semibold text-white hover:bg-mezo-hover transition-colors sm:px-4 sm:py-2 sm:text-sm"
+                className="whitespace-nowrap rounded-full self-center bg-mezo px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-mezo-hover transition-colors sm:px-4 sm:py-2 sm:text-sm"
               >
                 Connect Wallet
               </button>
             )}
           </div>
 
-          <div className="min-w-0 justify-end">
+          <div className="flex items-center gap-1 min-w-0 justify-end">
+            <ThemeToggle />
             <button
               type="button"
               onClick={() => setIsOpen((v) => !v)}
               aria-label="Toggle menu"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white transition-colors hover:bg-white/10 sm:h-12 sm:w-12"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-foreground/10 sm:h-12 sm:w-12"
             >
               {isOpen ? (
                 <X className="h-6 w-6 sm:h-7 sm:w-7" />
@@ -187,7 +193,7 @@ function MobileHeaderInner() {
       <div
         ref={menuRef}
         className={cn(
-          "lg:hidden fixed left-0 right-0 top-20 z-50 bg-[#121212] border-b border-white/5 overflow-hidden",
+          "lg:hidden fixed left-0 right-0 top-20 z-50 bg-sidebar border-b border-border overflow-hidden",
           "transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
           isOpen
             ? "translate-y-0 opacity-100"
@@ -204,18 +210,16 @@ function MobileHeaderInner() {
                 href={href}
                 className={cn(
                   "flex w-full items-center justify-start gap-4 rounded-2xl px-4 py-4 text-lg font-medium transition-colors duration-150 sm:px-6",
-                  active ? "text-white" : "text-white/35 hover:text-white/65",
-                )}
-                style={
                   active
-                    ? { background: "#222222", borderRadius: "24px" }
-                    : { borderRadius: "24px" }
-                }
+                    ? "bg-nav-active text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                style={{ borderRadius: "24px" }}
               >
                 <Icon
                   className={cn(
                     "h-6 w-6 shrink-0",
-                    active ? "text-white" : "text-white/35",
+                    active ? "text-foreground" : "text-muted-foreground",
                   )}
                 />
                 {label}

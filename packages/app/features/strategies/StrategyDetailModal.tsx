@@ -114,7 +114,7 @@ export function StrategyDetailModal({
                 preset.riskTone === "low" && "bg-emerald-500/10 text-emerald-400",
                 preset.riskTone === "medium" && "bg-amber-500/10 text-amber-400",
                 preset.riskTone === "high" && "bg-red-500/10 text-red-400",
-                preset.riskTone === "neutral" && "bg-white/10 text-white/70",
+                preset.riskTone === "neutral" && "bg-foreground/10 text-foreground/70",
               )}
             >
               {preset.riskLabel}

@@ -39,7 +39,7 @@ export function Hero() {
        * eye and gives the page a Wall-Street-Journal-masthead feel. */}
       <div
         aria-hidden
-        className="hidden xl:block absolute left-8 top-1/2 -translate-y-1/2 origin-left -rotate-90 text-[10px] uppercase tracking-[0.4em] text-white/40"
+        className="hidden xl:block absolute left-8 top-1/2 -translate-y-1/2 origin-left -rotate-90 text-[10px] uppercase tracking-[0.4em] text-muted-foreground"
       >
         MezoYield <span className="text-mezo">‖</span> Est. 2026 · Mezo MEZO Track
       </div>
@@ -125,7 +125,7 @@ export function Hero() {
 
         {/* Three-up credibility row — short, punchy, real */}
         <div
-          className="mt-14 grid w-full max-w-2xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/5 bg-white/5 animate-fade-up"
+          className="mt-14 grid w-full max-w-2xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-foreground/5 bg-foreground/5 animate-fade-up"
           style={{ animationDelay: "460ms" }}
         >
           {[
@@ -134,7 +134,7 @@ export function Hero() {
             { label: "Keeper", value: "Voted on chain" },
           ].map((item) => (
             <div key={item.label} className="bg-background px-4 py-3 text-left">
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/40">
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">
                 {item.label}
               </p>
               <p className="mt-1 text-sm font-medium text-foreground">
