@@ -44,7 +44,16 @@ contract MatchboxAdapter is IMatchbox {
 
     address[] private _trackedGauges;
 
+    // Per-gauge cached bribe amount in `rewardToken` (MUSD on mainnet).
+    // The keeper's `loadGauges` reads this via `bribeForGauge(gauge)` to
+    // score each gauge for optimal vote allocation. Same shape as testnet's
+    // MockMatchbox — owner-managed because Mezo mainnet has no
+    // protocol-wide bribe getter (per-gauge BribeVotingReward only
+    // exposes `earned(token, tokenId)` which requires a vote source).
+    mapping(address => uint256) private _bribeForGauge;
+
     event TrackedGaugesSet(uint256 count);
+    event BribeUpdated(address indexed gauge, uint256 amount);
     event OwnerTransferred(address indexed previousOwner, address indexed newOwner);
 
     error NotOwner();
@@ -85,6 +94,29 @@ contract MatchboxAdapter is IMatchbox {
 
     function trackedGaugeAt(uint256 index) external view returns (address) {
         return _trackedGauges[index];
+    }
+
+    /// @notice Current bribe MUSD attributed to `gauge`. Used by the
+    /// keeper's `loadGauges` + frontend's `useGaugeData` to score
+    /// gauges for vote allocation. Returns 0 for unknown gauges.
+    function bribeForGauge(address gauge) external view returns (uint256) {
+        return _bribeForGauge[gauge];
+    }
+
+    /// @notice Owner updates the cached bribe per gauge. Typically
+    /// called by an off-chain refresh process at epoch boundaries.
+    function setBribeForGauge(address gauge, uint256 amount) external onlyOwner {
+        _bribeForGauge[gauge] = amount;
+        emit BribeUpdated(gauge, amount);
+    }
+
+    /// @notice Batch helper — same as calling setBribeForGauge in a loop.
+    function setBribesForGauges(address[] calldata gauges_, uint256[] calldata amounts) external onlyOwner {
+        require(gauges_.length == amounts.length, "length mismatch");
+        for (uint256 i; i < gauges_.length; ++i) {
+            _bribeForGauge[gauges_[i]] = amounts[i];
+            emit BribeUpdated(gauges_[i], amounts[i]);
+        }
     }
 
     /// @inheritdoc IMatchbox
