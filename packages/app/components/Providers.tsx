@@ -8,7 +8,7 @@ import "@rainbow-me/rainbowkit/styles.css";
 import { Toaster } from "sonner";
 import { useTheme } from "next-themes";
 
-import { wagmiConfig, mezoTestnet } from "@/lib/wagmi";
+import { wagmiConfig, activeChain } from "@/lib/wagmi";
 import { ChainMismatchBanner } from "@/components/ChainMismatchBanner";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -22,7 +22,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider initialChain={mezoTestnet}>
+        <RainbowKitProvider initialChain={activeChain}>
           {/* Banner self-mounts (returns null) when wallet is on Mezo
              or disconnected. Sits above all routed children so the
              #38 auto-add-chain prompt and its retry surface are visible

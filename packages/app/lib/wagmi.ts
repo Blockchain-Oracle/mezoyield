@@ -1,4 +1,5 @@
-import { getConfig, mezoTestnet } from "@mezo-org/passport";
+import { getConfig, mezoMainnet, mezoTestnet } from "@mezo-org/passport";
+import { MEZO_NETWORK } from "@/lib/contracts";
 
 // Sentinel placeholder used in dev/test only. RainbowKit refuses to build
 // the WalletConnect connector when the projectId is falsy, so we need a
@@ -33,12 +34,35 @@ if (!envProjectId) {
 
 const walletConnectProjectId = envProjectId ?? DEV_WC_PLACEHOLDER;
 
+// `MEZO_NETWORK` is the same env-var-driven constant `contracts.ts` uses
+// to pick its deployment manifest — passing it here keeps the wallet
+// connector pinned to the same chain the rest of the app is reading
+// from, so a "testnet build" can't accidentally surface a mainnet
+// connect dialog.
 export const wagmiConfig = getConfig({
   appName: "MezoYield",
   appDescription:
     "Set-and-forget MEZO yield — auto-vote your veMEZO every epoch, claim in MUSD.",
-  mezoNetwork: "testnet",
+  mezoNetwork: MEZO_NETWORK,
   walletConnectProjectId,
 });
 
-export { mezoTestnet };
+// `activeChain` is the chain object matching the build's
+// `NEXT_PUBLIC_MEZO_NETWORK`. RainbowKit's `initialChain` prop must
+// reference a chain that exists in the wagmi config — and `getConfig`
+// above only registers ONE chain (testnet OR mainnet), so a mainnet
+// build that passes `mezoTestnet` here would fail to connect (chain
+// 31611 not in config). Codex P2 (pre-push): the old code imported
+// `mezoTestnet` directly from this module, baking the testnet chain
+// into Providers.tsx regardless of which network the build targets.
+// `activeChain` is the one safe import for that consumer.
+export const activeChain =
+  process.env.NEXT_PUBLIC_MEZO_NETWORK === "mainnet"
+    ? mezoMainnet
+    : mezoTestnet;
+
+// Named re-exports kept for static lookups (chain whitelists, ticker
+// labels, etc.). Consumers wiring wagmi-aware providers should use
+// `activeChain` instead so the wallet connector never points at a
+// chain absent from the active config.
+export { mezoMainnet, mezoTestnet };
