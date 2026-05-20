@@ -134,6 +134,16 @@ export function useActivateStrategy({
     setErrorMessage(undefined);
     try {
       if (preset.execution.mode === "delegate") {
+        // Skip the delegate tx when the user is already opted in.
+        // `delegate(user)` is idempotent on-chain (the contract just
+        // sets `isDelegated[user] = true`), so a second call would
+        // succeed but pop a redundant MetaMask prompt for no behavioral
+        // change. Surfaced by Abu in manual testing on testnet — the
+        // hook reads `isDelegated` but never short-circuited the write.
+        if (delegatedQuery.data) {
+          setPhase("success");
+          return;
+        }
         setPhase("writing");
         const hash = await writeContractAsync({
           address: OPTIMIZER_ADDRESS,
