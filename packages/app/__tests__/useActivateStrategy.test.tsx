@@ -173,4 +173,37 @@ describe("useActivateStrategy", () => {
     );
     expect(result.current.isDelegated).toBe(true);
   });
+
+  // Regression: surfaced by Abu in manual testing on testnet, 2026-05-20.
+  // Issue #32. The hook reads `isDelegated[user]` but the prior activate()
+  // submitted `delegate(user)` unconditionally, popping a redundant
+  // MetaMask prompt for an already-delegated wallet.
+  it("Given already-delegated, When activate() runs Set & Forget, Then no tx is submitted and status jumps to success", async () => {
+    isDelegatedState.value = true;
+    const { result } = renderHook(() =>
+      useActivateStrategy({ preset: SET_AND_FORGET, user: USER, gauges: ALL_GAUGES }),
+    );
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(writeContractAsync).not.toHaveBeenCalled();
+    expect(result.current.status).toBe("success");
+  });
+
+  it("Given NOT delegated, When activate() runs Set & Forget, Then it still submits the delegate tx", async () => {
+    // Sanity-check the converse: the short-circuit must only kick in when
+    // already delegated, otherwise the very first activation breaks.
+    isDelegatedState.value = false;
+    const { result } = renderHook(() =>
+      useActivateStrategy({ preset: SET_AND_FORGET, user: USER, gauges: ALL_GAUGES }),
+    );
+    await act(async () => {
+      await result.current.activate();
+    });
+    expect(writeContractAsync).toHaveBeenCalledTimes(1);
+    const call = writeContractAsync.mock.calls[0][0] as {
+      functionName: string;
+    };
+    expect(call.functionName).toBe("delegate");
+  });
 });
