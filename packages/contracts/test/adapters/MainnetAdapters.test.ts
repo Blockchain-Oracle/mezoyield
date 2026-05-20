@@ -378,5 +378,58 @@ describe("Mezo mainnet adapters (issue #31)", () => {
         adapter.connect(deployer).setTrackedGauges([]),
       ).to.be.revertedWithCustomError(adapter, "NotOwner");
     });
+
+    // ─── Bribe cache (keeper + frontend read this) ────────────────
+    // Codex P1 on PR #44: the bribe-cache API shipped without tests.
+    // Locking in owner-gating, batch length-check, and readback.
+
+    it("bribeForGauge returns 0 for unset gauge", async () => {
+      const { adapter, gaugeA } = await setupMatchbox();
+      expect(await adapter.bribeForGauge(gaugeA)).to.equal(0n);
+    });
+
+    it("setBribeForGauge stores the value, bribeForGauge reads it back", async () => {
+      const { adapter, gaugeA } = await setupMatchbox();
+      const amount = 8_400n * 10n ** 18n;
+      await adapter.setBribeForGauge(gaugeA, amount);
+      expect(await adapter.bribeForGauge(gaugeA)).to.equal(amount);
+    });
+
+    it("setBribesForGauges batch helper sets multiple at once", async () => {
+      const { adapter, gaugeA, gaugeB } = await setupMatchbox();
+      const a = 1_000n * 10n ** 18n;
+      const b = 2_500n * 10n ** 18n;
+      await adapter.setBribesForGauges([gaugeA, gaugeB], [a, b]);
+      expect(await adapter.bribeForGauge(gaugeA)).to.equal(a);
+      expect(await adapter.bribeForGauge(gaugeB)).to.equal(b);
+    });
+
+    it("setBribesForGauges reverts on length mismatch", async () => {
+      const { adapter, gaugeA, gaugeB } = await setupMatchbox();
+      await expect(
+        adapter.setBribesForGauges([gaugeA, gaugeB], [1n]),
+      ).to.be.revertedWith("length mismatch");
+    });
+
+    it("setBribeForGauge is owner-only", async () => {
+      const { bob, adapter, gaugeA } = await setupMatchbox();
+      await expect(
+        adapter.connect(bob).setBribeForGauge(gaugeA, 1n),
+      ).to.be.revertedWithCustomError(adapter, "NotOwner");
+    });
+
+    it("setBribesForGauges is owner-only", async () => {
+      const { bob, adapter, gaugeA } = await setupMatchbox();
+      await expect(
+        adapter.connect(bob).setBribesForGauges([gaugeA], [1n]),
+      ).to.be.revertedWithCustomError(adapter, "NotOwner");
+    });
+
+    it("updating the same gauge overwrites the cached bribe", async () => {
+      const { adapter, gaugeA } = await setupMatchbox();
+      await adapter.setBribeForGauge(gaugeA, 100n);
+      await adapter.setBribeForGauge(gaugeA, 999n);
+      expect(await adapter.bribeForGauge(gaugeA)).to.equal(999n);
+    });
   });
 });
