@@ -93,6 +93,137 @@ describe("Mezo mainnet adapters (issue #31)", () => {
           ),
       ).to.be.revertedWithCustomError(adapter, "CallerHasNoVeMezo");
     });
+
+    // Registry surface (READ — keeper + frontend's useGaugeData call this).
+    // The original v1 omitted gauges() / gaugeMeta() entirely; the keeper's
+    // boot tick reverted on first read. Locking in the registry shape so
+    // we don't regress.
+
+    it("gauges() returns [] when no gauges registered yet", async () => {
+      const { voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      expect(await adapter.gauges()).to.deep.equal([]);
+      expect(await adapter.gaugeCount()).to.equal(0n);
+    });
+
+    it("registerGauge stores name + totalVeMezo and adds to gauges() list", async () => {
+      const { voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+
+      const gauge = "0x000000000000000000000000000000000000A001";
+      await adapter.registerGauge(gauge, "Stability Pool", 12_500_000n * 10n ** 18n);
+
+      expect(await adapter.gauges()).to.deep.equal([gauge]);
+      const [name, weight] = await adapter.gaugeMeta(gauge);
+      expect(name).to.equal("Stability Pool");
+      expect(weight).to.equal(12_500_000n * 10n ** 18n);
+    });
+
+    it("registerGauges batch helper preserves order and weights", async () => {
+      const { voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+
+      const gauges = [
+        "0x000000000000000000000000000000000000A001",
+        "0x000000000000000000000000000000000000A002",
+        "0x000000000000000000000000000000000000A003",
+      ];
+      const names = ["Stability Pool", "MUSD Savings Rate", "BTC-MUSD LP"];
+      const totals = [
+        12_500_000n * 10n ** 18n,
+        9_200_000n * 10n ** 18n,
+        6_700_000n * 10n ** 18n,
+      ];
+
+      await adapter.registerGauges(gauges, names, totals);
+
+      expect(await adapter.gauges()).to.deep.equal(gauges);
+      for (let i = 0; i < gauges.length; i++) {
+        const [n, w] = await adapter.gaugeMeta(gauges[i]);
+        expect(n).to.equal(names[i]);
+        expect(w).to.equal(totals[i]);
+      }
+    });
+
+    it("gaugeMeta returns ('', 0) for unregistered addresses (no revert)", async () => {
+      const { voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      const [name, weight] = await adapter.gaugeMeta(
+        "0x0000000000000000000000000000000000000099",
+      );
+      expect(name).to.equal("");
+      expect(weight).to.equal(0n);
+    });
+
+    it("updateGaugeWeight refreshes a registered gauge's weight", async () => {
+      const { voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      const gauge = "0x000000000000000000000000000000000000A001";
+      await adapter.registerGauge(gauge, "Stability Pool", 1_000n);
+      await adapter.updateGaugeWeight(gauge, 9_999n);
+      const [, w] = await adapter.gaugeMeta(gauge);
+      expect(w).to.equal(9_999n);
+    });
+
+    it("updateGaugeWeight reverts UnknownGauge for unregistered address", async () => {
+      const { voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      await expect(
+        adapter.updateGaugeWeight(
+          "0x0000000000000000000000000000000000000099",
+          1n,
+        ),
+      ).to.be.revertedWithCustomError(adapter, "UnknownGauge");
+    });
+
+    it("registerGauge is owner-only", async () => {
+      const { bob, voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      await expect(
+        adapter
+          .connect(bob)
+          .registerGauge(
+            "0x000000000000000000000000000000000000A001",
+            "x",
+            1n,
+          ),
+      ).to.be.revertedWithCustomError(adapter, "NotOwner");
+    });
   });
 
   // ─── VeMezoVotingPower ─────────────────────────────────────────
