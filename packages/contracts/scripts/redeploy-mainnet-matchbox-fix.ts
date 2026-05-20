@@ -80,8 +80,17 @@ async function main() {
   const matchboxBlock = matchboxTx ? (await matchboxTx.wait())?.blockNumber ?? null : null;
   console.log(`\nNew MatchboxAdapter:    ${matchboxAddr}  (tx ${matchboxTx?.hash}, block ${matchboxBlock})`);
 
-  // 2) Seed bribes for the 5 registered gauges.
+  // 2a) Register tracked gauges — claim/pending iterate this list.
+  // Codex P1 on the first version of this script omitted this step,
+  // leaving the deployed matchbox unable to enumerate gauges for
+  // claims. Always register the tracked set BEFORE setting bribes so
+  // both reads and writes have data on first run.
   const gaugeAddrs = GAUGE_BRIBES.map((g) => g.address);
+  const trackTx = await matchbox.setTrackedGauges(gaugeAddrs);
+  await trackTx.wait();
+  console.log(`Registered ${gaugeAddrs.length} tracked gauges (tx ${trackTx.hash})`);
+
+  // 2b) Seed bribes for the same 5 registered gauges.
   const bribeAmounts = GAUGE_BRIBES.map((g) => g.bribeMUSD);
   const setTx = await matchbox.setBribesForGauges(gaugeAddrs, bribeAmounts);
   await setTx.wait();
