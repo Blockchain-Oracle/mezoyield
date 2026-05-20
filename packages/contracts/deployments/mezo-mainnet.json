@@ -1,0 +1,46 @@
+{
+  "chainId": 31612,
+  "network": "mezoMainnet",
+  "rpcUrl": "https://rpc-http.mezo.boar.network",
+  "explorer": "https://explorer.mezo.org",
+  "deployer": "0x84f94745ea0a434540749839819E65E281970004",
+  "deployedAt": null,
+  "contracts": {
+    "MezoYieldOptimizer": {
+      "address": null,
+      "txHash": null,
+      "blockNumber": null
+    },
+    "MockGaugeController": {
+      "address": null,
+      "txHash": null,
+      "blockNumber": null
+    },
+    "MockMatchbox": {
+      "address": null,
+      "txHash": null,
+      "blockNumber": null
+    },
+    "MockVeMezo": {
+      "address": null,
+      "txHash": null,
+      "blockNumber": null
+    }
+  },
+  "external": {
+    "MEZO": "0x7B7c000000000000000000000000000000000001",
+    "MUSD": "0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186",
+    "Bitcoin": "0x7b7c000000000000000000000000000000000000",
+    "MezoBoostVoter": "0x2ba614a598CfFa5a19D683CDcA97BAC3a49313D1",
+    "MezoBoostVoterImpl": "0xA696Dc56522E41811D06BBDA83c1a6D976637624",
+    "VeMEZO": "0xb90fdAd3DFD180458D62Cc6acedc983D78E20122",
+    "VeMEZOImpl": "0xA1aCc19aa9f7010c0013d8f043aff63A0527Dd5e",
+    "TigrisRouter": "0x16A76d3cd3C1e3CE843C6680d6B37E9116b5C706",
+    "TigrisPoolFactory": "0x83FE469C636C4081b87bA5b3Ae9991c6Ed104248",
+    "TigrisFactoryRegistry": "0x265054F72bAD343FDEE3e018269cbB899e2E2ec5"
+  },
+  "seedDeployerVeMezoWei": "0",
+  "seedDeployerPendingMUSDWei": "0",
+  "seededGauges": [],
+  "notes": "Mezo Mainnet (chain 31612). The `contracts.*` slots are intentionally null until adapters are deployed because the manifest's slot names — MockGaugeController, MockMatchbox, MockVeMezo — are also TYPES. Consumers (`packages/app/lib/contracts.ts`, `useVeMezoPosition`, `useGaugeData`, `MezoYieldOptimizer.castOptimalVote`) read them via `IGaugeController` / `IMatchbox` / `IVeMezo` ABIs. The real Mezo equivalents below in `external` use DIFFERENT ABIs: `MezoBoostVoter` is Solidly-derived (`pools()`, `vote(tokenId, pools, weights)`); `VeMEZO` is ERC-721 (`balanceOf` returns NFT count, not 18-decimal voting power). Wiring the real addresses directly into the mock slots would build cleanly but revert at runtime. The path to populating these slots requires (1) a `BoostVoterAdapter` that translates `IGaugeController` calls into `BoostVoter` calls, (2) a `MatchboxAdapter` that multiplexes per-gauge `BribeVotingReward` claims, (3) a `VeMezoVotingPower` shim that reads voting power across a user's NFT positions. Phase 3 of the mainnet rollout deploys those adapters and writes their addresses here. Phase 5 then deploys `MezoYieldOptimizer` against them and writes its address. The fail-fast in `contracts.ts` blocks mainnet builds until all four slots are populated."
+}
