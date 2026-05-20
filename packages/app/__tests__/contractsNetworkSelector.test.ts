@@ -60,10 +60,46 @@ describe("lib/contracts — NEXT_PUBLIC_MEZO_NETWORK selector", () => {
     expect(lib.MEZO_NETWORK).toBe("testnet");
   });
 
-  it("throws on mainnet build while Optimizer.address is null (Phase 1 stub state)", async () => {
+  it("throws on mainnet build when Optimizer.address is null (fail-fast guard)", async () => {
     vi.stubEnv("NEXT_PUBLIC_MEZO_NETWORK", "mainnet");
-    // No mock here — uses the committed mezo-mainnet.json which has
-    // Optimizer.address = null until Phase 5 deploys it.
+    // Inject a manifest with a null Optimizer to exercise the fail-fast
+    // guard regardless of whether the committed manifest happens to
+    // have a real address. Pre-Phase-5 the manifest naturally carried
+    // null; post-Phase-5 it carries the deployed address — the guard
+    // logic itself is what we're locking in here, not the manifest
+    // file's current state.
+    vi.doMock(
+      "@mezoyield/contracts/deployments/mezo-mainnet.json",
+      () => ({
+        default: {
+          chainId: 31612,
+          network: "mezoMainnet",
+          rpcUrl: "https://rpc-http.mezo.boar.network",
+          explorer: "https://explorer.mezo.org",
+          deployer: "0x0000000000000000000000000000000000000000",
+          deployedAt: null,
+          contracts: {
+            MezoYieldOptimizer: { address: null, txHash: null, blockNumber: null },
+            MockGaugeController: {
+              address: "0x1111111111111111111111111111111111111111",
+              txHash: null,
+              blockNumber: null,
+            },
+            MockMatchbox: {
+              address: "0x2222222222222222222222222222222222222222",
+              txHash: null,
+              blockNumber: null,
+            },
+            MockVeMezo: {
+              address: "0x3333333333333333333333333333333333333333",
+              txHash: null,
+              blockNumber: null,
+            },
+          },
+          notes: "test fixture — null optimizer",
+        },
+      }),
+    );
     await expect(import("@/lib/contracts")).rejects.toThrow(
       /MezoYieldOptimizer not yet deployed on Mezo mainnet/,
     );
