@@ -3,28 +3,28 @@
   "network": "mezoTestnet",
   "rpcUrl": "https://rpc.test.mezo.org",
   "explorer": "https://explorer.test.mezo.org",
-  "deployer": "0x84f94745ea0a434540749839819E65E281970004",
-  "deployedAt": "2026-05-01T18:52:04.908Z",
+  "deployer": "0x6A6D50F25A32f79bC784F7c67Df54ce21244834c",
+  "deployedAt": "2026-05-22T08:53:23.694Z",
   "contracts": {
     "MezoYieldOptimizer": {
-      "address": "0x1A9a4f8279F88a1551117766957DB23A35133B6D",
-      "txHash": "0x05095dc0ec8c1385c6b648f994899b094870ae78a8541ec6c12d6163cc63b4b5",
-      "blockNumber": 12758568
+      "address": "0x62Bc24173cE545b751f095563716E93819d5740e",
+      "txHash": "0xba4ebb7e2ac228389dbd905b5311622b4afab2d2f7c7607c7d5f05ed81f147a8",
+      "blockNumber": 13205245
     },
     "MockGaugeController": {
-      "address": "0xB2f5cBbf2401F4F74F3E4d9FaCb3C4b7c1897140",
-      "txHash": "0xe1c61060c21490db409effb068ceee50b89841edd91250b4ab3fe3cc63965eba",
-      "blockNumber": 12758565
+      "address": "0x2d413D8267b9ab5DE06C8588da66d1Caff337544",
+      "txHash": "0x04e906d7719471a842e50829d7bd227bc97d253a6edc8d4977da07f633f54e6e",
+      "blockNumber": 13205242
     },
     "MockMatchbox": {
-      "address": "0x5C86Aa4Cc0aff9f4AA9751671eE946dc4Dc07431",
-      "txHash": "0xd2c5115052416bc684fc0bf1fe48828196306951973c21fb0644a42cbce86d5e",
-      "blockNumber": 12758566
+      "address": "0x3A8B5b22A3a433e3f31359c796e542221F48aB38",
+      "txHash": "0xe6b4cda38899b027cb1178a323cd8ea14ef0ed8eda8adaccf9d40c35f2408d13",
+      "blockNumber": 13205243
     },
     "MockVeMezo": {
-      "address": "0x5351665b6805B35e0ba3C7522e62e7E3EEEeA2d6",
-      "txHash": "0x9f07a2386723dcd12bc4ca1143dbfdfed22f6857e3649b747c2cc0556a7d4305",
-      "blockNumber": 12758567
+      "address": "0xFe5C3420784C6F312fD5977FFfb7Af616C7dEb75",
+      "txHash": "0x83fdd467c9d23e2aeddc569d38a90d132ec74e332fe6c0bb2588d3b1b5a92140",
+      "blockNumber": 13205244
     }
   },
   "seedDeployerVeMezoWei": "1500000000000000000000",
