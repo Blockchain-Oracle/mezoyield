@@ -36,12 +36,26 @@ import { type PublicClient } from "viem";
  * as the high-risk failure mode. Tests cover those branches.
  */
 
-const VOTE_CAST_EVENT = {
+/**
+ * Per-epoch dedup keys off `TickAttempted` (emitted every call to
+ * `castOptimalVote`), NOT `VoteCast` (only emitted on successful
+ * ticks). Without this, a no-delegates or all-fail tick leaves no
+ * marker — the next daily cron run within the same epoch re-submits
+ * a doomed tx and burns gas + spams VoteSkipped logs. Codex P1 round
+ * 3 on the v3 PR caught this gap after Phase A's "VoteCast only on
+ * success" fix.
+ *
+ * Frontend's `useLastVote` correctly continues to walk `VoteCast` —
+ * it's the user-facing "successful vote happened" signal for the
+ * ProofLedger receipt + dashboard heartbeat chip.
+ */
+const TICK_ATTEMPTED_EVENT = {
   type: "event",
-  name: "VoteCast",
+  name: "TickAttempted",
   inputs: [
-    { name: "gauges", type: "address[]", indexed: false },
-    { name: "weights", type: "uint256[]", indexed: false },
+    { name: "timestamp", type: "uint256", indexed: false },
+    { name: "successCount", type: "uint256", indexed: false },
+    { name: "delegatedUserCount", type: "uint256", indexed: false },
   ],
   anonymous: false,
 } as const;
@@ -188,7 +202,7 @@ export async function getLastVote(
     fetchLogs: async (from, to) => {
       const logs = await client.getLogs({
         address: deployment.address,
-        event: VOTE_CAST_EVENT,
+        event: TICK_ATTEMPTED_EVENT,
         fromBlock: from,
         toBlock: to,
       });

@@ -107,6 +107,23 @@ contract MezoYieldOptimizer {
     ///         that NFT in the current BoostVoter epoch). One keeper
     ///         tick may fire 0..N of these.
     event VoteSkipped(address indexed user, bytes reason);
+    /// @notice Emitted EVERY time the keeper calls `castOptimalVote`,
+    ///         regardless of whether any per-user vote succeeded.
+    ///         Distinct from `VoteCast` so consumers can pick the right
+    ///         dedup signal:
+    ///
+    ///           - Keeper's per-epoch dedup walks `TickAttempted` —
+    ///             "did I already run this epoch?" Without this, a
+    ///             no-delegates or all-fail tick leaves no marker and
+    ///             the next cron run re-submits in the same epoch.
+    ///             Codex P1 round 3 — Phase A's "VoteCast only on
+    ///             success" fix created this dedup gap; this event
+    ///             closes it.
+    ///           - Frontend `useLastVote` walks `VoteCast` — "show
+    ///             receipts of actual successful keeper activity to
+    ///             the user." A no-op tick shouldn't get a "voted Xm
+    ///             ago" chip.
+    event TickAttempted(uint256 timestamp, uint256 successCount, uint256 delegatedUserCount);
     event KeeperUpdated(address indexed previousKeeper, address indexed newKeeper);
     event OwnerTransferred(address indexed previousOwner, address indexed newOwner);
     event RewardsClaimed(address indexed user, uint256 amount);
@@ -234,12 +251,14 @@ contract MezoYieldOptimizer {
                 emit VoteSkipped(voter, reason);
             }
         }
-        // Only emit VoteCast when at least one per-user vote actually
-        // landed. The keeper's per-epoch dedup walks `VoteCast` events
-        // backward to decide "did we already vote this epoch?" — if we
-        // emit on zero-success (no delegates yet, or all reverted), the
-        // keeper marks the epoch done and never retries until the next
-        // one, leaving the demo dead between epochs. Codex P1 on round 1.
+        // Always emit `TickAttempted` so the keeper's per-epoch dedup
+        // has a marker even when nothing landed — without it, daily
+        // cron + a no-delegates-or-all-fail tick would re-submit every
+        // day until the epoch turns over (Codex P1 round 3). Only emit
+        // `VoteCast` when at least one per-user vote actually landed:
+        // that one is the user-facing "real vote happened" signal that
+        // ProofLedger + the keeper-heartbeat chip consume.
+        emit TickAttempted(block.timestamp, successCount, n);
         if (successCount > 0) {
             emit VoteCast(gauges, weights);
         }

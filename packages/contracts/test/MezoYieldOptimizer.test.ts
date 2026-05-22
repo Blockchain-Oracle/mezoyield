@@ -257,28 +257,55 @@ describe("MezoYieldOptimizer", () => {
       expect(await gaugeController.lastVoter()).to.equal(stranger.address);
     });
 
-    it("is a no-op when no users have delegated and does NOT emit VoteCast", async () => {
-      // VoteCast suppression matters because the keeper's per-epoch dedup
-      // walks VoteCast logs backward — if we emit on a zero-success tick,
-      // the keeper marks the epoch done and never retries. Codex P1.
+    it("is a no-op when no users have delegated: no VoteCast, but TickAttempted still fires", async () => {
+      // Two events do different jobs:
+      //   - VoteCast: only on success (user-facing "real vote landed" receipt)
+      //   - TickAttempted: every call, so the keeper's per-epoch dedup
+      //     has a marker even when nothing landed. Codex P1 round 3.
       const { optimizer, gaugeController, keeper, gaugeA, gaugeB } =
         await loadFixture(deployFixture);
-      await expect(
-        optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [5000, 5000]),
-      ).to.not.emit(optimizer, "VoteCast");
+      const txPromise = optimizer
+        .connect(keeper)
+        .castOptimalVote([gaugeA, gaugeB], [5000, 5000]);
+      await expect(txPromise).to.not.emit(optimizer, "VoteCast");
+      await expect(txPromise).to.emit(optimizer, "TickAttempted");
       expect(await gaugeController.voteCount()).to.equal(0n);
     });
 
-    it("does NOT emit VoteCast when every delegated user's adapter call reverts", async () => {
+    it("emits TickAttempted with success/delegated counts (dedup marker)", async () => {
+      const { optimizer, keeper, user, gaugeA, gaugeB } =
+        await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
+      const tx = await optimizer
+        .connect(keeper)
+        .castOptimalVote([gaugeA, gaugeB], [6000, 4000]);
+      const receipt = await tx.wait();
+      const topic = ethers.id("TickAttempted(uint256,uint256,uint256)");
+      const logs = receipt!.logs.filter(
+        (l: { topics: ReadonlyArray<string> }) => l.topics[0] === topic,
+      );
+      expect(logs.length).to.equal(1);
+      // data = (timestamp, successCount, delegatedUserCount) — 3 uint256s
+      const data = logs[0].data;
+      const decoded = ethers.AbiCoder.defaultAbiCoder().decode(
+        ["uint256", "uint256", "uint256"],
+        data,
+      );
+      expect(decoded[1]).to.equal(1n); // successCount
+      expect(decoded[2]).to.equal(1n); // delegatedUserCount
+    });
+
+    it("does NOT emit VoteCast when every delegated user's adapter call reverts, BUT TickAttempted does fire", async () => {
       const { optimizer, gaugeController, keeper, user, gaugeA, gaugeB } =
         await loadFixture(deployFixture);
       await optimizer.connect(user).delegate(user.address);
       await gaugeController.setShouldRevertFor(user.address, true);
-      await expect(
-        optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [5000, 5000]),
-      )
-        .to.emit(optimizer, "VoteSkipped")
-        .and.to.not.emit(optimizer, "VoteCast");
+      const txPromise = optimizer
+        .connect(keeper)
+        .castOptimalVote([gaugeA, gaugeB], [5000, 5000]);
+      await expect(txPromise).to.emit(optimizer, "VoteSkipped");
+      await expect(txPromise).to.emit(optimizer, "TickAttempted");
+      await expect(txPromise).to.not.emit(optimizer, "VoteCast");
       expect(await gaugeController.voteCount()).to.equal(0n);
     });
 
