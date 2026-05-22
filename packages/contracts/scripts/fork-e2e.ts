@@ -51,18 +51,17 @@ async function impersonate(address: string) {
 async function probeRealGauges(maxProbe = 10): Promise<string[]> {
   const boostVoter = new ethers.Contract(
     REAL_BOOST_VOTER,
-    ["function gauges(uint256) view returns (address)"],
+    [
+      "function length() view returns (uint256)",
+      "function gauges(uint256) view returns (address)",
+    ],
     ethers.provider,
   );
+  const len: bigint = await boostVoter.length();
   const found: string[] = [];
-  for (let i = 0; i < maxProbe; i++) {
-    try {
-      const g = await boostVoter.gauges(i);
-      if (g === ethers.ZeroAddress) break;
-      found.push(g);
-    } catch {
-      break;
-    }
+  const cap = Math.min(maxProbe, Number(len));
+  for (let i = 0; i < cap; i++) {
+    found.push(await boostVoter.gauges(i));
   }
   return found;
 }
