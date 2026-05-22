@@ -227,11 +227,24 @@ async function main() {
   console.log("");
   console.log("Next steps:");
   console.log("  1. Commit deployments/mezo-mainnet.json + push to main.");
-  console.log("  2. From keeper EOA: lock MEZO (veMEZO.createLock(amount, 604800)).");
-  console.log("  3. From keeper EOA: veMEZO.setApprovalForAll(BoostVoterAdapter, true).");
-  console.log("  4. Force-redeploy Coolify mainnet app + keeper.");
-  console.log("  5. Restart keeper container to fire boot tick.");
-  console.log("  6. Run scripts/verify-mainnet-state.ts to confirm.");
+  console.log("  2. Force-redeploy Coolify mainnet app + keeper services.");
+  console.log("     (App build must point at the new addresses; keeper");
+  console.log("      reads the same manifest at boot.)");
+  console.log("");
+  console.log("  Per delegating user (including the keeper EOA when it");
+  console.log("  also acts as a demo user — every user is in the keeper");
+  console.log("  iteration loop and needs adapter approval on their own");
+  console.log("  veMEZO NFT, otherwise their per-tick voteForUser reverts");
+  console.log("  CallerHasNoVeMezo and they're skipped):");
+  console.log("  3. Lock MEZO if needed: veMEZO.createLock(amount, 604800).");
+  console.log("  4. Approve the adapter:");
+  console.log(`     veMEZO.setApprovalForAll(${adapterAddr}, true).`);
+  console.log("  5. Delegate via dApp: Optimizer.delegate(self).");
+  console.log("     (The dApp's activate flow batches steps 4+5 into");
+  console.log("      two sequential signatures.)");
+  console.log("");
+  console.log("  6. Restart keeper container to fire boot tick.");
+  console.log("  7. Run scripts/verify-mainnet-state.ts to confirm.");
 }
 
 main().catch((err) => {
