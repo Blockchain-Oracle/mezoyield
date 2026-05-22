@@ -106,8 +106,14 @@ async function main() {
   const mezoOk = mezoBal >= LOCK_MEZO_AMOUNT;
   console.log(`[1/5] MEZO balance:                   ${ethers.formatUnits(mezoBal, 18)} MEZO  ${mezoOk ? "✅" : "❌ need ≥1 MEZO to lock"}`);
   if (!mezoOk) {
-    console.log(`      Acquire MEZO via Tigris (https://tigris.exchange) by swapping a tiny BTC→MEZO.`);
-    console.log(`      Alternative: any DEX that lists MEZO on Mezo Mainnet. Minimum needed: 1 MEZO (1e18 wei).`);
+    console.log(`      NO PUBLIC BTC→MEZO POOL on Mezo Mainnet right now — confirmed by probing`);
+    console.log(`      Tigris PoolFactory (0x83FE…4248) at every fee tier + volatile/stable.`);
+    console.log(`      MEZO is circulating via Mezo-team distributions, not a public AMM.`);
+    console.log(`      Three ways to get MEZO into ${user}:`);
+    console.log(`        a) CEX route: buy MEZO somewhere it's listed, withdraw to this address.`);
+    console.log(`        b) Mezo Hack Discord / sponsor channel: ask for a 1 MEZO demo drop.`);
+    console.log(`        c) Transfer from another wallet you control that already holds MEZO.`);
+    console.log(`      Once 1+ MEZO lands here, re-run with EXECUTE=1 to finish.`);
     needsAction++;
   }
 
