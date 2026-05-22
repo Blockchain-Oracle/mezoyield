@@ -101,6 +101,22 @@ export function StrategyDetailModal({
     return "Activate strategy";
   })();
 
+  // Step indicator label — surfaces the multi-step nature of the
+  // activate flow so users don't think the wallet popup that says
+  // "Set approval for all" appeared out of nowhere. Testnet skips
+  // the `approve` step (mock has no NFT check), so step labels
+  // differ per network and per current state.
+  const stepLabel = (() => {
+    if (!activation.currentStep) return null;
+    const labels: Record<string, string> = {
+      faucet: "Minting testnet veMEZO",
+      approve: "Approving adapter on veMEZO NFT",
+      delegate: "Delegating to optimizer",
+      vote: "Setting allocation",
+    };
+    return labels[activation.currentStep] ?? activation.currentStep;
+  })();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -216,6 +232,15 @@ export function StrategyDetailModal({
           </p>
         </div>
 
+        {stepLabel && (
+          <div className="-mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <span
+              aria-hidden
+              className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-mezo"
+            />
+            <span className="font-mono">{stepLabel}…</span>
+          </div>
+        )}
         <DialogFooter>
           <Button
             type="button"

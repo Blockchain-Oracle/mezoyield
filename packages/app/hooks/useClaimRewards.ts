@@ -58,7 +58,12 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
     abi: matchboxAbi,
     functionName: "pending",
     args: user ? [user] : undefined,
-    query: { enabled: !!user },
+    // 10s staleTime: pending only changes on-chain (claim, keeper
+    // vote rewards). 10s caps the per-render refetch storm without
+    // making the dashboard feel stale to a user who just claimed —
+    // the optimistic cache update on claim success (below) keeps the
+    // UI fresh in that window.
+    query: { enabled: !!user, staleTime: 10_000 },
   });
 
   // Codex pre-push P2 on STORY-009: STORY-009 BDD case "user claims
@@ -161,6 +166,32 @@ export function useClaimRewards(user: Address | undefined): ClaimState {
         if (myToken !== claimTokenRef.current) return;
         setTxHash(hash);
         setPhase("confirming");
+        // Optimistic update: zero the pending balance the instant the
+        // user's wallet broadcasts the tx, before the receipt lands
+        // (~12 s on mainnet, ~1–2 s testnet). Without this the dashboard
+        // shows the old pending amount through the entire mining window
+        // — users perceive the click as "did nothing" until the receipt
+        // arrives and triggers refetch. queryClient.setQueryData updates
+        // the same key wagmi's useReadContract caches under (`["readContract",
+        // {address, functionName: "pending", args: [user]}, …]`); we use
+        // wagmi's hashed key shape so the optimistic write hits the same
+        // slot the live read pulls from. If the tx reverts, the receipt-
+        // error branch re-refetches and reconciles back to the true value.
+        const readContractQueryKey: unknown[] = [
+          "readContract",
+          {
+            address: MATCHBOX_ADDRESS,
+            functionName: "pending",
+            args: [user],
+            chainId: undefined,
+          },
+        ];
+        queryClient.setQueryData(readContractQueryKey, 0n);
+        // Also refetch via wagmi's own invalidation pathway so other
+        // pending-reading hooks (e.g. PositionSummary derived metrics)
+        // pick up the change immediately — belt-and-suspenders, since
+        // the receipt-success effect also refetches.
+        void pendingQuery.refetch();
       } catch (err) {
         if (myToken !== claimTokenRef.current) return;
         setPhase("error");

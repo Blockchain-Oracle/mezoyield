@@ -146,6 +146,15 @@ describe("lib/contracts — NEXT_PUBLIC_MEZO_NETWORK selector", () => {
               blockNumber: null,
             },
           },
+          // `external` block mirrors the real mainnet manifest shape
+          // post-Phase-3: BoostVoter / VeMEZO / MUSD addresses live
+          // here so the activate flow can read `VE_MEZO_NFT_ADDRESS`
+          // and call setApprovalForAll on the real NFT.
+          external: {
+            MezoBoostVoter: "0x4444444444444444444444444444444444444444",
+            VeMEZO: "0x5555555555555555555555555555555555555555",
+            MUSD: "0x6666666666666666666666666666666666666666",
+          },
           notes: "test fixture",
         },
       }),
