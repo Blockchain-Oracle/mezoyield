@@ -72,6 +72,11 @@ const NAME_TO_STRATEGY_ID: ReadonlyMap<string, string> = new Map([
 
 export function useProtocolStrategyMix(): UseProtocolStrategyMixResult {
   // Read 1: the gauge address list from the gauge controller.
+  // staleTime + gcTime cap the per-mount RPC storm: without them, every
+  // StrategyGrid re-mount (route nav, modal open, etc.) fires N×2 reads
+  // (one per gauge × 2 ABI calls each). 30s matches the rest of the
+  // dApp's read cadence (useGaugeData, useLastVote, etc.); gauge
+  // metadata changes at most on epoch boundaries.
   const list = useReadContracts({
     contracts: [
       {
@@ -80,6 +85,7 @@ export function useProtocolStrategyMix(): UseProtocolStrategyMixResult {
         functionName: "gauges",
       },
     ],
+    query: { staleTime: 30_000, gcTime: 5 * 60_000 },
   });
 
   const addresses = (list.data?.[0]?.result as readonly Address[] | undefined) ?? [];
@@ -91,6 +97,7 @@ export function useProtocolStrategyMix(): UseProtocolStrategyMixResult {
   // time; the test harness alternates `gaugeMeta` tuples with a sentinel
   // bigint on this slot.
   const meta = useReadContracts({
+    query: { staleTime: 30_000, gcTime: 5 * 60_000 },
     contracts: addresses.flatMap((g) => [
       {
         address: GAUGE_CONTROLLER_ADDRESS,

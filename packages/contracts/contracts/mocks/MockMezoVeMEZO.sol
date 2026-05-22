@@ -30,7 +30,7 @@ contract MockMezoVeMEZO is IMezoVeMEZO {
         return _tokenOwners[tokenId];
     }
 
-    function tokenOfOwnerByIndex(address owner, uint256 index)
+    function ownerToNFTokenIdList(address owner, uint256 index)
         external
         view
         override

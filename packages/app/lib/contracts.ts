@@ -143,6 +143,27 @@ export const GAUGE_CONTROLLER_ADDRESS = gaugeControllerAddress;
 export const MATCHBOX_ADDRESS = matchboxAddress;
 export const VE_MEZO_ADDRESS = veMezoAddress;
 
+/**
+ * Real Mezo veMEZO ERC-721 NFT contract on mainnet. Only present in the
+ * `external` block of the mainnet manifest (testnet uses MockVeMezo,
+ * exported above as `VE_MEZO_ADDRESS`, which collapses the NFT to an
+ * ERC-20-style balance). The frontend's activate flow uses this address
+ * to call `setApprovalForAll(BoostVoterAdapter, true)` so the keeper's
+ * per-user `voteForUser` fan-out can vote with the user's NFT.
+ *
+ * `undefined` on testnet — callers MUST gate on `MEZO_NETWORK === "mainnet"`
+ * before reading this. Empty/missing value on mainnet is a manifest bug
+ * (caught at module load below).
+ */
+export const VE_MEZO_NFT_ADDRESS: `0x${string}` | undefined =
+  NETWORK === "mainnet" ? (manifest.external?.VeMEZO as `0x${string}` | undefined) : undefined;
+if (NETWORK === "mainnet" && !VE_MEZO_NFT_ADDRESS) {
+  throw new Error(
+    "mezo-mainnet.json `external.VeMEZO` missing — required by the dApp's " +
+      "activate flow to call setApprovalForAll on the real veMEZO NFT.",
+  );
+}
+
 // Lower bound for `getLogs` calls against the optimizer. On testnet the
 // deploy block is captured in the manifest; on mainnet, when the optimizer
 // lands, the deploy script will populate it. Fall back to 0n so the log

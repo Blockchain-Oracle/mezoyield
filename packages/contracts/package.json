@@ -8,8 +8,7 @@
     "test": "hardhat test",
     "lint": "tsc --noEmit",
     "deploy:testnet": "hardhat run scripts/deploy.ts --network mezoTestnet",
-    "deploy:mainnet:adapters": "hardhat run scripts/deploy-mainnet-adapters.ts --network mezoMainnet",
-    "deploy:mainnet": "hardhat run scripts/deploy-mainnet.ts --network mezoMainnet"
+    "deploy:mainnet": "hardhat run scripts/redeploy-mainnet-canonical.ts --network mezoMainnet"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

@@ -27,4 +27,23 @@ interface IGaugeController {
      *                but the gauge controller MAY enforce its own bounds.
      */
     function voteForGaugeWeights(address[] calldata gauges, uint256[] calldata weights) external;
+
+    /**
+     * @notice Submit gauge weights using `voter`'s veMEZO NFT, not the caller's.
+     *         Used by `MezoYieldOptimizer.castOptimalVote` to fan out votes
+     *         across all delegated users in a single keeper transaction. The
+     *         adapter MUST verify that the caller is the configured optimizer
+     *         (so arbitrary contracts cannot pass an unrelated address through
+     *         and trigger a vote from someone else's NFT) and that `voter`
+     *         actually owns at least one veMEZO NFT.
+     * @param voter The veMEZO holder whose NFT casts the vote. The adapter
+     *              uses `voter`'s first NFT (token-of-owner-by-index 0).
+     * @param gauges Gauge addresses to vote for, parallel to `weights`.
+     * @param weights Voting weights in basis points, parallel to `gauges`.
+     */
+    function voteForUser(
+        address voter,
+        address[] calldata gauges,
+        uint256[] calldata weights
+    ) external;
 }

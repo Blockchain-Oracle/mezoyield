@@ -4,6 +4,7 @@ import { useAccount } from "wagmi";
 import { useWalletReady } from "@/app/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PositionSummary } from "@/features/dashboard/PositionSummary";
+import { RealChainPositionCard } from "@/features/dashboard/RealChainPositionCard";
 import { EpochCountdownStrip } from "@/features/dashboard/EpochCountdownStrip";
 import { NextActionCard } from "@/features/dashboard/NextActionCard";
 import { PendingClaimCard } from "@/features/dashboard/PendingClaimCard";
@@ -62,6 +63,7 @@ function DashboardInner() {
       {!isConnected && <ExampleUserRow />}
 
       <PositionSummary />
+      <RealChainPositionCard />
       <EpochCountdownStrip />
       <NextActionCard />
       <PendingClaimCard />

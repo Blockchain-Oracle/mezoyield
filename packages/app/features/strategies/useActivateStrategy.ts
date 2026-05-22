@@ -9,9 +9,13 @@ import {
 } from "wagmi";
 import {
   OPTIMIZER_ADDRESS,
+  GAUGE_CONTROLLER_ADDRESS,
   VE_MEZO_ADDRESS,
+  VE_MEZO_NFT_ADDRESS,
   MEZO_CHAIN_ID,
+  MEZO_NETWORK,
 } from "@/lib/contracts";
+import { optimizerAbi, veMezoAbi, veMezoNftAbi } from "@/lib/abi";
 import type { Address } from "@/lib/types";
 import type { Gauge } from "@/lib/types";
 import {
@@ -50,56 +54,19 @@ import {
  * testnet veMEZO" etc.
  */
 
-const optimizerActivateAbi = [
-  {
-    type: "function",
-    stateMutability: "nonpayable",
-    name: "delegate",
-    inputs: [{ name: "user", type: "address" }],
-    outputs: [],
-  },
-  {
-    type: "function",
-    stateMutability: "nonpayable",
-    name: "setManualAllocation",
-    inputs: [
-      { name: "gauges", type: "address[]" },
-      { name: "weights", type: "uint256[]" },
-    ],
-    outputs: [],
-  },
-  {
-    type: "function",
-    stateMutability: "view",
-    name: "isDelegated",
-    inputs: [{ name: "user", type: "address" }],
-    outputs: [{ name: "", type: "bool" }],
-  },
-] as const;
-
-const veMezoFaucetAbi = [
-  {
-    type: "function",
-    stateMutability: "view",
-    name: "balanceOf",
-    inputs: [{ name: "user", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-  {
-    type: "function",
-    stateMutability: "nonpayable",
-    name: "faucet",
-    inputs: [],
-    outputs: [],
-  },
-] as const;
+// Activate flow uses three ABIs, all now sourced from `@/lib/abi`:
+//   - `optimizerAbi`     — delegate + setManualAllocation + isDelegated
+//   - `veMezoAbi`        — testnet mock faucet (balanceOf + faucet)
+//   - `veMezoNftAbi`     — mainnet ERC-721 (isApprovedForAll, setApprovalForAll, createLock, …)
+// Local copies removed during Phase D consolidation (eliminates drift
+// risk between this file's ABI fragments and the canonical lib/abi.ts).
 
 // Testnet chain id — used to gate the auto-faucet path. On mainnet the
 // real veMEZO is an NFT lock with no public faucet; that branch is a
 // "lock MEZO first" CTA in a follow-up PR (#33 acceptance criteria).
 const MEZO_TESTNET_CHAIN_ID = 31611;
 
-export type ActivationStep = "faucet" | "delegate" | "vote";
+export type ActivationStep = "faucet" | "approve" | "delegate" | "vote";
 
 export type ActivationStatus =
   | "idle"
@@ -139,7 +106,7 @@ export function useActivateStrategy({
 }: UseActivateStrategyArgs): ActivationState {
   const delegatedQuery = useReadContract({
     address: OPTIMIZER_ADDRESS,
-    abi: optimizerActivateAbi,
+    abi: optimizerAbi,
     functionName: "isDelegated",
     args: user ? [user] : undefined,
     query: { enabled: !!user },
@@ -150,7 +117,7 @@ export function useActivateStrategy({
   // reflect the minted 1000.
   const veMezoBalanceQuery = useReadContract({
     address: VE_MEZO_ADDRESS,
-    abi: veMezoFaucetAbi,
+    abi: veMezoAbi,
     functionName: "balanceOf",
     args: user ? [user] : undefined,
     query: { enabled: !!user },
@@ -207,7 +174,7 @@ export function useActivateStrategy({
         setPhase("writing");
         const faucetHash = await writeContractAsync({
           address: VE_MEZO_ADDRESS,
-          abi: veMezoFaucetAbi,
+          abi: veMezoAbi,
           functionName: "faucet",
         });
         setTxHash(faucetHash);
@@ -230,7 +197,7 @@ export function useActivateStrategy({
         setPhase("writing");
         const delegateHash = await writeContractAsync({
           address: OPTIMIZER_ADDRESS,
-          abi: optimizerActivateAbi,
+          abi: optimizerAbi,
           functionName: "delegate",
           args: [user],
         });
@@ -239,6 +206,36 @@ export function useActivateStrategy({
           await publicClient.waitForTransactionReceipt({ hash: delegateHash });
         }
         await delegatedQuery.refetch();
+      }
+
+      // ─── Precondition 2.5 (mainnet only): adapter approval ───
+      // The keeper's per-user fan-out calls
+      // `BoostVoter.vote(tokenId, …)` AS the adapter. Solidly-style
+      // BoostVoter requires `isApprovedOrOwner(msg.sender, tokenId)` —
+      // so the user must grant the adapter operator-of-all on their
+      // veMEZO NFT once. Without this step every keeper tick would
+      // skip the user with a VoteSkipped event. Testnet's mock has no
+      // approval check, so we gate this strictly on
+      // `MEZO_NETWORK === "mainnet"` + `VE_MEZO_NFT_ADDRESS` being set.
+      if (MEZO_NETWORK === "mainnet" && VE_MEZO_NFT_ADDRESS && publicClient) {
+        const isApproved = (await publicClient.readContract({
+          address: VE_MEZO_NFT_ADDRESS,
+          abi: veMezoNftAbi,
+          functionName: "isApprovedForAll",
+          args: [user, GAUGE_CONTROLLER_ADDRESS],
+        })) as boolean;
+        if (!isApproved) {
+          setCurrentStep("approve");
+          setPhase("writing");
+          const approveHash = await writeContractAsync({
+            address: VE_MEZO_NFT_ADDRESS,
+            abi: veMezoNftAbi,
+            functionName: "setApprovalForAll",
+            args: [GAUGE_CONTROLLER_ADDRESS, true],
+          });
+          setTxHash(approveHash);
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        }
       }
 
       // ─── Strategy-specific tx (the user-facing "activation") ───
@@ -264,7 +261,7 @@ export function useActivateStrategy({
         setPhase("writing");
         const hash = await writeContractAsync({
           address: OPTIMIZER_ADDRESS,
-          abi: optimizerActivateAbi,
+          abi: optimizerAbi,
           functionName: "setManualAllocation",
           args: [
             allocation.map((e) => e.gauge) as readonly Address[],

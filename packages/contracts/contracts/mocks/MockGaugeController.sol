@@ -5,8 +5,16 @@ import {IGaugeController} from "../interfaces/IGaugeController.sol";
 
 /**
  * @title MockGaugeController
- * @notice Test/testnet stand-in for the real Mezo gauge controller. Real
- *         Mezo gauges live in `mezo-org/tigris`'s Voter.sol — see
+ * @notice **Testnet-only**. Production sibling is `BoostVoterAdapter`
+ *         (`contracts/adapters/BoostVoterAdapter.sol`) which implements
+ *         the same `IGaugeController` interface on top of the real Mezo
+ *         BoostVoter. The mock skips the veMEZO NFT ownership / approval
+ *         checks the real adapter enforces, so the testnet user-flow is
+ *         shorter (no `setApprovalForAll` step). Behavioral delta is
+ *         documented in `TESTNET_ADDRESSES.md#testnet-vs-mainnet-wiring-delta`;
+ *         interface parity is locked by `test/InterfaceConformance.test.ts`.
+ *
+ *         Real Mezo gauges live in `mezo-org/tigris`'s Voter.sol — see
  *         `context/refs/repos/tigris/solidity/contracts/Voter.sol`. We
  *         deploy this mock alongside MezoYieldOptimizer for testnet demos
  *         because Mezo hasn't published canonical gauge controller
@@ -34,18 +42,50 @@ contract MockGaugeController is IGaugeController {
     address public lastVoter;
     uint256 public voteCount;
 
+    /// @dev Test-only revert toggle. When `shouldRevertFor[voter]` is true,
+    ///      `voteForUser` reverts with the recorded reason — letting the
+    ///      Optimizer's `castOptimalVote` exercise its per-user try/catch
+    ///      without needing a separate dedicated mock contract.
+    mapping(address => bool) public shouldRevertFor;
+
     event MockVoteRecorded(address indexed voter, address[] gauges, uint256[] weights);
 
+    function setShouldRevertFor(address voter, bool revert_) external {
+        shouldRevertFor[voter] = revert_;
+    }
+
     function voteForGaugeWeights(address[] calldata gauges_, uint256[] calldata weights) external override {
+        _recordVote(msg.sender, gauges_, weights);
+    }
+
+    /// @inheritdoc IGaugeController
+    /// @dev Testnet stand-in: there's no real veMEZO check, so we just
+    ///      record the explicit `voter` argument as the recorded voter.
+    ///      The real `BoostVoterAdapter.voteForUser` enforces both the
+    ///      caller (optimizer) and the voter (veMEZO holder).
+    function voteForUser(
+        address voter,
+        address[] calldata gauges_,
+        uint256[] calldata weights
+    ) external override {
+        if (shouldRevertFor[voter]) revert("forced revert for testing");
+        _recordVote(voter, gauges_, weights);
+    }
+
+    function _recordVote(
+        address voter,
+        address[] calldata gauges_,
+        uint256[] calldata weights
+    ) private {
         delete lastVoteGauges;
         delete lastVoteWeights;
         for (uint256 i; i < gauges_.length; ++i) {
             lastVoteGauges.push(gauges_[i]);
             lastVoteWeights.push(weights[i]);
         }
-        lastVoter = msg.sender;
+        lastVoter = voter;
         ++voteCount;
-        emit MockVoteRecorded(msg.sender, gauges_, weights);
+        emit MockVoteRecorded(voter, gauges_, weights);
     }
 
     function getLastVote() external view returns (address[] memory, uint256[] memory) {

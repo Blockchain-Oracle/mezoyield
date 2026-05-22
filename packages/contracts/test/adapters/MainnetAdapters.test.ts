@@ -48,7 +48,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       // Mint a single lock NFT for Alice with 1000e18 voting power.
       const ONE_K = 1_000n * 10n ** 18n;
       await veMezo.mintLockFor(alice.address, ONE_K);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -224,6 +224,107 @@ describe("Mezo mainnet adapters (issue #31)", () => {
           ),
       ).to.be.revertedWithCustomError(adapter, "NotOwner");
     });
+
+    // ─── voteForUser + optimizer wiring (the v3 fix) ─────────────
+    // The mainnet keeper-side flow now goes:
+    //   Keeper → Optimizer.castOptimalVote → Adapter.voteForUser(user, …)
+    //                                         ↑ onlyOptimizer
+    // These tests lock in the auth path: only the registered optimizer
+    // can call voteForUser, only the voter's NFT is used as the source,
+    // and the previous msg.sender-driven path (voteForGaugeWeights) is
+    // unaffected.
+
+    it("voteForUser reverts NotOptimizer when caller is not the configured optimizer", async () => {
+      const { alice, voter, veMezo } = await setup();
+      await veMezo.mintLockFor(alice.address, 1_000n * 10n ** 18n);
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      // optimizer slot is unset → any caller is unauthorized
+      await expect(
+        adapter
+          .connect(alice)
+          .voteForUser(alice.address, ["0x0000000000000000000000000000000000000001"], [10000n]),
+      ).to.be.revertedWithCustomError(adapter, "NotOptimizer");
+    });
+
+    it("voteForUser reverts VoterHasNoVeMezo when voter holds no NFT", async () => {
+      const { alice, bob, voter, veMezo } = await setup();
+      // Alice will pose as the optimizer (deployer of the adapter, so she
+      // can call setOptimizer to wire herself in).
+      const [deployer] = await ethers.getSigners();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      await adapter.connect(deployer).setOptimizer(alice.address);
+
+      // bob has no NFT
+      await expect(
+        adapter
+          .connect(alice)
+          .voteForUser(bob.address, ["0x0000000000000000000000000000000000000001"], [10000n]),
+      ).to.be.revertedWithCustomError(adapter, "VoterHasNoVeMezo");
+    });
+
+    it("voteForUser forwards to BoostVoter under voter's tokenId when optimizer calls", async () => {
+      const { alice, voter, veMezo } = await setup();
+      // alice is the NFT holder; deployer = signer 0; signer 2 (bob slot)
+      // poses as the optimizer for this test.
+      const [deployer, , bob] = await ethers.getSigners();
+      const ONE_K = 1_000n * 10n ** 18n;
+      await veMezo.mintLockFor(alice.address, ONE_K);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
+
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      await adapter.connect(deployer).setOptimizer(bob.address);
+
+      const gauges = [
+        "0x000000000000000000000000000000000000a001",
+        "0x000000000000000000000000000000000000a002",
+      ];
+      const weights = [6000n, 4000n];
+
+      await adapter.connect(bob).voteForUser(alice.address, gauges, weights);
+
+      expect(await voter.voteCallCount()).to.equal(1n);
+      expect(await voter.lastVoteTokenId()).to.equal(aliceTokenId);
+      expect((await voter.lastVoteGauges(0)).toLowerCase()).to.equal(gauges[0]);
+      expect((await voter.lastVoteGauges(1)).toLowerCase()).to.equal(gauges[1]);
+      expect(await voter.lastVoteWeights(0)).to.equal(weights[0]);
+      expect(await voter.lastVoteWeights(1)).to.equal(weights[1]);
+    });
+
+    it("setOptimizer is owner-only and rejects zero address; emits OptimizerUpdated", async () => {
+      const { alice, bob, voter, veMezo } = await setup();
+      const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adapter: any = await Adapter.deploy(
+        await voter.getAddress(),
+        await veMezo.getAddress(),
+      );
+      await expect(
+        adapter.connect(bob).setOptimizer(alice.address),
+      ).to.be.revertedWithCustomError(adapter, "NotOwner");
+      await expect(
+        adapter.setOptimizer("0x0000000000000000000000000000000000000000"),
+      ).to.be.revertedWithCustomError(adapter, "ZeroAddress");
+
+      await expect(adapter.setOptimizer(alice.address))
+        .to.emit(adapter, "OptimizerUpdated")
+        .withArgs("0x0000000000000000000000000000000000000000", alice.address);
+      expect(await adapter.optimizer()).to.equal(alice.address);
+    });
   });
 
   // ─── VeMezoVotingPower ─────────────────────────────────────────
@@ -321,7 +422,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       const { alice, veMezo, adapter, bribeA, bribeB, gaugeA, gaugeB, rewardToken } =
         await setupMatchbox();
       await veMezo.mintLockFor(alice.address, 1_000n * 10n ** 18n);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       // Set per-bribe earned amounts for Alice's tokenId.
       await bribeA.setEarned(rewardToken, aliceTokenId, 7n * 10n ** 18n);
@@ -342,7 +443,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       const { alice, veMezo, voter, adapter, gaugeA, gaugeB } =
         await setupMatchbox();
       await veMezo.mintLockFor(alice.address, 1_000n * 10n ** 18n);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       await adapter.setTrackedGauges([gaugeA, gaugeB]);
 
