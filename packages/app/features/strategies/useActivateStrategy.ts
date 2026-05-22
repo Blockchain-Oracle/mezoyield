@@ -9,8 +9,11 @@ import {
 } from "wagmi";
 import {
   OPTIMIZER_ADDRESS,
+  GAUGE_CONTROLLER_ADDRESS,
   VE_MEZO_ADDRESS,
+  VE_MEZO_NFT_ADDRESS,
   MEZO_CHAIN_ID,
+  MEZO_NETWORK,
 } from "@/lib/contracts";
 import type { Address } from "@/lib/types";
 import type { Gauge } from "@/lib/types";
@@ -94,12 +97,40 @@ const veMezoFaucetAbi = [
   },
 ] as const;
 
+/**
+ * Minimal ERC-721 surface for the mainnet adapter-approval step. The
+ * real Mezo veMEZO at `VE_MEZO_NFT_ADDRESS` is a full ERC-721; we only
+ * need `isApprovedForAll` (read) and `setApprovalForAll` (write).
+ */
+const veMezoErc721Abi = [
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "isApprovedForAll",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "operator", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "setApprovalForAll",
+    inputs: [
+      { name: "operator", type: "address" },
+      { name: "approved", type: "bool" },
+    ],
+    outputs: [],
+  },
+] as const;
+
 // Testnet chain id — used to gate the auto-faucet path. On mainnet the
 // real veMEZO is an NFT lock with no public faucet; that branch is a
 // "lock MEZO first" CTA in a follow-up PR (#33 acceptance criteria).
 const MEZO_TESTNET_CHAIN_ID = 31611;
 
-export type ActivationStep = "faucet" | "delegate" | "vote";
+export type ActivationStep = "faucet" | "approve" | "delegate" | "vote";
 
 export type ActivationStatus =
   | "idle"
