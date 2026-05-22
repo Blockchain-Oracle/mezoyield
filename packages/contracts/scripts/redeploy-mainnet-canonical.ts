@@ -128,15 +128,9 @@ async function main() {
   }
 
   const existingMatchboxAddr = manifest.contracts.MockMatchbox.address;
-  const existingVotingPowerAddr = manifest.contracts.MockVeMezo.address;
-  if (!existingMatchboxAddr || !existingVotingPowerAddr) {
-    throw new Error(
-      "mezo-mainnet.json missing MockMatchbox or MockVeMezo address — " +
-        "this script preserves those contracts and only redeploys " +
-        "BoostVoterAdapter + Optimizer. If MatchboxAdapter / " +
-        "VeMezoVotingPower truly need redeployment, run " +
-        "deploy-mainnet-adapters.ts first.",
-    );
+  const musd = ext.MUSD;
+  if (!musd) {
+    throw new Error("mezo-mainnet.json `external.MUSD` missing — required for MatchboxAdapter deploy.");
   }
 
   const head = await ethers.provider.getBlockNumber();
@@ -145,8 +139,8 @@ async function main() {
   console.log(`Deployer:               ${deployer.address}`);
   console.log(`BoostVoter (upstream):  ${boostVoter}`);
   console.log(`VeMEZO (upstream):      ${veMezoUpstream}`);
-  console.log(`MatchboxAdapter (keep): ${existingMatchboxAddr}`);
-  console.log(`VotingPower (keep):     ${existingVotingPowerAddr}`);
+  console.log(`MUSD (upstream):        ${musd}`);
+  console.log(`MatchboxAdapter (existing, will redeploy): ${existingMatchboxAddr}`);
   console.log("");
 
   // ─── 1. Deploy new BoostVoterAdapter ────────────────────────────
@@ -169,21 +163,55 @@ async function main() {
   await regTx.wait();
   console.log(`  → tx ${regTx.hash}`);
 
+  // ─── 2b. Deploy VeMezoVotingPower (shim) ────────────────────────
+  // Source uses `ownerToNFTokenIdList` (correct name for real Mezo
+  // veMEZO). Earlier versions used `tokenOfOwnerByIndex` which the
+  // real contract doesn't expose — every read reverted. Always
+  // redeploy here so the on-chain code matches source.
+  console.log("[2b/5] Deploying VeMezoVotingPower (shim)…");
+  const VotingPowerFactory = await ethers.getContractFactory("VeMezoVotingPower");
+  const votingPower = await VotingPowerFactory.deploy(veMezoUpstream);
+  const vpTx = votingPower.deploymentTransaction();
+  await votingPower.waitForDeployment();
+  const votingPowerAddr = await votingPower.getAddress();
+  const vpBlock = vpTx ? (await vpTx.wait())?.blockNumber ?? null : null;
+  console.log(`  → ${votingPowerAddr}  (tx ${vpTx?.hash}, block ${vpBlock})`);
+
+  // ─── 2c. Deploy MatchboxAdapter ─────────────────────────────────
+  // Also has the same renamed-function dependency. Redeploy so claims
+  // work end-to-end too. Re-seed tracked gauges + bribes.
+  console.log("[2c/5] Deploying MatchboxAdapter…");
+  const MatchboxFactory = await ethers.getContractFactory("MatchboxAdapter");
+  const matchbox = await MatchboxFactory.deploy(boostVoter, veMezoUpstream, musd);
+  const mbTx = matchbox.deploymentTransaction();
+  await matchbox.waitForDeployment();
+  const matchboxAddr = await matchbox.getAddress();
+  const mbBlock = mbTx ? (await mbTx.wait())?.blockNumber ?? null : null;
+  console.log(`  → ${matchboxAddr}  (tx ${mbTx?.hash}, block ${mbBlock})`);
+  // Re-seed: tracked gauges + bribes (same set as the old MatchboxAdapter v3 had)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const trackTx = await (matchbox as any).setTrackedGauges(gaugeAddrs);
+  await trackTx.wait();
+  console.log(`  setTrackedGauges → tx ${trackTx.hash}`);
+  const bribes = [
+    8_400n * 10n ** 18n,
+    4_500n * 10n ** 18n,
+    5_200n * 10n ** 18n,
+    2_100n * 10n ** 18n,
+    3_800n * 10n ** 18n,
+  ];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const bribeTx = await (matchbox as any).setBribesForGauges(gaugeAddrs, bribes);
+  await bribeTx.wait();
+  console.log(`  setBribesForGauges → tx ${bribeTx.hash}`);
+
   // ─── 3. Deploy new MezoYieldOptimizer ───────────────────────────
-  // The 3rd arg is the veMEZO balance source used to gate `delegate()`.
-  // We pass `VeMezoVotingPower` (the shim in the MockVeMezo slot) — its
-  // `balanceOf` returns total voting power across a user's NFTs, so
-  // `> 0` means "has at least one veMEZO lock", which is exactly the
-  // eligibility we want before pushing a user into `_delegatedUsers`.
-  // Using the raw upstream `external.VeMEZO` ERC-721 NFT-count would
-  // also work, but the shim is already in the manifest and used by
-  // the rest of the dApp's read surface — keep wiring consistent.
-  console.log("[3/4] Deploying MezoYieldOptimizer…");
+  console.log("[3/5] Deploying MezoYieldOptimizer…");
   const OptimizerFactory = await ethers.getContractFactory("MezoYieldOptimizer");
   const optimizer = await OptimizerFactory.deploy(
     adapterAddr,
-    existingMatchboxAddr,
-    existingVotingPowerAddr,
+    matchboxAddr,
+    votingPowerAddr,
     deployer.address,
   );
   const optTx = optimizer.deploymentTransaction();
@@ -210,7 +238,16 @@ async function main() {
     txHash: adapterTx?.hash ?? null,
     blockNumber: adapterBlock,
   };
-  // MockMatchbox + MockVeMezo intentionally left untouched.
+  manifest.contracts.MockMatchbox = {
+    address: matchboxAddr,
+    txHash: mbTx?.hash ?? null,
+    blockNumber: mbBlock,
+  };
+  manifest.contracts.MockVeMezo = {
+    address: votingPowerAddr,
+    txHash: vpTx?.hash ?? null,
+    blockNumber: vpBlock,
+  };
   manifest.deployedAt = new Date().toISOString();
   manifest.deployer = deployer.address;
   saveManifest(manifest);
@@ -220,9 +257,8 @@ async function main() {
   console.log("Manifest updated. New canonical addresses:");
   console.log(`  MezoYieldOptimizer:   ${optAddr}`);
   console.log(`  BoostVoterAdapter:    ${adapterAddr}`);
-  console.log("Preserved (no redeploy):");
-  console.log(`  MatchboxAdapter:      ${existingMatchboxAddr}`);
-  console.log(`  VeMezoVotingPower:    ${existingVotingPowerAddr}`);
+  console.log(`  MatchboxAdapter:      ${matchboxAddr}`);
+  console.log(`  VeMezoVotingPower:    ${votingPowerAddr}`);
   console.log("─".repeat(60));
   console.log("");
   console.log("Next steps:");

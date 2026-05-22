@@ -86,7 +86,7 @@ export const veMezoNftAbi = [
   {
     type: "function",
     stateMutability: "view",
-    name: "tokenOfOwnerByIndex",
+    name: "ownerToNFTokenIdList",
     inputs: [
       { name: "owner", type: "address" },
       { name: "index", type: "uint256" },

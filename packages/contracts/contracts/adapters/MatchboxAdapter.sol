@@ -126,7 +126,7 @@ contract MatchboxAdapter is IMatchbox {
     function pending(address user) external view override returns (uint256 total) {
         uint256 n = veMezo.balanceOf(user);
         if (n == 0) return 0;
-        uint256 tokenId = veMezo.tokenOfOwnerByIndex(user, 0);
+        uint256 tokenId = veMezo.ownerToNFTokenIdList(user, 0);
 
         for (uint256 i = 0; i < _trackedGauges.length; ++i) {
             address bribe = boostVoter.gaugeToBribe(_trackedGauges[i]);
@@ -144,7 +144,7 @@ contract MatchboxAdapter is IMatchbox {
     ///      authorization happens inside the BoostVoter.
     function claim(address user) external override returns (uint256 amount) {
         if (veMezo.balanceOf(user) == 0) revert CallerHasNoVeMezo();
-        uint256 tokenId = veMezo.tokenOfOwnerByIndex(user, 0);
+        uint256 tokenId = veMezo.ownerToNFTokenIdList(user, 0);
 
         // Build the per-bribe rewardToken[][] array. Every bribe pays
         // in `rewardToken` (MUSD on mainnet) — single-token claim.

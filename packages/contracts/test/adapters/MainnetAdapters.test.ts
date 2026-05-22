@@ -48,7 +48,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       // Mint a single lock NFT for Alice with 1000e18 voting power.
       const ONE_K = 1_000n * 10n ** 18n;
       await veMezo.mintLockFor(alice.address, ONE_K);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -279,7 +279,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       const [deployer, , bob] = await ethers.getSigners();
       const ONE_K = 1_000n * 10n ** 18n;
       await veMezo.mintLockFor(alice.address, ONE_K);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       const Adapter = await ethers.getContractFactory("BoostVoterAdapter");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -422,7 +422,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       const { alice, veMezo, adapter, bribeA, bribeB, gaugeA, gaugeB, rewardToken } =
         await setupMatchbox();
       await veMezo.mintLockFor(alice.address, 1_000n * 10n ** 18n);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       // Set per-bribe earned amounts for Alice's tokenId.
       await bribeA.setEarned(rewardToken, aliceTokenId, 7n * 10n ** 18n);
@@ -443,7 +443,7 @@ describe("Mezo mainnet adapters (issue #31)", () => {
       const { alice, veMezo, voter, adapter, gaugeA, gaugeB } =
         await setupMatchbox();
       await veMezo.mintLockFor(alice.address, 1_000n * 10n ** 18n);
-      const aliceTokenId = await veMezo.tokenOfOwnerByIndex(alice.address, 0);
+      const aliceTokenId = await veMezo.ownerToNFTokenIdList(alice.address, 0);
 
       await adapter.setTrackedGauges([gaugeA, gaugeB]);
 

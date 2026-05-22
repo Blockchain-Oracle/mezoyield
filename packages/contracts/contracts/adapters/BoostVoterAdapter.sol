@@ -104,7 +104,7 @@ contract BoostVoterAdapter is IGaugeController {
         if (veMezo.balanceOf(msg.sender) == 0) {
             revert CallerHasNoVeMezo();
         }
-        uint256 tokenId = veMezo.tokenOfOwnerByIndex(msg.sender, 0);
+        uint256 tokenId = veMezo.ownerToNFTokenIdList(msg.sender, 0);
         boostVoter.vote(tokenId, gauges_, weights);
     }
 
@@ -124,7 +124,7 @@ contract BoostVoterAdapter is IGaugeController {
         if (veMezo.balanceOf(voter) == 0) {
             revert VoterHasNoVeMezo();
         }
-        uint256 tokenId = veMezo.tokenOfOwnerByIndex(voter, 0);
+        uint256 tokenId = veMezo.ownerToNFTokenIdList(voter, 0);
         boostVoter.vote(tokenId, gauges_, weights);
     }
 

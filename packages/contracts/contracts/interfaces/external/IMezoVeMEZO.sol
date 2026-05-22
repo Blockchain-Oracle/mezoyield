@@ -21,7 +21,7 @@ interface IMezoVeMEZO {
     /// @notice Enumerate the user's tokens by index. Inherited from
     ///         ERC-721 Enumerable; required by adapters that don't
     ///         track token ids themselves.
-    function tokenOfOwnerByIndex(address owner, uint256 index)
+    function ownerToNFTokenIdList(address owner, uint256 index)
         external
         view
         returns (uint256);

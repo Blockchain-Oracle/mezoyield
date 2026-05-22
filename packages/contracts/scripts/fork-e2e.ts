@@ -129,7 +129,7 @@ async function main() {
     REAL_VE_MEZO,
     [
       "function balanceOf(address) view returns (uint256)",
-      "function tokenOfOwnerByIndex(address, uint256) view returns (uint256)",
+      "function ownerToNFTokenIdList(address, uint256) view returns (uint256)",
       "function setApprovalForAll(address, bool)",
       "function isApprovedForAll(address, address) view returns (bool)",
     ],
@@ -138,7 +138,7 @@ async function main() {
   const holderBal = await veMezoNft.balanceOf(VE_MEZO_HOLDER);
   console.log(`    veMEZO NFT count: ${holderBal}`);
   if (holderBal === 0n) throw new Error("Holder unexpectedly has 0 NFTs.");
-  const holderTokenId = await veMezoNft.tokenOfOwnerByIndex(VE_MEZO_HOLDER, 0);
+  const holderTokenId = await veMezoNft.ownerToNFTokenIdList(VE_MEZO_HOLDER, 0);
   console.log(`    First tokenId:    ${holderTokenId}`);
 
   // 5. Holder grants approval to adapter, then delegates via optimizer.

@@ -42,7 +42,7 @@ type Manifest = {
 
 const veMezoNftAbi = [
   "function balanceOf(address) view returns (uint256)",
-  "function tokenOfOwnerByIndex(address, uint256) view returns (uint256)",
+  "function ownerToNFTokenIdList(address, uint256) view returns (uint256)",
   "function isApprovedForAll(address, address) view returns (bool)",
   "function setApprovalForAll(address, bool)",
   "function createLock(uint256, uint256) returns (uint256)",
@@ -143,7 +143,7 @@ async function main() {
   // Re-read after potential lock
   const nftCountAfter = (await veMezo.balanceOf(user)) as bigint;
   if (nftCountAfter > 0n) {
-    const tokenId = await veMezo.tokenOfOwnerByIndex(user, 0);
+    const tokenId = await veMezo.ownerToNFTokenIdList(user, 0);
     console.log(`      First tokenId: ${tokenId}`);
   }
 
@@ -195,11 +195,18 @@ async function main() {
     if (EXECUTE) {
       console.log(`      EXECUTING: castOptimalVote on 2 gauges (60/40 split)`);
       const adapter = await ethers.getContractAt("BoostVoterAdapter", adapterAddr);
+      // ethers v6 returns Result objects (readonly). Spread into a fresh
+      // mutable array before passing to writeContract — encoder mutates
+      // in place internally.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const gauges: string[] = await (adapter as any).gauges();
-      const voteGauges = gauges.slice(0, VOTE_GAUGES_TAKE);
+      const gaugesRaw = await (adapter as any).gauges();
+      const voteGauges = [...gaugesRaw].slice(0, VOTE_GAUGES_TAKE).map((g: string) => g);
       const voteWeights = [6000n, 4000n];
-      const gas = 100_000n + 200_000n * (delegatedCount as bigint);
+      // Earlier formula (100k + 200k*N) under-counted real BoostVoter.vote
+      // cost (~250-400k per inner call on mainnet). Bumping the per-user
+      // figure to 600k gives comfortable headroom; the keeper helper
+      // should mirror this. Total tx cost is still pennies on Mezo.
+      const gas = 300_000n + 600_000n * (delegatedCount as bigint);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tx = await (optimizer as any).connect(signer).castOptimalVote(voteGauges, voteWeights, { gasLimit: gas });
       const receipt = await tx.wait();

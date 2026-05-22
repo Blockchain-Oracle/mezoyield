@@ -36,7 +36,7 @@ contract VeMezoVotingPower {
 
     /**
      * @notice Sum of voting power across every veMEZO NFT held by `user`.
-     * @dev Uses ERC-721 Enumerable's `tokenOfOwnerByIndex` to iterate.
+     * @dev Uses ERC-721 Enumerable's `ownerToNFTokenIdList` to iterate.
      *      Each read is a view, so the gas cost is borne by the caller
      *      (the wagmi RPC) — not by transactions. O(n) in the user's NFT
      *      count, which is bounded by their lock activity.
@@ -44,7 +44,7 @@ contract VeMezoVotingPower {
     function balanceOf(address user) external view returns (uint256 power) {
         uint256 n = veMezo.balanceOf(user);
         for (uint256 i = 0; i < n; ++i) {
-            uint256 tokenId = veMezo.tokenOfOwnerByIndex(user, i);
+            uint256 tokenId = veMezo.ownerToNFTokenIdList(user, i);
             power += veMezo.votingPowerOfNFT(tokenId);
         }
     }

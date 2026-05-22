@@ -29,8 +29,13 @@
  * keeper should switch to a paginated `castOptimalVoteFor(subset)`
  * overload to stay under block gas.
  */
-const KEEPER_GAS_BASE = 100_000n;
-const KEEPER_GAS_PER_USER = 200_000n;
+// Bumped from 100k+200k after mainnet walkthrough on 2026-05-22 showed
+// real BoostVoter.vote burns ~250-400k per inner call (writes vote
+// weights for multiple gauges + emits multiple events + Solidly
+// bookkeeping). 300k base + 600k/user keeps headroom comfortable even
+// for 4-5 gauge votes.
+const KEEPER_GAS_BASE = 300_000n;
+const KEEPER_GAS_PER_USER = 600_000n;
 
 export function keeperGasLimitFor(delegatedUserCount: bigint): bigint {
   return KEEPER_GAS_BASE + KEEPER_GAS_PER_USER * delegatedUserCount;
