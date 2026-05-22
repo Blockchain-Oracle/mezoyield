@@ -44,9 +44,29 @@ contract MezoYieldOptimizer {
     /// @dev User-pinned allocations (manual override). Empty when unset.
     mapping(address user => Allocation) private _allocations;
 
+    /// @dev Enumerable list of delegated users. `castOptimalVote` iterates
+    ///      this to fan out per-user votes through the adapter. Append-only
+    ///      in v1 — `delegate()` pushes on first activation; subsequent
+    ///      calls are no-ops. An `undelegate()` path would compact this
+    ///      array (swap-and-pop) but is intentionally out of scope for now
+    ///      (users who stop participating naturally fail at the adapter
+    ///      level via the per-user `try`/`catch` and are silently skipped).
+    address[] private _delegatedUsers;
+
     event Delegated(address indexed user);
     event ManualAllocationSet(address indexed user, address[] gauges, uint256[] weights);
+    /// @notice Emitted once per `castOptimalVote` call, regardless of how
+    ///         many users were iterated. Signature retained from v1 so the
+    ///         frontend's `useLastVote` topic filter and the keeper's
+    ///         per-epoch dedup walker work against this Optimizer without
+    ///         ABI changes. Per-user failures surface via `VoteSkipped`.
     event VoteCast(address[] gauges, uint256[] weights);
+    /// @notice Emitted for each delegated user whose forwarded
+    ///         `adapter.voteForUser` reverted (e.g. they revoked NFT
+    ///         approval, transferred their NFT, or already voted with
+    ///         that NFT in the current BoostVoter epoch). One keeper
+    ///         tick may fire 0..N of these.
+    event VoteSkipped(address indexed user, bytes reason);
     event KeeperUpdated(address indexed previousKeeper, address indexed newKeeper);
     event OwnerTransferred(address indexed previousOwner, address indexed newOwner);
     event RewardsClaimed(address indexed user, uint256 amount);
@@ -96,8 +116,15 @@ contract MezoYieldOptimizer {
      */
     function delegate(address user) external {
         if (user != msg.sender) revert CallerMustMatchUser();
-        isDelegated[user] = true;
-        emit Delegated(user);
+        // Idempotent: only push + emit on first activation. A user can
+        // call delegate() repeatedly (e.g. confirming after wallet
+        // reconnect) without polluting the enumerable list or spamming
+        // the event log.
+        if (!isDelegated[user]) {
+            isDelegated[user] = true;
+            _delegatedUsers.push(user);
+            emit Delegated(user);
+        }
     }
 
     /**
@@ -111,12 +138,36 @@ contract MezoYieldOptimizer {
     }
 
     /**
-     * @notice Submit the optimized allocation on behalf of all delegated users.
-     * @dev Keeper- (or owner-) only. Forwards to the gauge controller.
+     * @notice Submit the optimized allocation on behalf of every delegated user.
+     * @dev Keeper- (or owner-) only. Fans out one keeper transaction into N
+     *      adapter calls, one per delegated user, using each user's own
+     *      veMEZO NFT as the voting source. The Optimizer is non-custodial
+     *      and holds no NFTs of its own — `BoostVoterAdapter.voteForUser`
+     *      reads each `voter`'s first NFT (token-of-owner-by-index 0) and
+     *      calls `BoostVoter.vote(tokenId, gauges, weights)` against it.
+     *
+     *      Each per-user adapter call is wrapped in `try`/`catch` so one
+     *      stale delegation (NFT transferred, approval revoked, already
+     *      voted with that NFT this epoch) does not halt the rest of the
+     *      iteration. Failed users surface a `VoteSkipped(user, reason)`
+     *      event; the rest still vote.
+     *
+     *      Gas: linear in `_delegatedUsers.length`. Hackathon scale is
+     *      fine; at scale a `castOptimalVoteFor(address[] subset)`
+     *      overload would let the keeper page through users across
+     *      multiple txs. Out of scope for v1.
      */
     function castOptimalVote(address[] calldata gauges, uint256[] calldata weights) external onlyKeeper {
         _checkWeights(gauges, weights);
-        IGaugeController(gaugeController).voteForGaugeWeights(gauges, weights);
+        uint256 n = _delegatedUsers.length;
+        for (uint256 i; i < n; ++i) {
+            address voter = _delegatedUsers[i];
+            try IGaugeController(gaugeController).voteForUser(voter, gauges, weights) {
+                // success — VoteCast summary event fires once at the end
+            } catch (bytes memory reason) {
+                emit VoteSkipped(voter, reason);
+            }
+        }
         emit VoteCast(gauges, weights);
     }
 
@@ -136,6 +187,18 @@ contract MezoYieldOptimizer {
     function getAllocation(address user) external view returns (address[] memory, uint256[] memory) {
         Allocation storage a = _allocations[user];
         return (a.gauges, a.weights);
+    }
+
+    /// @notice Full list of delegated users (append-only in v1). Used by
+    ///         the dApp to render "N users delegated" and by the keeper /
+    ///         verify scripts to confirm fan-out targets on-chain.
+    function delegatedUsers() external view returns (address[] memory) {
+        return _delegatedUsers;
+    }
+
+    /// @notice Cheap size handle for pagination + UI counts.
+    function delegatedUsersCount() external view returns (uint256) {
+        return _delegatedUsers.length;
     }
 
     /// @notice Owner can rotate the keeper role.

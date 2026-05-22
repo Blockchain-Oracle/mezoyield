@@ -121,6 +121,33 @@ describe("MezoYieldOptimizer", () => {
         optimizer.connect(stranger).delegate(user.address),
       ).to.be.revertedWithCustomError(optimizer, "CallerMustMatchUser");
     });
+
+    it("is idempotent — second delegate() call does not double-push or re-emit", async () => {
+      const { optimizer, user } = await loadFixture(deployFixture);
+      await expect(optimizer.connect(user).delegate(user.address))
+        .to.emit(optimizer, "Delegated")
+        .withArgs(user.address);
+      // Second call: no event, no array growth.
+      await expect(optimizer.connect(user).delegate(user.address)).to.not.emit(
+        optimizer,
+        "Delegated",
+      );
+      expect(await optimizer.delegatedUsersCount()).to.equal(1n);
+      expect(await optimizer.delegatedUsers()).to.deep.equal([user.address]);
+    });
+
+    it("appends each new delegator to delegatedUsers() in order", async () => {
+      const { optimizer, user, stranger, deployer } = await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
+      await optimizer.connect(stranger).delegate(stranger.address);
+      await optimizer.connect(deployer).delegate(deployer.address);
+      expect(await optimizer.delegatedUsersCount()).to.equal(3n);
+      expect(await optimizer.delegatedUsers()).to.deep.equal([
+        user.address,
+        stranger.address,
+        deployer.address,
+      ]);
+    });
   });
 
   describe("setManualAllocation()", () => {
@@ -160,8 +187,10 @@ describe("MezoYieldOptimizer", () => {
   });
 
   describe("castOptimalVote()", () => {
-    it("forwards to gauge controller and emits VoteCast when keeper calls", async () => {
-      const { optimizer, gaugeController, keeper, gaugeA, gaugeB } = await loadFixture(deployFixture);
+    it("fans out to gauge controller per delegated user and emits VoteCast once", async () => {
+      const { optimizer, gaugeController, keeper, user, gaugeA, gaugeB } =
+        await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
       await expect(
         optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [7000, 3000]),
       )
@@ -171,11 +200,76 @@ describe("MezoYieldOptimizer", () => {
       const [gauges, weights] = await gaugeController.getLastVote();
       expect(gauges).to.deep.equal([gaugeA, gaugeB]);
       expect(weights.map((w: bigint) => Number(w))).to.deep.equal([7000, 3000]);
-      expect(await gaugeController.lastVoter()).to.equal(await optimizer.getAddress());
+      // lastVoter is the per-user `voter` argument, not the optimizer's
+      // contract address — this is the regression test for the v1→v2
+      // architectural bug that caused mainnet CallerHasNoVeMezo reverts.
+      expect(await gaugeController.lastVoter()).to.equal(user.address);
+      expect(await gaugeController.voteCount()).to.equal(1n);
+    });
+
+    it("iterates every delegated user in registration order", async () => {
+      const { optimizer, gaugeController, keeper, user, stranger, gaugeA, gaugeB } =
+        await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
+      await optimizer.connect(stranger).delegate(stranger.address);
+
+      await optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [6000, 4000]);
+
+      expect(await gaugeController.voteCount()).to.equal(2n);
+      // Last recorded voter is the last user iterated.
+      expect(await gaugeController.lastVoter()).to.equal(stranger.address);
+    });
+
+    it("is a no-op when no users have delegated (still emits VoteCast)", async () => {
+      const { optimizer, gaugeController, keeper, gaugeA, gaugeB } =
+        await loadFixture(deployFixture);
+      await expect(
+        optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [5000, 5000]),
+      ).to.emit(optimizer, "VoteCast");
+      expect(await gaugeController.voteCount()).to.equal(0n);
+    });
+
+    it("skips users whose adapter call reverts, continues others, emits VoteSkipped", async () => {
+      const { optimizer, gaugeController, keeper, user, stranger, gaugeA, gaugeB } =
+        await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
+      await optimizer.connect(stranger).delegate(stranger.address);
+
+      // Force the adapter to revert for stranger only (simulates revoked
+      // approval, transferred NFT, or epoch-already-voted on mainnet).
+      await gaugeController.setShouldRevertFor(stranger.address, true);
+
+      const tx = await optimizer
+        .connect(keeper)
+        .castOptimalVote([gaugeA, gaugeB], [5000, 5000]);
+      const receipt = await tx.wait();
+
+      // VoteCast summary still fires.
+      const voteCastLogs = receipt!.logs.filter(
+        (l: { topics: ReadonlyArray<string> }) =>
+          l.topics[0] === ethers.id("VoteCast(address[],uint256[])"),
+      );
+      expect(voteCastLogs.length).to.equal(1);
+
+      // Exactly one VoteSkipped, for stranger (indexed first topic).
+      const voteSkippedTopic = ethers.id("VoteSkipped(address,bytes)");
+      const skippedLogs = receipt!.logs.filter(
+        (l: { topics: ReadonlyArray<string> }) => l.topics[0] === voteSkippedTopic,
+      );
+      expect(skippedLogs.length).to.equal(1);
+      // topics[1] is the indexed user address, padded to 32 bytes.
+      expect("0x" + skippedLogs[0].topics[1].slice(-40)).to.equal(
+        stranger.address.toLowerCase(),
+      );
+
+      // user voted, stranger was skipped → voteCount = 1.
+      expect(await gaugeController.voteCount()).to.equal(1n);
+      expect(await gaugeController.lastVoter()).to.equal(user.address);
     });
 
     it("permits the owner (deployer) to act as a keeper", async () => {
-      const { optimizer, deployer, gaugeA, gaugeB } = await loadFixture(deployFixture);
+      const { optimizer, deployer, user, gaugeA, gaugeB } = await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
       await expect(
         optimizer.connect(deployer).castOptimalVote([gaugeA, gaugeB], [5000, 5000]),
       ).to.emit(optimizer, "VoteCast");

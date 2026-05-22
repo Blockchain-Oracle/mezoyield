@@ -44,6 +44,13 @@ contract BoostVoterAdapter is IGaugeController {
     /// @notice Owner can register/update the gauge registry.
     address public owner;
 
+    /// @notice MezoYieldOptimizer authorized to call `voteForUser`. Set by
+    ///         the owner post-deploy (chicken-and-egg: the optimizer needs
+    ///         the adapter's address at construction, so we wire the
+    ///         reverse pointer afterwards). Until set, `voteForUser` is
+    ///         locked.
+    address public optimizer;
+
     struct GaugeMeta {
         string name;
         uint256 totalVeMezo;
@@ -56,14 +63,23 @@ contract BoostVoterAdapter is IGaugeController {
     event GaugeRegistered(address indexed gauge, string name, uint256 totalVeMezo);
     event GaugeWeightUpdated(address indexed gauge, uint256 totalVeMezo);
     event OwnerTransferred(address indexed previousOwner, address indexed newOwner);
+    event OptimizerUpdated(address indexed previousOptimizer, address indexed newOptimizer);
 
     error CallerHasNoVeMezo();
+    error VoterHasNoVeMezo();
     error NotOwner();
+    error NotOptimizer();
     error AlreadyRegistered();
     error UnknownGauge();
+    error ZeroAddress();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
+        _;
+    }
+
+    modifier onlyOptimizer() {
+        if (msg.sender != optimizer) revert NotOptimizer();
         _;
     }
 
@@ -89,6 +105,26 @@ contract BoostVoterAdapter is IGaugeController {
             revert CallerHasNoVeMezo();
         }
         uint256 tokenId = veMezo.tokenOfOwnerByIndex(msg.sender, 0);
+        boostVoter.vote(tokenId, gauges_, weights);
+    }
+
+    /// @inheritdoc IGaugeController
+    /// @dev Restricted to the configured optimizer. The optimizer is the
+    ///      only authorized caller because `voter` is passed explicitly —
+    ///      letting any contract invoke this would let an attacker route
+    ///      arbitrary votes through any veMEZO holder who has set
+    ///      approval-for-all on this adapter. The optimizer's own
+    ///      `castOptimalVote` is `onlyKeeper`, so the trust path
+    ///      bottoms out at the keeper EOA.
+    function voteForUser(
+        address voter,
+        address[] calldata gauges_,
+        uint256[] calldata weights
+    ) external override onlyOptimizer {
+        if (veMezo.balanceOf(voter) == 0) {
+            revert VoterHasNoVeMezo();
+        }
+        uint256 tokenId = veMezo.tokenOfOwnerByIndex(voter, 0);
         boostVoter.vote(tokenId, gauges_, weights);
     }
 
@@ -160,8 +196,20 @@ contract BoostVoterAdapter is IGaugeController {
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
         address prev = owner;
         owner = newOwner;
         emit OwnerTransferred(prev, newOwner);
+    }
+
+    /// @notice Wire the MezoYieldOptimizer that is allowed to call
+    ///         `voteForUser`. Owner-only. The optimizer needs the adapter
+    ///         address at construction, so the reverse pointer is set
+    ///         post-deploy.
+    function setOptimizer(address newOptimizer) external onlyOwner {
+        if (newOptimizer == address(0)) revert ZeroAddress();
+        address prev = optimizer;
+        optimizer = newOptimizer;
+        emit OptimizerUpdated(prev, newOptimizer);
     }
 }
