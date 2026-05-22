@@ -170,11 +170,20 @@ async function main() {
   console.log(`  → tx ${regTx.hash}`);
 
   // ─── 3. Deploy new MezoYieldOptimizer ───────────────────────────
+  // The 3rd arg is the veMEZO balance source used to gate `delegate()`.
+  // We pass `VeMezoVotingPower` (the shim in the MockVeMezo slot) — its
+  // `balanceOf` returns total voting power across a user's NFTs, so
+  // `> 0` means "has at least one veMEZO lock", which is exactly the
+  // eligibility we want before pushing a user into `_delegatedUsers`.
+  // Using the raw upstream `external.VeMEZO` ERC-721 NFT-count would
+  // also work, but the shim is already in the manifest and used by
+  // the rest of the dApp's read surface — keep wiring consistent.
   console.log("[3/4] Deploying MezoYieldOptimizer…");
   const OptimizerFactory = await ethers.getContractFactory("MezoYieldOptimizer");
   const optimizer = await OptimizerFactory.deploy(
     adapterAddr,
     existingMatchboxAddr,
+    existingVotingPowerAddr,
     deployer.address,
   );
   const optTx = optimizer.deploymentTransaction();

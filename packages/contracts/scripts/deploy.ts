@@ -91,6 +91,7 @@ async function main() {
   const optimizer = await OptimizerFactory.deploy(
     gaugeControllerAddress,
     matchboxAddress,
+    veMezoAddress, // eligibility gate source for delegate()
     deployer.address, // initial keeper = deployer
   );
   const optimizerTx = optimizer.deploymentTransaction();

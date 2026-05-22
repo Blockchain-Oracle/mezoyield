@@ -4,6 +4,16 @@ pragma solidity ^0.8.20;
 import {IGaugeController} from "./interfaces/IGaugeController.sol";
 import {IMatchbox} from "./interfaces/IMatchbox.sol";
 
+/// @dev Minimal slice of veMEZO needed for the `delegate()` eligibility
+///      gate. Mainnet `VeMezoVotingPower` (ERC-20-shape shim that sums
+///      voting power across a user's NFTs), testnet `MockVeMezo`
+///      (ERC-20-shape mock), and the upstream real Mezo `veMEZO` ERC-721
+///      (NFT count) all expose this signature — `> 0` means the user
+///      has voting capacity, regardless of the underlying shape.
+interface IVeMezoBalance {
+    function balanceOf(address user) external view returns (uint256);
+}
+
 /**
  * @title MezoYieldOptimizer
  * @notice Non-custodial vote-delegation hub for veMEZO holders. Users opt
@@ -24,6 +34,16 @@ contract MezoYieldOptimizer {
 
     /// @notice Bribe/reward market the contract forwards `claimRewards` to.
     address public immutable matchbox;
+
+    /// @notice veMEZO contract (or shim) used to gate `delegate()`. Must
+    ///         expose `balanceOf(address) view returns (uint256)`. On
+    ///         mainnet this points at `VeMezoVotingPower` (the shim that
+    ///         sums voting power across a user's NFTs); on testnet at
+    ///         `MockVeMezo` (ERC-20-shape mock). `delegate()` requires
+    ///         `balanceOf(msg.sender) > 0` so an attacker cannot fill
+    ///         `_delegatedUsers[]` with throwaway addresses and DoS the
+    ///         keeper's per-tick iteration loop.
+    address public immutable veMezo;
 
     /// @notice Address authorized to call `castOptimalVote`. Set at deploy
     ///         and rotatable by the owner. Owner is also implicitly a keeper.
@@ -75,6 +95,7 @@ contract MezoYieldOptimizer {
     error EmptyAllocation();
     error ZeroAddress();
     error CallerMustMatchUser();
+    error NotEligibleToDelegate();
 
     modifier onlyKeeper() {
         // Owner is implicitly a keeper so deployments don't deadlock if the
@@ -89,16 +110,31 @@ contract MezoYieldOptimizer {
     }
 
     /**
-     * @param _gaugeController Address of the gauge controller to forward votes to.
-     * @param _matchbox Address of the Matchbox bribe market.
+     * @param _gaugeController Address of the gauge controller adapter
+     *                         (or `MockGaugeController` on testnet).
+     * @param _matchbox Address of the Matchbox bribe market (or adapter).
+     * @param _veMezo veMEZO balance source used to gate `delegate()`.
+     *                On mainnet: `VeMezoVotingPower` shim. On testnet:
+     *                `MockVeMezo`. Must expose `balanceOf(address)`.
      * @param _keeper Initial keeper allowed to call `castOptimalVote`.
      */
-    constructor(address _gaugeController, address _matchbox, address _keeper) {
-        if (_gaugeController == address(0) || _matchbox == address(0) || _keeper == address(0)) {
+    constructor(
+        address _gaugeController,
+        address _matchbox,
+        address _veMezo,
+        address _keeper
+    ) {
+        if (
+            _gaugeController == address(0) ||
+            _matchbox == address(0) ||
+            _veMezo == address(0) ||
+            _keeper == address(0)
+        ) {
             revert ZeroAddress();
         }
         gaugeController = _gaugeController;
         matchbox = _matchbox;
+        veMezo = _veMezo;
         keeper = _keeper;
         owner = msg.sender;
         emit OwnerTransferred(address(0), msg.sender);
@@ -116,6 +152,15 @@ contract MezoYieldOptimizer {
      */
     function delegate(address user) external {
         if (user != msg.sender) revert CallerMustMatchUser();
+        // Gate entry on owning at least one veMEZO unit. Without this
+        // check, anyone could push throwaway addresses into the
+        // enumerable list and grow keeper-tick gas linearly until the
+        // batch exceeds block gas — a public DoS surface for free
+        // (caller pays only the delegate() gas; keeper pays forever).
+        // Codex P2 on round 1 of this PR.
+        if (IVeMezoBalance(veMezo).balanceOf(msg.sender) == 0) {
+            revert NotEligibleToDelegate();
+        }
         // Idempotent: only push + emit on first activation. A user can
         // call delegate() repeatedly (e.g. confirming after wallet
         // reconnect) without polluting the enumerable list or spamming
@@ -160,15 +205,24 @@ contract MezoYieldOptimizer {
     function castOptimalVote(address[] calldata gauges, uint256[] calldata weights) external onlyKeeper {
         _checkWeights(gauges, weights);
         uint256 n = _delegatedUsers.length;
+        uint256 successCount;
         for (uint256 i; i < n; ++i) {
             address voter = _delegatedUsers[i];
             try IGaugeController(gaugeController).voteForUser(voter, gauges, weights) {
-                // success — VoteCast summary event fires once at the end
+                unchecked { ++successCount; }
             } catch (bytes memory reason) {
                 emit VoteSkipped(voter, reason);
             }
         }
-        emit VoteCast(gauges, weights);
+        // Only emit VoteCast when at least one per-user vote actually
+        // landed. The keeper's per-epoch dedup walks `VoteCast` events
+        // backward to decide "did we already vote this epoch?" — if we
+        // emit on zero-success (no delegates yet, or all reverted), the
+        // keeper marks the epoch done and never retries until the next
+        // one, leaving the demo dead between epochs. Codex P1 on round 1.
+        if (successCount > 0) {
+            emit VoteCast(gauges, weights);
+        }
     }
 
     /**

@@ -55,19 +55,36 @@ describe("MezoYieldOptimizer", () => {
     const matchbox: any = await MatchboxFactory.deploy();
     await matchbox.waitForDeployment();
 
+    // veMEZO eligibility gate source. Tests that need a user to delegate
+    // must call `veMezo.mint(user.address, ...)` first to satisfy the
+    // `balanceOf > 0` check in `delegate()`.
+    const VeMezoFactory = await ethers.getContractFactory("MockVeMezo");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const veMezo: any = await VeMezoFactory.deploy();
+    await veMezo.waitForDeployment();
+
     const OptimizerFactory = await ethers.getContractFactory("MezoYieldOptimizer");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const optimizer: any = await OptimizerFactory.deploy(
       await gaugeController.getAddress(),
       await matchbox.getAddress(),
+      await veMezo.getAddress(),
       keeper.address,
     );
     await optimizer.waitForDeployment();
+
+    // Convenience helper: seed all signers used as delegators with
+    // 1 veMEZO so the eligibility check passes without ceremony.
+    const ONE = 10n ** 18n;
+    await veMezo.mint(user.address, ONE);
+    await veMezo.mint(stranger.address, ONE);
+    await veMezo.mint(deployer.address, ONE);
 
     return {
       optimizer,
       gaugeController,
       matchbox,
+      veMezo,
       deployer,
       keeper,
       user,
@@ -82,19 +99,29 @@ describe("MezoYieldOptimizer", () => {
     it("rejects zero addresses", async () => {
       const Factory = await ethers.getContractFactory("MezoYieldOptimizer");
       await expect(
-        Factory.deploy(ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress),
+        Factory.deploy(
+          ethers.ZeroAddress,
+          ethers.ZeroAddress,
+          ethers.ZeroAddress,
+          ethers.ZeroAddress,
+        ),
       ).to.be.revertedWithCustomError(Factory, "ZeroAddress");
     });
 
     it("emits OwnerTransferred and KeeperUpdated on deploy", async () => {
-      const { optimizer, deployer, keeper } = await loadFixture(deployFixture);
+      const { optimizer, deployer, keeper, veMezo } = await loadFixture(deployFixture);
       // Re-deploy to capture deployment events.
       const ControllerFactory = await ethers.getContractFactory("MockGaugeController");
       const c = await ControllerFactory.deploy();
       const MatchboxFactory = await ethers.getContractFactory("MockMatchbox");
       const m = await MatchboxFactory.deploy();
       const Factory = await ethers.getContractFactory("MezoYieldOptimizer");
-      const tx = await Factory.deploy(await c.getAddress(), await m.getAddress(), keeper.address);
+      const tx = await Factory.deploy(
+        await c.getAddress(),
+        await m.getAddress(),
+        await veMezo.getAddress(),
+        keeper.address,
+      );
       await expect(tx.deploymentTransaction()!)
         .to.emit(tx, "OwnerTransferred")
         .withArgs(ethers.ZeroAddress, deployer.address)
@@ -120,6 +147,16 @@ describe("MezoYieldOptimizer", () => {
       await expect(
         optimizer.connect(stranger).delegate(user.address),
       ).to.be.revertedWithCustomError(optimizer, "CallerMustMatchUser");
+    });
+
+    it("reverts NotEligibleToDelegate when caller holds zero veMEZO", async () => {
+      // Use the fixture's `gaugeA` signer — an unfunded EOA (no veMEZO mint).
+      const { optimizer } = await loadFixture(deployFixture);
+      const signers = await ethers.getSigners();
+      const noNftCaller = signers[4]; // gaugeA slot — not minted veMEZO in fixture
+      await expect(
+        optimizer.connect(noNftCaller).delegate(noNftCaller.address),
+      ).to.be.revertedWithCustomError(optimizer, "NotEligibleToDelegate");
     });
 
     it("is idempotent — second delegate() call does not double-push or re-emit", async () => {
@@ -220,12 +257,28 @@ describe("MezoYieldOptimizer", () => {
       expect(await gaugeController.lastVoter()).to.equal(stranger.address);
     });
 
-    it("is a no-op when no users have delegated (still emits VoteCast)", async () => {
+    it("is a no-op when no users have delegated and does NOT emit VoteCast", async () => {
+      // VoteCast suppression matters because the keeper's per-epoch dedup
+      // walks VoteCast logs backward — if we emit on a zero-success tick,
+      // the keeper marks the epoch done and never retries. Codex P1.
       const { optimizer, gaugeController, keeper, gaugeA, gaugeB } =
         await loadFixture(deployFixture);
       await expect(
         optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [5000, 5000]),
-      ).to.emit(optimizer, "VoteCast");
+      ).to.not.emit(optimizer, "VoteCast");
+      expect(await gaugeController.voteCount()).to.equal(0n);
+    });
+
+    it("does NOT emit VoteCast when every delegated user's adapter call reverts", async () => {
+      const { optimizer, gaugeController, keeper, user, gaugeA, gaugeB } =
+        await loadFixture(deployFixture);
+      await optimizer.connect(user).delegate(user.address);
+      await gaugeController.setShouldRevertFor(user.address, true);
+      await expect(
+        optimizer.connect(keeper).castOptimalVote([gaugeA, gaugeB], [5000, 5000]),
+      )
+        .to.emit(optimizer, "VoteSkipped")
+        .and.to.not.emit(optimizer, "VoteCast");
       expect(await gaugeController.voteCount()).to.equal(0n);
     });
 
