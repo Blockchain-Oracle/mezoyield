@@ -54,7 +54,7 @@ export function Hero() {
             <span className="absolute inset-0 animate-ping rounded-full bg-mezo opacity-60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-mezo" />
           </span>
-          Live on Mezo Testnet · Set &amp; Forget online
+          Live on Mezo Mainnet · Set &amp; Forget online
         </p>
 
         {/* Hero — stacked editorial. The italic verb gets its own line +

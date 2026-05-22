@@ -48,8 +48,8 @@ export function FeatureGrid() {
           A yield platform with <span className="italic">teeth.</span>
         </h2>
         <p className="mt-4 text-sm text-muted-foreground">
-          Real testnet contracts. Real wagmi reads. Real gauge votes. No mocked
-          settlement, no theater.
+          Real Mezo Mainnet contracts. Real wagmi reads. Real gauge votes. No
+          mocked settlement, no theater.
         </p>
       </div>
 

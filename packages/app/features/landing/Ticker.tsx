@@ -56,15 +56,12 @@ function TickerInner() {
     ? `Mezo Mainnet · ${MEZO_CHAIN_ID}`
     : `Mezo Testnet · ${MEZO_CHAIN_ID}`;
 
-  // Cross-domain announcement gated by an explicit "is mainnet live"
-  // signal. Codex P2 (pre-push round): the prior version rendered
-  // "Also live mainnet.mezoyield.xyz" unconditionally on testnet builds
-  // even while the mainnet manifest's Optimizer.address is null (so
-  // the mainnet build literally cannot succeed). Surfacing that claim
-  // before Phase 5 deploys would be slop. The flag is FALSE until the
-  // mainnet manifest carries a non-null Optimizer; flipping it is the
-  // last line of the Phase 5 deploy PR.
-  const MAINNET_LIVE = false;
+  // Cross-domain announcement now safe to flip — mainnet v3.3 is
+  // deployed (Optimizer 0xCC79A4…d53) with at least one VoteCast
+  // event on chain (tx 0x17a4a564…4fdb). Testnet builds advertise
+  // "Also live mainnet.mezoyield.xyz"; mainnet builds reciprocate
+  // with "Testnet · mezoyield.xyz". No more conditional gate.
+  const MAINNET_LIVE = true;
   const items: { label: string; value: string; tone?: "mezo" }[] = [
     { label: "Top APY", value: topApy > 0 ? `${topApy.toFixed(1)}%` : "—", tone: "mezo" },
     { label: "Bribes posted", value: `${formatBig(totalBribesWei)} MUSD` },
