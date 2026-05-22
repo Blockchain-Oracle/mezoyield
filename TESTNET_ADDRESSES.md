@@ -1,44 +1,83 @@
-# Testnet Addresses
+# MezoYield deployments
 
-## Network
+## Networks
 
-| Field        | Value                                              |
-|--------------|----------------------------------------------------|
-| Chain name   | Mezo Testnet                                       |
-| Chain ID     | `31611`                                            |
-| RPC endpoint | `https://rpc.test.mezo.org`                        |
-| Explorer     | `https://explorer.test.mezo.org`                   |
-| Faucet       | `https://faucet.test.mezo.org`                     |
-| Deployed at  | `2026-05-01T18:52:04.908Z` (UTC)                   |
-| Deployer EOA | `0x84f94745ea0a434540749839819E65E281970004`       |
+| Field        | Testnet                                            | Mainnet                                            |
+|--------------|----------------------------------------------------|----------------------------------------------------|
+| Chain name   | Mezo Testnet                                       | Mezo Mainnet                                       |
+| Chain ID     | `31611`                                            | `31612`                                            |
+| RPC endpoint | `https://rpc.test.mezo.org`                        | `https://rpc-http.mezo.boar.network`               |
+| Explorer     | `https://explorer.test.mezo.org`                   | `https://explorer.mezo.org`                        |
+| Faucet       | `https://faucet.test.mezo.org`                     | n/a — real MEZO required                           |
+| Deployer EOA | `0x6A6D50F25A32f79bC784F7c67Df54ce21244834c` (also the keeper)                                  | same                                                |
 
-The deployment manifest is the on-disk source of truth at `packages/contracts/deployments/mezo-testnet.json` — that file is loaded by `packages/app/lib/contracts.ts`, which is what the frontend reads at runtime. Update the manifest, the app picks it up automatically.
+The deployment manifests at `packages/contracts/deployments/mezo-{testnet,mainnet}.json` are the on-disk source of truth — they're loaded by `packages/app/lib/contracts.ts` at build time based on the `NEXT_PUBLIC_MEZO_NETWORK` env var. Update the manifest, rebuild the app.
 
-## Contracts
+## Testnet contracts (v3 — per-user fan-out)
 
-| Contract              | Address                                       | Deployment tx                                                          | Block      |
-|-----------------------|-----------------------------------------------|------------------------------------------------------------------------|------------|
-| `MezoYieldOptimizer`  | `0x1A9a4f8279F88a1551117766957DB23A35133B6D`  | `0x05095dc0ec8c1385c6b648f994899b094870ae78a8541ec6c12d6163cc63b4b5`   | `12758568` |
-| `MockGaugeController` | `0xB2f5cBbf2401F4F74F3E4d9FaCb3C4b7c1897140`  | `0xe1c61060c21490db409effb068ceee50b89841edd91250b4ab3fe3cc63965eba`   | `12758565` |
-| `MockMatchbox`        | `0x5C86Aa4Cc0aff9f4AA9751671eE946dc4Dc07431`  | `0xd2c5115052416bc684fc0bf1fe48828196306951973c21fb0644a42cbce86d5e`   | `12758566` |
-| `MockVeMezo`          | `0x5351665b6805B35e0ba3C7522e62e7E3EEEeA2d6`  | `0x9f07a2386723dcd12bc4ca1143dbfdfed22f6857e3649b747c2cc0556a7d4305`   | `12758567` |
+| Slot                  | Address                                       | Real contract                | Block      |
+|-----------------------|-----------------------------------------------|------------------------------|------------|
+| `MezoYieldOptimizer`  | `0x62Bc24173cE545b751f095563716E93819d5740e`  | `MezoYieldOptimizer`         | `13205245` |
+| `MockGaugeController` | `0x2d413D8267b9ab5DE06C8588da66d1Caff337544`  | `MockGaugeController` (mock) | `13205242` |
+| `MockMatchbox`        | `0x3A8B5b22A3a433e3f31359c796e542221F48aB38`  | `MockMatchbox` (mock)        | `13205243` |
+| `MockVeMezo`          | `0xFe5C3420784C6F312fD5977FFfb7Af616C7dEb75`  | `MockVeMezo` (mock)          | `13205244` |
 
-Each address links to the testnet explorer once visited:
+[Optimizer](https://explorer.test.mezo.org/address/0x62Bc24173cE545b751f095563716E93819d5740e) · [MockGaugeController](https://explorer.test.mezo.org/address/0x2d413D8267b9ab5DE06C8588da66d1Caff337544) · [MockMatchbox](https://explorer.test.mezo.org/address/0x3A8B5b22A3a433e3f31359c796e542221F48aB38) · [MockVeMezo](https://explorer.test.mezo.org/address/0xFe5C3420784C6F312fD5977FFfb7Af616C7dEb75)
 
-- [`MezoYieldOptimizer`](https://explorer.test.mezo.org/address/0x1A9a4f8279F88a1551117766957DB23A35133B6D)
-- [`MockGaugeController`](https://explorer.test.mezo.org/address/0xB2f5cBbf2401F4F74F3E4d9FaCb3C4b7c1897140)
-- [`MockMatchbox`](https://explorer.test.mezo.org/address/0x5C86Aa4Cc0aff9f4AA9751671eE946dc4Dc07431)
-- [`MockVeMezo`](https://explorer.test.mezo.org/address/0x5351665b6805B35e0ba3C7522e62e7E3EEEeA2d6)
+## Mainnet contracts (v3)
 
-## Why are there mock contracts?
+| Slot                  | Address                                       | Real contract                                  | Notes |
+|-----------------------|-----------------------------------------------|------------------------------------------------|-------|
+| `MezoYieldOptimizer`  | _see `deployments/mezo-mainnet.json`_         | `MezoYieldOptimizer`                           | redeployed each canonical run |
+| `MockGaugeController` | _see manifest_                                | `BoostVoterAdapter` (wraps real BoostVoter)    | slot named for shape compat |
+| `MockMatchbox`        | `0xdB2CB451fBCfa232d97d5De878F17Cc3F2b10535`  | `MatchboxAdapter` (5 tracked gauges, seeded bribes) | preserved across redeploys |
+| `MockVeMezo`          | `0x2d413D8267b9ab5DE06C8588da66d1Caff337544`  | `VeMezoVotingPower` (sums NFT voting power)    | preserved across redeploys |
 
-Mezo has not yet published canonical mainnet addresses for the gauge controller, matchbox (bribe distributor), or veMEZO token. The judge-facing demo therefore deploys testnet stand-ins so the application can call real on-chain code end-to-end (per the "no teeth = no win" rule from MEZO Hack transcripts).
+`external` block (real upstream Mezo contracts the adapters wrap):
 
-The real Mezo gauge system is `mezo-org/tigris`'s `Voter.sol` (Solidly-style ve-NFT). When the production addresses are published, swapping requires only an updated deployment manifest — the optimizer's `IGaugeController` and `IMatchbox` interfaces match Tigris's surface, and there's no hard-coded address in the application code.
+| Name             | Address                                       |
+|------------------|-----------------------------------------------|
+| `MezoBoostVoter` | `0x2Ba614a598Cffa5a19d683cDCA97bac3a49313d1`  |
+| `VeMEZO` (NFT)   | `0xb90fdAd3DFD180458D62Cc6acedc983D78E20122`  |
+| `MEZO`           | `0x7B7c000000000000000000000000000000000001`  |
+| `MUSD`           | `0xdD468A1DDc392dcdbEf6db6e34E89AA338F9F186`  |
 
-## Seeded state
+## Testnet vs mainnet wiring delta
 
-The deploy script seeded the testnet with a small dataset so the demo flow is observable without a separate setup ritual:
+This is the most load-bearing fact about the codebase. **Both networks satisfy the same `IGaugeController` and `IMatchbox` interfaces, so the Optimizer source is identical.** What differs is the contract **wired into the gauge-controller slot** and the **user-flow constraints** that contract imposes.
+
+```
+TESTNET                                           MAINNET
+─────────────────────────────────                ─────────────────────────────────
+Keeper EOA                                       Keeper EOA
+   │                                                │
+   ▼                                                ▼
+MezoYieldOptimizer                               MezoYieldOptimizer
+   │ castOptimalVote → iterate delegated users     │  (same source code)
+   │                                                │
+   ▼ voteForUser(user, gauges, weights)             ▼
+MockGaugeController                              BoostVoterAdapter (onlyOptimizer)
+   │ records vote in mock storage                   │ checks voter has veMEZO NFT
+   │ no NFT check                                   │ tokenOfOwnerByIndex(voter, 0)
+   │ no approval check                              ▼
+   ▼                                              real Mezo BoostVoter
+   (done)                                            │ requires isApprovedOrOwner(adapter, tokenId)
+                                                     ▼
+                                                  records vote against tokenId
+```
+
+**Behavioral consequences for the user flow:**
+
+| Step                         | Testnet                                   | Mainnet                                                          |
+|------------------------------|-------------------------------------------|------------------------------------------------------------------|
+| Get veMEZO                   | `MockVeMezo.faucet()` (mints 1000 wei)    | `VeMEZO.createLock(amount, ≥604_800s)` — locks real MEZO         |
+| Approve adapter for NFT      | not required (mock skips check)           | `VeMEZO.setApprovalForAll(BoostVoterAdapter, true)` — required   |
+| Delegate                     | `Optimizer.delegate(self)`                | `Optimizer.delegate(self)` — same                                |
+| Keeper vote-fan-out          | hits MockGaugeController; always succeeds | hits BoostVoterAdapter → BoostVoter; reverts per-user if NFT approval missing or epoch already voted |
+
+**Why we don't unify (per Codex round 2 + research on Tigris/MUSD patterns):** Mezo's own MUSD protocol uses `NoOp` stubs on Sepolia with explicit disclosure. Tigris uses real contracts both sides. Both patterns are industry-defensible. For MezoYield's hackathon timeline the cost-benefit of full parity (4–6 h rebuild, breaks existing testnet state) doesn't beat documenting the divergence + locking interface conformance via `test/InterfaceConformance.test.ts`. Phase G's mainnet smoke test catches the residual risk (anything the testnet flow doesn't exercise) on the real chain before demo.
+
+## Seeded state (testnet only)
 
 | Seed                           | Value                                  |
 |--------------------------------|----------------------------------------|
@@ -54,6 +93,4 @@ Gauge addresses are deterministic (`keccak256(name)` truncated to 160 bits), so 
 | MUSD Savings Rate     | `0x170aa1595dC03156B857201599BbFfb325Fda61b`  | 9_200_000            | 4_500              |
 | BTC-MUSD LP           | `0xA6373a4c6fB851673e73cA2Ff05bC80853E40B38`  | 6_700_000            | 5_200              |
 
-## Mainnet readiness
-
-`packages/app/lib/contracts.ts` accepts both `chainId: 31611` (testnet) and `chainId: 31612` (mainnet) so the same source code can be retargeted by swapping the manifest. Mainnet deploy is intentionally deferred until Mezo publishes the real gauge / matchbox addresses; once they're available, the deploy script's address resolver (currently `MockGaugeController` etc.) is the only thing that needs to change.
+Mainnet seeds nothing automatically — see `scripts/redeploy-mainnet-canonical.ts` operational checklist for the per-user lock/approve/delegate sequence.

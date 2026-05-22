@@ -5,8 +5,16 @@ import {IGaugeController} from "../interfaces/IGaugeController.sol";
 
 /**
  * @title MockGaugeController
- * @notice Test/testnet stand-in for the real Mezo gauge controller. Real
- *         Mezo gauges live in `mezo-org/tigris`'s Voter.sol — see
+ * @notice **Testnet-only**. Production sibling is `BoostVoterAdapter`
+ *         (`contracts/adapters/BoostVoterAdapter.sol`) which implements
+ *         the same `IGaugeController` interface on top of the real Mezo
+ *         BoostVoter. The mock skips the veMEZO NFT ownership / approval
+ *         checks the real adapter enforces, so the testnet user-flow is
+ *         shorter (no `setApprovalForAll` step). Behavioral delta is
+ *         documented in `TESTNET_ADDRESSES.md#testnet-vs-mainnet-wiring-delta`;
+ *         interface parity is locked by `test/InterfaceConformance.test.ts`.
+ *
+ *         Real Mezo gauges live in `mezo-org/tigris`'s Voter.sol — see
  *         `context/refs/repos/tigris/solidity/contracts/Voter.sol`. We
  *         deploy this mock alongside MezoYieldOptimizer for testnet demos
  *         because Mezo hasn't published canonical gauge controller

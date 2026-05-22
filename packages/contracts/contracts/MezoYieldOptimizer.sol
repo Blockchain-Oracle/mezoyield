@@ -29,10 +29,30 @@ contract MezoYieldOptimizer {
     /// @notice Total weight units in basis points. Allocations must sum to this.
     uint256 public constant TOTAL_BPS = 10_000;
 
-    /// @notice Gauge controller that records vote weights.
+    /// @notice Gauge controller that records vote weights. All consumers
+    ///         (Optimizer, frontend hooks, keeper) talk to it via the
+    ///         `IGaugeController` interface — the Optimizer is chain-
+    ///         agnostic. The address wired here varies by network:
+    ///
+    ///         - Mainnet: `BoostVoterAdapter` (wraps the real Mezo
+    ///           `BoostVoter` at `external.MezoBoostVoter`). Requires
+    ///           each voter to own a veMEZO NFT AND have called
+    ///           `veMEZO.setApprovalForAll(adapter, true)` so the
+    ///           adapter can submit votes on their behalf.
+    ///         - Testnet: `MockGaugeController` (records votes in mock
+    ///           storage with no NFT check). No approval needed.
+    ///
+    ///         See `TESTNET_ADDRESSES.md#testnet-vs-mainnet-wiring-delta`
+    ///         and `test/InterfaceConformance.test.ts` (selector parity).
     address public immutable gaugeController;
 
-    /// @notice Bribe/reward market the contract forwards `claimRewards` to.
+    /// @notice Bribe/reward market the contract forwards `claimRewards`
+    ///         to. Same shape contract: `IMatchbox` interface, different
+    ///         implementation per network.
+    ///
+    ///         - Mainnet: `MatchboxAdapter` (multiplexes per-gauge
+    ///           `BribeVotingReward` claims via the real BoostVoter).
+    ///         - Testnet: `MockMatchbox` (records claims in mock storage).
     address public immutable matchbox;
 
     /// @notice veMEZO contract (or shim) used to gate `delegate()`. Must

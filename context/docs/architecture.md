@@ -110,6 +110,45 @@ Reason: Goldsky is a hackathon sponsor. Using their indexing earns sponsor point
 **ADR-4: SPA layout, not multi-route dashboard**  
 Reason: Baked into hackathon-playbook.md §12 — demo punch requires focus. One page with mode toggle (Dashboard ↔ Optimize).
 
+**ADR-5: Per-user vote fan-out via `voteForUser`**
+Reason: original v1/v2 wiring had `Optimizer → adapter.voteForGaugeWeights` which checks `veMezo.balanceOf(msg.sender)` — and `msg.sender` from the optimizer's call frame is the *optimizer contract* (non-custodial, holds zero NFTs). Every keeper tick reverted with `CallerHasNoVeMezo` on mainnet. v3 introduces `IGaugeController.voteForUser(voter, gauges, weights)` so the optimizer fans out one keeper tx into N per-user adapter calls, each using that user's own veMEZO NFT (the user must `setApprovalForAll(adapter, true)` once). Mirrors Aerodrome / Velodrome / Tigris's Solidly-style auth pattern. See `MezoYieldOptimizer.sol:castOptimalVote` + the postmortem section in the PR.
+
+---
+
+## Contract dependency wiring — testnet vs mainnet
+
+The Optimizer source is identical across networks; what differs is the contract wired into the `gaugeController` slot. Both implementations satisfy the `IGaugeController` interface (locked in by `test/InterfaceConformance.test.ts`); only the *behavior* downstream of that interface differs.
+
+```
+TESTNET (chain 31611)                            MAINNET (chain 31612)
+─────────────────────────────────                ─────────────────────────────────
+Keeper EOA                                       Keeper EOA
+   │                                                │
+   ▼                                                ▼
+MezoYieldOptimizer (same source)                 MezoYieldOptimizer (same source)
+   │                                                │
+   ▼ IGaugeController.voteForUser                   ▼ IGaugeController.voteForUser
+MockGaugeController                              BoostVoterAdapter (onlyOptimizer)
+   │ records vote in mock storage                   │ checks voter holds veMEZO NFT
+   │ no NFT check                                   │ uses tokenOfOwnerByIndex(voter, 0)
+   │ no approval required                           ▼
+   ▼                                              real Mezo BoostVoter
+   (done)                                            │ checks isApprovedOrOwner(adapter, tokenId)
+                                                     ▼
+                                                  records vote against tokenId
+```
+
+**Behavioral consequences for the user flow:**
+
+| Step                         | Testnet                                     | Mainnet                                                          |
+|------------------------------|---------------------------------------------|------------------------------------------------------------------|
+| Acquire veMEZO               | `MockVeMezo.faucet()` (mints 1000 wei)      | `VeMEZO.createLock(amount, ≥604800s)` — real MEZO locked         |
+| Approve adapter for NFT      | not required                                | `VeMEZO.setApprovalForAll(BoostVoterAdapter, true)` — required   |
+| Delegate                     | `Optimizer.delegate(self)` — same           | `Optimizer.delegate(self)` — same                                |
+| Keeper vote fan-out          | always succeeds against mock                | reverts per-user if NFT approval missing / epoch already voted; try/catch emits `VoteSkipped` |
+
+Pattern justification: Mezo's own MUSD protocol uses `NoOp` stubs on Sepolia with explicit disclosure; Tigris uses real contracts on both sides. Both patterns are industry-defensible. We chose the former (mocks + interface conformance) over a full testnet rebuild — see `TESTNET_ADDRESSES.md` for the trade-off analysis and `test/InterfaceConformance.test.ts` for the selector-parity guard.
+
 ---
 
 ## Mezo Testnet config

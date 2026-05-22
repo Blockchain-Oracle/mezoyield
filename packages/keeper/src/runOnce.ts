@@ -15,6 +15,7 @@ import {
   type RunOnceOptions,
   type RunOnceResult,
 } from "./keeperFlow.js";
+import { keeperGasLimitFor } from "./keeperGasLimit.js";
 import { notify } from "./notifier.js";
 
 const logger = pino({
@@ -31,6 +32,13 @@ const optimizerAbi = [
       { name: "weights", type: "uint256[]" },
     ],
     outputs: [],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "delegatedUsersCount",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
   },
 ] as const;
 
@@ -100,12 +108,27 @@ export async function runOnce(opts: RunOnceOptions = {}): Promise<RunOnceResult>
         return allocation;
       },
       submitVote: async (allocation) => {
-        logger.info("submitting castOptimalVote…");
+        // Size gas to delegated-user count BEFORE submitting. viem's
+        // estimator can't see past `castOptimalVote`'s try/catch into
+        // the per-user adapter call, so it under-allocates and the
+        // inner BoostVoter.vote OOGs silently into a VoteSkipped event.
+        // See `keeperGasLimit.ts` for the postmortem.
+        const delegatedCount = (await publicClient.readContract({
+          address: OPTIMIZER_ADDRESS,
+          abi: optimizerAbi,
+          functionName: "delegatedUsersCount",
+        })) as bigint;
+        const gas = keeperGasLimitFor(delegatedCount);
+        logger.info(
+          { delegatedCount: delegatedCount.toString(), gas: gas.toString() },
+          "submitting castOptimalVote with sized gas",
+        );
         const txHash = await walletClient.writeContract({
           address: OPTIMIZER_ADDRESS,
           abi: optimizerAbi,
           functionName: "castOptimalVote",
           args: [allocation.gauges, allocation.weights],
+          gas,
         });
         logger.info({ txHash }, "submitted; waiting for receipt");
         const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
