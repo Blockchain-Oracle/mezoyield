@@ -5,6 +5,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "./providers";
 import { ThemeProviderClient } from "@/components/ThemeProviderClient";
+import { GlobalTicker } from "@/components/GlobalTicker";
 
 /**
  * Type system — committed to aesthetic, not defaults.
@@ -71,7 +72,10 @@ export default function RootLayout({
          * the theme class on <html> never depends on the wallet stack
          * being mounted. */}
         <ThemeProviderClient>
-          <Providers>{children}</Providers>
+          <Providers>
+            <GlobalTicker />
+            {children}
+          </Providers>
         </ThemeProviderClient>
       </body>
     </html>

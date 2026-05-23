@@ -4,11 +4,9 @@ import { render, screen } from "@testing-library/react";
 /**
  * BDD coverage for the landing's <ProtocolEarningsChart />:
  *   - Pre-walletReady → renders skeleton (NOT the inner chart).
- *   - With aggregated claim data → renders the BarChart and the currency
- *     toggle in the top-right.
- *   - Empty state (zero claims) → renders an explicit "No claims yet"
- *     empty-state line instead of the chart container.
- *   - Currency toggle → switches the rendered label from MUSD → BTC.
+ *   - With aggregated bribe data → renders the BarChart with MUSD totals.
+ *   - Empty state (zero bribes) → renders an explicit empty-state line.
+ *   - MUSD-only, no BTC toggle (Codex P1 regression).
  *   - Error → renders an inline error block.
  */
 
@@ -18,11 +16,12 @@ vi.mock("@/app/providers", () => ({
 }));
 
 type Bucket = { epoch: number; musdWei: bigint };
+type GaugeBribe = { gauge: `0x${string}`; amountWei: bigint };
 type HookResult = {
   epochs: Bucket[];
-  totalVeMezoWei: bigint;
-  uniqueClaimants: number;
-  source: "subgraph" | "rpc" | null;
+  byGauge: GaugeBribe[];
+  uniqueGauges: number;
+  source: "rpc" | null;
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
@@ -31,8 +30,8 @@ type HookResult = {
 const hookState: { value: HookResult } = {
   value: {
     epochs: [],
-    totalVeMezoWei: 0n,
-    uniqueClaimants: 0,
+    byGauge: [],
+    uniqueGauges: 0,
     source: "rpc",
     isLoading: false,
     isError: false,
@@ -40,8 +39,28 @@ const hookState: { value: HookResult } = {
   },
 };
 
-vi.mock("@/hooks/useProtocolYieldHistory", () => ({
-  useProtocolYieldHistory: () => hookState.value,
+vi.mock("@/hooks/useProtocolBribesHistory", () => ({
+  useProtocolBribesHistory: () => hookState.value,
+}));
+
+// useGaugeData provides human-readable names for each gauge address.
+// Mock with the same five gauge addresses the byGauge fixture uses
+// so the chart renders human labels rather than truncated hex.
+vi.mock("@/hooks/useGaugeData", () => ({
+  useGaugeData: () => ({
+    gauges: [
+      { address: "0x1111111111111111111111111111111111111111", name: "Mezo Gauge 0" },
+      { address: "0x2222222222222222222222222222222222222222", name: "Mezo Gauge 1" },
+      { address: "0x3333333333333333333333333333333333333333", name: "Mezo Gauge 2" },
+      { address: "0x4444444444444444444444444444444444444444", name: "Mezo Gauge 3" },
+      { address: "0x5555555555555555555555555555555555555555", name: "Mezo Gauge 4" },
+    ],
+    isLoading: false,
+    isError: false,
+    error: null,
+    source: "rpc",
+    refetch: () => {},
+  }),
 }));
 
 // Recharts' ResponsiveContainer uses ResizeObserver / element-size; in jsdom
@@ -67,13 +86,21 @@ function makeContiguous(values: bigint[]): Bucket[] {
   return values.map((v, i) => ({ epoch: NOW_EPOCH - (7 - i), musdWei: v }));
 }
 
+const SAMPLE_BY_GAUGE: GaugeBribe[] = [
+  { gauge: "0x1111111111111111111111111111111111111111", amountWei: 8n * 10n ** 18n },
+  { gauge: "0x2222222222222222222222222222222222222222", amountWei: 5n * 10n ** 18n },
+  { gauge: "0x3333333333333333333333333333333333333333", amountWei: 4n * 10n ** 18n },
+  { gauge: "0x4444444444444444444444444444444444444444", amountWei: 4n * 10n ** 18n },
+  { gauge: "0x5555555555555555555555555555555555555555", amountWei: 3n * 10n ** 18n },
+];
+
 describe("<ProtocolEarningsChart />", () => {
   beforeEach(() => {
     walletReadyState.value = true;
     hookState.value = {
       epochs: makeContiguous([0n, 0n, 1n * 10n ** 18n, 2n * 10n ** 18n, 0n, 3n * 10n ** 18n, 4n * 10n ** 18n, 5n * 10n ** 18n]),
-      totalVeMezoWei: 20_000_000n * 10n ** 18n,
-      uniqueClaimants: 12,
+      byGauge: SAMPLE_BY_GAUGE,
+      uniqueGauges: SAMPLE_BY_GAUGE.length,
       source: "rpc",
       isLoading: false,
       isError: false,
@@ -88,7 +115,7 @@ describe("<ProtocolEarningsChart />", () => {
     expect(screen.queryByTestId("protocol-chart")).not.toBeInTheDocument();
   });
 
-  it("Given aggregated claim data, When rendered, Then it shows the chart with MUSD totals", () => {
+  it("Given aggregated bribe data, When rendered, Then it shows the chart with MUSD totals", () => {
     render(<ProtocolEarningsChart />);
     expect(screen.getByTestId("protocol-chart")).toBeInTheDocument();
     expect(
@@ -96,15 +123,16 @@ describe("<ProtocolEarningsChart />", () => {
     ).toMatch(/MUSD/);
   });
 
-  it("Given no claim events on chain, When rendered, Then it shows the empty-state copy", () => {
+  it("Given no bribe events on chain, When rendered, Then it shows the empty-state copy", () => {
     hookState.value = {
       ...hookState.value,
       epochs: [],
-      uniqueClaimants: 0,
+      byGauge: [],
+      uniqueGauges: 0,
     };
     render(<ProtocolEarningsChart />);
     expect(
-      screen.getByText(/no claims yet/i),
+      screen.getByText(/no bribes posted yet/i),
     ).toBeInTheDocument();
   });
 
@@ -121,6 +149,7 @@ describe("<ProtocolEarningsChart />", () => {
     hookState.value = {
       ...hookState.value,
       epochs: [],
+      byGauge: [],
       isError: true,
       error: new Error("indexer 503"),
     };

@@ -5,7 +5,9 @@ import { useLastVote } from "@/hooks/useLastVote";
 import { useGaugeData } from "@/hooks/useGaugeData";
 import { useWalletReady } from "@/app/providers";
 import {
+  MEZO_CHAIN_ID,
   MEZO_EXPLORER,
+  MEZO_NETWORK,
   OPTIMIZER_ADDRESS,
 } from "@/lib/contracts";
 import type { Address, Gauge } from "@/lib/types";
@@ -272,7 +274,9 @@ function StatusChip({
         <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${dotClass}`} />
       </span>
       <span className={textClass}>{label}</span>
-      <span className="text-muted-foreground">· testnet 31611</span>
+      <span className="text-muted-foreground">
+        · {MEZO_NETWORK === "mainnet" ? "mainnet" : "testnet"} {MEZO_CHAIN_ID}
+      </span>
     </span>
   );
 }

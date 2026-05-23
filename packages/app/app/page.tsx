@@ -1,6 +1,5 @@
 import { AppHeader } from "@/components/AppHeader/AppHeader";
 import { Hero } from "@/features/landing/Hero";
-import { Ticker } from "@/features/landing/Ticker";
 import { HowItWorks } from "@/features/landing/HowItWorks";
 import { ProofLedger } from "@/features/landing/ProofLedger";
 import { Comparison } from "@/features/landing/Comparison";
@@ -14,8 +13,10 @@ import { Footer } from "@/features/landing/Footer";
  * the order judges/visitors will read it:
  *
  *   1. Hero — maximalist Fraunces statement, status pulse, dual CTAs.
- *   2. Ticker — continuously-scrolling on-chain numbers (no teeth=no win).
- *   3. HowItWorks — 3 Fraunces-numeral steps, asymmetric staircase.
+ *      (The continuously-scrolling on-chain ticker lives in
+ *      `components/GlobalTicker.tsx`, mounted in `app/layout.tsx`
+ *      above this page — sticks to the top across every route.)
+ *   2. HowItWorks — 3 Fraunces-numeral steps, asymmetric staircase.
  *   4. ProofLedger — receipts. The most recent on-chain VoteCast from
  *      the keeper, pulled live. Replaces the old JudgeQuotes section
  *      (quotes are soft signals, tx hashes are hard signals).
@@ -29,7 +30,6 @@ export default function LandingPage() {
     <div className="flex min-h-screen flex-col">
       <AppHeader variant="landing" />
       <Hero />
-      <Ticker />
       <HowItWorks />
       <ProofLedger />
       <Comparison />
