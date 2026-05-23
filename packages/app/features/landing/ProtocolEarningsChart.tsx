@@ -5,52 +5,43 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { useWalletReady } from "@/app/providers";
-import {
-  useProtocolYieldHistory,
-} from "@/hooks/useProtocolYieldHistory";
-import type { YieldBucket } from "@/hooks/useYieldHistory";
+import { useProtocolBribesHistory } from "@/hooks/useProtocolBribesHistory";
+import { useGaugeData } from "@/hooks/useGaugeData";
+import type { Address } from "@/lib/types";
 
 /**
- * Synthesize 8 zero-value contiguous buckets ending at the current
- * Unix-aligned epoch. ONLY used to keep the chart container visible
- * when `epochs.length === 0` from the hook (genuinely no on-chain
- * claims yet) — per SPEC.md acceptance: "Chart renders with all-zero
- * bars and a small empty-state line — never invented values." The
- * values are explicitly zero, not invented. The visible "No claims
- * yet" line accompanies the bars so readers don't mistake a flat
- * baseline for a price chart.
- */
-function buildEmptyBuckets(): YieldBucket[] {
-  const SECONDS_PER_EPOCH = 604_800;
-  const nowEpoch = Math.floor(Date.now() / 1000 / SECONDS_PER_EPOCH);
-  return Array.from({ length: 8 }, (_, i) => ({
-    epoch: nowEpoch - (7 - i),
-    musdWei: 0n,
-  }));
-}
-
-/**
- * Landing-page chart of protocol-aggregate MUSD distributed per epoch.
- * Anchor signal lifted from Boar Finance's "Live Performance" panel —
- * before a visitor connects, they see the protocol is actually moving.
+ * Landing-page chart of MUSD bribed into each Mezo gauge. Anchor signal
+ * lifted from Boar Finance's "Live Performance" panel — before a
+ * visitor connects, they see the protocol is actually moving.
  *
- * Sized smaller than Boar's hero chart on purpose — the strategies grid
- * remains MezoYield's hero, the chart is secondary credibility.
+ * Why per-gauge (not weekly time-series): all current bribes were posted
+ * in the same epoch during the mainnet seeding, so a weekly chart
+ * collapses to one tall bar + seven empty bars and misleads readers
+ * into thinking the protocol just spiked. Per-gauge distribution is
+ * the actually-useful signal: it shows *where* sponsor MUSD is sitting,
+ * which is what an Aunt-Linda user wants to know ("which pools are
+ * paying right now?"). When bribes start landing across multiple
+ * epochs, the hook already exposes `epochs[]` — we can add a tab
+ * toggle then.
  *
- * Currency: MUSD only. Rewards are MUSD-denominated on-chain; there is
- * no live price feed wired up, so we don't render BTC values. Codex P1
- * (pre-merge review) caught a prior version using a fixed sentinel rate
- * to fake a BTC toggle — invented numbers on a credibility chart break
- * the same anti-slop rule we apply to gauges and APYs.
+ * Why bribes (not RewardsClaimed): claims fire only after a user calls
+ * `claim()` post-settlement, and no user has done that yet on either
+ * network — the prior chart sat flat at 0/0/0. Bribes are the
+ * upstream signal: MUSD landing in the protocol that will *become*
+ * claims. §14 still holds — every bar is an on-chain log.
  *
- * §14: no invented values. Hook returns `[]` → empty-state copy. Hook
- * returns isError → error block, never a blank chart.
+ * Currency: MUSD only. There is no live price feed wired up, so we
+ * don't render BTC values. Codex P1 (pre-merge review) caught a prior
+ * version using a fixed sentinel rate to fake a BTC toggle — invented
+ * numbers on a credibility chart break the same anti-slop rule we
+ * apply to gauges and APYs.
  */
 
 export function ProtocolEarningsChart() {
@@ -79,26 +70,27 @@ function ProtocolEarningsChartSkeleton() {
 }
 
 function ProtocolEarningsChartInner() {
-  const { epochs, uniqueClaimants, source, isError, error } =
-    useProtocolYieldHistory();
+  const { byGauge, uniqueGauges, source, isError, error } =
+    useProtocolBribesHistory();
+  const { gauges: knownGauges } = useGaugeData();
 
   if (isError) {
     return (
       <section className="mx-auto w-full max-w-5xl px-6">
         <div className="rounded-2xl border border-border bg-card/40 p-6">
           <p className="text-sm text-destructive">
-            Couldn&rsquo;t load protocol earnings: {error?.message ?? "unknown error"}
+            Couldn&rsquo;t load protocol bribes: {error?.message ?? "unknown error"}
           </p>
         </div>
       </section>
     );
   }
 
-  const total = epochs.reduce((acc, b) => acc + b.musdWei, 0n);
-  const isEmpty = epochs.length === 0 || total === 0n;
-  const displayBuckets = epochs.length === 0 ? buildEmptyBuckets() : epochs;
-  const newestEpoch = displayBuckets[displayBuckets.length - 1].epoch;
-  const data = displayBuckets.map((b) => toRow(b, newestEpoch));
+  const total = byGauge.reduce((acc, b) => acc + b.amountWei, 0n);
+  const isEmpty = byGauge.length === 0 || total === 0n;
+  const rows = (isEmpty ? buildEmptyRows() : byGauge).map((b, i) =>
+    toRow(b, total, knownGauges ?? [], i),
+  );
 
   return (
     <section className="mx-auto w-full max-w-5xl px-6">
@@ -109,7 +101,7 @@ function ProtocolEarningsChartInner() {
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div className="flex flex-col">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              Protocol earnings
+              MUSD bribed into the protocol
             </span>
             <span
               data-testid="protocol-chart-currency-label"
@@ -118,39 +110,43 @@ function ProtocolEarningsChartInner() {
               {formatTotal(total)}
             </span>
             <span className="mt-1 text-xs text-muted-foreground">
-              across {uniqueClaimants} unique{" "}
-              {uniqueClaimants === 1 ? "claimant" : "claimants"} ·{" "}
-              {epochs.length} epochs · source {source ?? "rpc"}
+              {uniqueGauges} {uniqueGauges === 1 ? "gauge" : "gauges"} ·
+              latest BribeUpdated per gauge · source {source ?? "rpc"}
             </span>
           </div>
         </div>
 
-        <div className="mt-5 h-44 w-full">
+        <div className="mt-5 h-52 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={data}
-              margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+              data={rows}
+              layout="vertical"
+              margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
             >
               <CartesianGrid
                 stroke="var(--color-border)"
                 strokeDasharray="3 3"
-                vertical={false}
+                horizontal={false}
               />
               <XAxis
+                type="number"
+                stroke="var(--color-muted-foreground)"
+                fontSize={10}
+                tickLine={false}
+                axisLine={false}
+                domain={isEmpty ? [0, 1] : undefined}
+                tickFormatter={(v: number) =>
+                  v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)
+                }
+              />
+              <YAxis
+                type="category"
                 dataKey="label"
                 stroke="var(--color-muted-foreground)"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
-              />
-              <YAxis
-                stroke="var(--color-muted-foreground)"
-                fontSize={10}
-                tickLine={false}
-                axisLine={false}
-                width={48}
-                domain={isEmpty ? [0, 1] : undefined}
-                tickFormatter={(v: number) => v.toFixed(2)}
+                width={140}
               />
               <Tooltip
                 cursor={{ fill: "var(--color-muted)" }}
@@ -160,21 +156,30 @@ function ProtocolEarningsChartInner() {
                   color: "var(--color-foreground)",
                   fontSize: 11,
                 }}
-                formatter={(value) => {
+                formatter={(value, _name, ctx) => {
                   const n = typeof value === "number" ? value : Number(value);
-                  return [`${n.toFixed(2)} MUSD`, "Distributed"];
+                  const pct = ctx?.payload?.pct;
+                  return [
+                    `${n.toFixed(2)} MUSD${typeof pct === "number" ? ` · ${pct.toFixed(1)}%` : ""}`,
+                    "Bribed",
+                  ];
                 }}
               />
-              <Bar dataKey="value" fill="var(--color-mezo)" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                {rows.map((r) => (
+                  <Cell key={r.label} fill={r.fill} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {isEmpty && (
           <p className="mt-2 text-xs text-muted-foreground">
-            No claims yet — be the first to optimize and post an on-chain
-            <code className="mx-1 font-mono text-foreground">RewardsClaimed</code>
-            event.
+            No bribes posted yet — once a sponsor calls the matchbox the
+            chart fills in via on-chain
+            <code className="mx-1 font-mono text-foreground">BribeUpdated</code>
+            events.
           </p>
         )}
       </div>
@@ -182,13 +187,45 @@ function ProtocolEarningsChartInner() {
   );
 }
 
-function toRow(bucket: YieldBucket, newestEpoch: number) {
-  const delta = bucket.epoch - newestEpoch;
-  const label = delta === 0 ? "Now" : `${delta}`;
-  return {
-    label,
-    value: Number(formatUnits(bucket.musdWei, 18)),
-  };
+type RawRow = { gauge: Address; amountWei: bigint };
+type ChartRow = {
+  label: string;
+  value: number;
+  pct: number;
+  fill: string;
+};
+
+function buildEmptyRows(): RawRow[] {
+  // Five placeholder rows so the bar chart container retains its
+  // canonical height instead of collapsing. Zero values are explicit,
+  // never invented (§14).
+  const zero = "0x0000000000000000000000000000000000000000" as Address;
+  return Array.from({ length: 5 }, () => ({ gauge: zero, amountWei: 0n }));
+}
+
+function toRow(
+  bucket: RawRow,
+  total: bigint,
+  known: Array<{ address: Address; name: string }>,
+  index: number,
+): ChartRow {
+  const meta = known.find(
+    (g) => g.address.toLowerCase() === bucket.gauge.toLowerCase(),
+  );
+  const label =
+    meta?.name ??
+    (bucket.gauge === "0x0000000000000000000000000000000000000000"
+      ? `Gauge ${index + 1}`
+      : `${bucket.gauge.slice(0, 6)}…${bucket.gauge.slice(-4)}`);
+  const value = Number(formatUnits(bucket.amountWei, 18));
+  const pct =
+    total === 0n
+      ? 0
+      : Number((bucket.amountWei * 10_000n) / total) / 100;
+  // Top-bribed gauge gets the brand accent; the rest sit at half opacity
+  // so the eye lands on the leader. Pure visual, no data implication.
+  const fill = index === 0 ? "var(--color-mezo)" : "rgba(255,0,77,0.45)";
+  return { label, value, pct, fill };
 }
 
 function formatTotal(wei: bigint): string {

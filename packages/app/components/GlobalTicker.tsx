@@ -72,7 +72,7 @@ function TickerBoot() {
       className="ticker-container sticky top-0 z-50 flex h-8 w-full items-center justify-center overflow-hidden border-b border-foreground/10 bg-black/85 backdrop-blur-sm"
     >
       <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
-        · booting on-chain feed · live on Mezo Mainnet ·
+        · booting on-chain feed · live on mainnet · mainnet.mezoyield.xyz ·
       </span>
     </aside>
   );
@@ -92,8 +92,13 @@ function TickerInner() {
   const totalVeMezoWei = list.reduce((acc, g) => acc + g.totalVeMezoWei, 0n);
 
   const items: Item[] = [
-    { kind: "text", label: "Live on", value: "Mezo Mainnet", tone: "mezo" },
-    { kind: "text", label: "Status", value: "Set & Forget · non-custodial", tone: "mezo" },
+    {
+      kind: "link",
+      label: "Live on Mainnet",
+      value: "mainnet.mezoyield.xyz",
+      href: "https://mainnet.mezoyield.xyz",
+      tone: "mezo",
+    },
     { kind: "text", label: "Top APY", value: topApy > 0 ? `${topApy.toFixed(1)}%` : "—", tone: "mezo" },
     { kind: "text", label: "Bribes posted", value: `${formatBig(totalBribesWei)} MUSD` },
     { kind: "text", label: "Total veMEZO", value: formatBig(totalVeMezoWei) },

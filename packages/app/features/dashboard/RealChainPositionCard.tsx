@@ -21,6 +21,12 @@ export function RealChainPositionCard() {
   const { address } = useAccount();
   const real = useRealVeMezoPosition(address);
   const balances = useTokenBalances(address);
+  // Hooks must run unconditionally and in the same order on every
+  // render — React enforces this. Compute the live-aging label here
+  // (the hook returns undefined for null/undefined input) so the
+  // early-return branches below don't change the hook count.
+  const unlock = real.data?.earliestUnlockSeconds ?? null;
+  const unlockAgo = useLiveRelativeTime(unlock);
 
   if (!real.available) return null; // testnet — show nothing
   if (!address) {
@@ -43,8 +49,6 @@ export function RealChainPositionCard() {
   const pos = real.data;
   const nftCount = pos?.nftCount ?? 0n;
   const hasLock = nftCount > 0n;
-  const unlock = pos?.earliestUnlockSeconds ?? null;
-  const unlockAgo = useLiveRelativeTime(unlock);
 
   return (
     <Card className="bg-card">

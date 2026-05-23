@@ -174,4 +174,14 @@ export const OPTIMIZER_DEPLOYMENT_BLOCK = BigInt(
   manifest.contracts.MezoYieldOptimizer.blockNumber ?? 0,
 );
 
+// Lower bound for `getLogs` calls against the Matchbox slot — used by
+// the landing-page bribes chart. The matchbox slot holds different
+// contracts per chain (MockMatchbox on testnet, MatchboxAdapter on
+// mainnet) but the deploy block lives in the same manifest entry on
+// both. Falls back to 0n so the walker can start from genesis if the
+// manifest somehow has the address but null block (deploy-script bug).
+export const MATCHBOX_DEPLOYMENT_BLOCK = BigInt(
+  manifest.contracts.MockMatchbox.blockNumber ?? 0,
+);
+
 export const DEPLOYMENT_MANIFEST = manifest;
