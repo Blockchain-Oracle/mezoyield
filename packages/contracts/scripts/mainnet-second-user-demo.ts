@@ -1,4 +1,5 @@
 import { ethers, network } from "hardhat";
+import type { Wallet } from "ethers";
 import { readFileSync, writeFileSync, existsSync, readFileSync as readEnv } from "fs";
 import { resolve } from "path";
 
@@ -36,7 +37,7 @@ function explorer(hash: string): string {
   return `https://explorer.mezo.org/tx/${hash}`;
 }
 
-function loadOrCreateDemoWallet(): ethers.Wallet {
+function loadOrCreateDemoWallet(): Wallet {
   // Idempotent: persist the demo wallet's private key into .env on first
   // run so re-running the script reuses it (we don't want to fund a
   // fresh wallet every run).
