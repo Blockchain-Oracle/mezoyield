@@ -215,6 +215,11 @@
     animation: ticker-scroll 45s linear infinite;
     will-change: transform;
 }
+/* Pause-on-hover so users can read items mid-scroll. Inherited from
+ * Bloomberg / financial-ticker convention. */
+.ticker-container:hover .animate-ticker {
+    animation-play-state: paused;
+}
 @media (prefers-reduced-motion: reduce) {
     .animate-ticker { animation: none; }
 }
