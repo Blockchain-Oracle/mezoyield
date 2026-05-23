@@ -130,7 +130,7 @@ export function Hero() {
         >
           {[
             { label: "Custody", value: "Non-custodial" },
-            { label: "Network", value: "Mezo Testnet" },
+            { label: "Network", value: "Mezo Mainnet" },
             { label: "Keeper", value: "Voted on chain" },
           ].map((item) => (
             <div key={item.label} className="bg-background px-4 py-3 text-left">
