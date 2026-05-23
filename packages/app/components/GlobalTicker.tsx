@@ -37,7 +37,11 @@ import {
  */
 
 const SHORT_OPTIMIZER = `${OPTIMIZER_ADDRESS.slice(0, 8)}…${OPTIMIZER_ADDRESS.slice(-6)}`;
-const IS_MAINNET = MEZO_CHAIN_ID === 31612;
+// Single-network product: keeper runs on Mezo Mainnet only. UI never
+// references testnet to a visitor. (The testnet build still exists
+// internally for sandbox work; it just doesn't appear in this strip.)
+void MEZO_CHAIN_ID;
+void MEZO_NETWORK;
 
 type Item =
   | { kind: "text"; label: string; value: string; tone?: "mezo" | "muted" }
@@ -68,7 +72,7 @@ function TickerBoot() {
       className="ticker-container sticky top-0 z-50 flex h-8 w-full items-center justify-center overflow-hidden border-b border-foreground/10 bg-black/85 backdrop-blur-sm"
     >
       <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
-        · booting on-chain feed · live · Mezo {MEZO_CHAIN_ID === 31612 ? "Mainnet" : "Testnet"} ·
+        · booting on-chain feed · live on Mezo Mainnet ·
       </span>
     </aside>
   );
@@ -87,18 +91,13 @@ function TickerInner() {
   const totalBribesWei = list.reduce((acc, g) => acc + g.bribeMUSDWei, 0n);
   const totalVeMezoWei = list.reduce((acc, g) => acc + g.totalVeMezoWei, 0n);
 
-  const chainLabel = IS_MAINNET
-    ? `Mezo Mainnet · ${MEZO_CHAIN_ID}`
-    : `Mezo Testnet · ${MEZO_CHAIN_ID}`;
-  void MEZO_NETWORK;
-
   const items: Item[] = [
-    { kind: "text", label: "Status", value: "Set & Forget live · non-custodial", tone: "mezo" },
+    { kind: "text", label: "Live on", value: "Mezo Mainnet", tone: "mezo" },
+    { kind: "text", label: "Status", value: "Set & Forget · non-custodial", tone: "mezo" },
     { kind: "text", label: "Top APY", value: topApy > 0 ? `${topApy.toFixed(1)}%` : "—", tone: "mezo" },
     { kind: "text", label: "Bribes posted", value: `${formatBig(totalBribesWei)} MUSD` },
     { kind: "text", label: "Total veMEZO", value: formatBig(totalVeMezoWei) },
     { kind: "text", label: "Active gauges", value: `${list.length}` },
-    { kind: "text", label: "Chain", value: chainLabel, tone: "mezo" },
     {
       kind: "link",
       label: "Optimizer",
@@ -116,13 +115,6 @@ function TickerInner() {
           },
         ] as Item[])
       : []),
-    {
-      kind: "link",
-      label: IS_MAINNET ? "Testnet" : "Also live",
-      value: IS_MAINNET ? "mezoyield.xyz" : "mainnet.mezoyield.xyz",
-      href: IS_MAINNET ? "https://mezoyield.xyz" : "https://mainnet.mezoyield.xyz",
-      tone: "mezo",
-    },
   ];
 
   // Duplicate the items array so the CSS `translateX(-50%)` loop is
