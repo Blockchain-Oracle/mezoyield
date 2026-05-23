@@ -27,13 +27,6 @@ import {
  *   - Everything else is real on-chain data via wagmi reads — no
  *     synthesized numbers. Aria-live polite so screen readers
  *     announce updates without being noisy.
- *
- * Two reasons this is a separate component (vs the prior
- * `features/landing/Ticker.tsx`):
- *   1. Placement: this lives in `app/layout.tsx` so it appears on
- *      every page, not just `/`.
- *   2. Interactivity: links + pause-on-hover make this an actual
- *      navigation surface, not chrome decoration.
  */
 
 const SHORT_OPTIMIZER = `${OPTIMIZER_ADDRESS.slice(0, 8)}…${OPTIMIZER_ADDRESS.slice(-6)}`;
