@@ -1,34 +1,43 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 build/
 .next/
 out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env / secrets
 .env
 .env.local
 .env.*.local
+
+# Hardhat / contracts build artifacts
+packages/contracts/cache/
+packages/contracts/artifacts/
+packages/contracts/typechain-types/
+
+# Test / coverage
 coverage/
+
+# Editor / OS
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
-*.tsbuildinfo
-next-env.d.ts
-packages/contracts/cache/
-packages/contracts/artifacts/
-packages/contracts/typechain-types/
 
-# Reference clones — agents clone these on demand per context/refs/sponsor-repos.md.
-# Tigris (Mezo gauge contracts + Next.js dApp reference) and chains (canonical
-# viem chain config) are not committed; their stubs in sponsor-repos.md point
-# to the upstream URLs. (musd is committed as a regular tree from PR #16; we
-# treat new clones the kite-style stub-pointer way to avoid further repo bloat.)
-context/refs/repos/tigris/
-context/refs/repos/chains/
+# Internal research, vendored reference repos, agent context.
+# Not for public consumption — the hackathon submission lives in
+# README.md, docs/, and the source under packages/.
+context/
 
-# Local screenshot loops + reviewer artifacts. Anchors live in
-# screenshots/anchor/ (committed); ad-hoc runs/ and theme-*.png are not.
+# Agent + screenshot-loop artifacts.
+.claude/last-review.json
+.playwright-mcp/
 runs/
 theme-dark-*.png
 theme-light-*.png
