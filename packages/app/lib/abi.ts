@@ -66,6 +66,63 @@ export const veMezoAbi = [
     inputs: [],
     outputs: [],
   },
+  {
+    // Unrestricted on the testnet mock (`MockVeMezo.sol:42`). Used by the
+    // activate flow as the testnet equivalent of `createLock(amount, …)` —
+    // lets the user pick a starting voting-power amount instead of being
+    // stuck with the fixed-1000 `faucet()` mint.
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "mint",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+/**
+ * Canonical ERC-20 surface for the mainnet MEZO token. Used by the
+ * activate flow to read MEZO balance/allowance and submit `approve` calls
+ * before `createLock`. Kept minimal — balance reads, allowance, approve,
+ * decimals — so callers don't pull in the full ERC-20 ABI.
+ */
+export const mezoErc20Abi = [
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "allowance",
+    inputs: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "approve",
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "decimals",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
+  },
 ] as const;
 
 /**

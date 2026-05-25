@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { formatUnits } from "viem";
+import { useEffect, useState, type ChangeEvent } from "react";
+import { formatUnits, parseUnits } from "viem";
 import { ExternalLink, Sparkles } from "lucide-react";
 import {
   Dialog,
@@ -15,11 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useVeMezoPosition } from "@/hooks/useVeMezoPosition";
+import { useTokenBalances } from "@/hooks/useTokenBalances";
 import { autoAllocate, estimateWeeklyMusdWei, TOTAL_BPS } from "@/lib/optimize";
 import { useActivateStrategy } from "./useActivateStrategy";
 import { type StrategyPreset, SET_AND_FORGET_ID } from "./presets";
 import type { Address, Gauge } from "@/lib/types";
-import { MEZO_EXPLORER, OPTIMIZER_ADDRESS } from "@/lib/contracts";
+import { MEZO_EXPLORER, MEZO_NETWORK, OPTIMIZER_ADDRESS } from "@/lib/contracts";
+
+// Testnet cap on the self-mint amount — keeps the input from accepting
+// arbitrarily-large strings that would build but fail at the wallet.
+// 10k veMEZO is well above the demo-relevant range; tighten later if
+// the keeper starts iterating dust positions slowly.
+const TESTNET_MINT_CAP_WEI = 10_000n * 10n ** 18n;
 
 interface StrategyDetailModalProps {
   preset: StrategyPreset | null;
@@ -54,14 +61,78 @@ export function StrategyDetailModal({
   });
 
   const position = useVeMezoPosition(user);
+  const tokenBalances = useTokenBalances(user);
+
+  // ── Set-Voting-Power local state ──
+  // `inputAmount` is the raw text in the field (so users can type
+  // "1.5"); `activePreset` is the selected preset button (or `null` if
+  // the input has been edited freely). Both reset when the modal opens
+  // for a new preset.
+  const [inputAmount, setInputAmount] = useState<string>("");
+  const [activePreset, setActivePreset] = useState<number | null>(null);
 
   // Reset hook state when the modal opens with a new preset.
   useEffect(() => {
-    if (open && preset) activation.reset();
+    if (open && preset) {
+      activation.reset();
+      setInputAmount("");
+      setActivePreset(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, preset?.id]);
 
   if (!preset) return null;
+
+  const isMainnet = MEZO_NETWORK === "mainnet";
+  // Gate the lock section on BOTH a resolved read AND a true-zero balance.
+  // While the read is in-flight, render nothing and disable Activate —
+  // otherwise a returning user with an existing lock could be re-prompted
+  // for funds they've already locked.
+  const needsInitialVotingPower =
+    activation.veMezoBalanceLoaded && activation.veMezoBalance === 0n;
+
+  // Parse input → wei. Returns 0n on empty/invalid so the validator
+  // logic stays simple downstream.
+  const lockAmountWei = (() => {
+    if (!inputAmount || inputAmount === "." ) return 0n;
+    try {
+      return parseUnits(inputAmount, 18);
+    } catch {
+      return 0n;
+    }
+  })();
+
+  const mezoAvailableWei = tokenBalances.data.mezoWei;
+  const lockAmountValid =
+    lockAmountWei > 0n &&
+    (isMainnet
+      ? lockAmountWei <= mezoAvailableWei
+      : lockAmountWei <= TESTNET_MINT_CAP_WEI);
+
+  // Preset percentages on mainnet (of available MEZO balance);
+  // literal-amount presets on testnet so the input maps directly to
+  // "give me X veMEZO."
+  const presetValues = isMainnet ? [25, 50, 75, 100] : [250, 500, 750, 1000];
+
+  const applyPreset = (preset: number) => {
+    setActivePreset(preset);
+    if (isMainnet) {
+      const bps = BigInt(preset);
+      const amount = (mezoAvailableWei * bps) / 100n;
+      setInputAmount(formatUnits(amount, 18));
+    } else {
+      setInputAmount(preset.toString());
+    }
+  };
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    // Allow digits + at most one decimal point; reject anything else
+    // so the parser doesn't choke and presets stay in sync with edits.
+    if (v !== "" && !/^\d*\.?\d*$/.test(v)) return;
+    setInputAmount(v);
+    setActivePreset(null);
+  };
 
   const isDelegate = preset.execution.mode === "delegate";
   // Manual presets carry their own allocation function. Delegate (Set &
@@ -104,13 +175,15 @@ export function StrategyDetailModal({
   // Step indicator label — surfaces the multi-step nature of the
   // activate flow so users don't think the wallet popup that says
   // "Set approval for all" appeared out of nowhere. Testnet skips
-  // the `approve` step (mock has no NFT check), so step labels
-  // differ per network and per current state.
+  // the approve/lock pair (mock takes a single `mint` call), so the
+  // sequence the user sees depends on network + their starting state.
   const stepLabel = (() => {
     if (!activation.currentStep) return null;
     const labels: Record<string, string> = {
-      faucet: "Minting testnet veMEZO",
-      approve: "Approving adapter on veMEZO NFT",
+      "mint-vemezo": "Minting testnet veMEZO",
+      "approve-mezo": "Approving MEZO transfer",
+      lock: "Locking MEZO into veMEZO",
+      "approve-nft": "Approving adapter on veMEZO NFT",
       delegate: "Delegating to optimizer",
       vote: "Setting allocation",
     };
@@ -140,6 +213,71 @@ export function StrategyDetailModal({
         </DialogHeader>
 
         <div className="space-y-4">
+          {needsInitialVotingPower && (
+            <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
+              {/* Row 1: title + balance/info */}
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
+                  {isMainnet ? "Lock MEZO" : "Get testnet veMEZO"}
+                </span>
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  {isMainnet
+                    ? `${Number(formatUnits(mezoAvailableWei, 18)).toFixed(2)} MEZO available`
+                    : "Testnet · pick any amount"}
+                </span>
+              </div>
+
+              {/* Row 2: preset buttons (left) + input (right), side-by-side */}
+              <div className="flex items-stretch gap-2">
+                <div className="flex flex-1 gap-1">
+                  {presetValues.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => applyPreset(p)}
+                      disabled={isBusy || (isMainnet && mezoAvailableWei === 0n)}
+                      className={cn(
+                        "flex-1 rounded-md px-2 py-1.5 text-xs transition-colors disabled:opacity-50",
+                        activePreset === p
+                          ? "border border-mezo bg-mezo-soft text-mezo"
+                          : "border border-border bg-card text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {isMainnet ? (p === 100 ? "MAX" : `${p}%`) : p.toString()}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={inputAmount}
+                    onChange={handleInputChange}
+                    disabled={isBusy}
+                    className="h-full w-full rounded-md border border-border bg-card/40 px-2 py-1.5 pr-12 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-mezo focus:outline-none disabled:opacity-50"
+                  />
+                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-muted-foreground">
+                    {isMainnet ? "MEZO" : "veMEZO"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 3: one-line disclosure */}
+              <p className="text-[10px] text-muted-foreground">
+                {isMainnet
+                  ? "Locked 1 week minimum. Extend or unlock after the first epoch."
+                  : "Testnet only · free · no real lock."}
+              </p>
+
+              {isMainnet && mezoAvailableWei === 0n && (
+                <p className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-400">
+                  You don&apos;t have any MEZO yet. Bridge or swap on Mezo first, then come back.
+                </p>
+              )}
+            </div>
+          )}
+
           <p className="text-sm text-muted-foreground">{preset.description}</p>
 
           <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
@@ -252,8 +390,18 @@ export function StrategyDetailModal({
           </Button>
           <Button
             type="button"
-            onClick={() => void activation.activate()}
-            disabled={!user || isBusy || isDone}
+            onClick={() =>
+              void activation.activate(
+                needsInitialVotingPower ? { lockAmountWei } : undefined,
+              )
+            }
+            disabled={
+              !user ||
+              isBusy ||
+              isDone ||
+              !activation.veMezoBalanceLoaded ||
+              (needsInitialVotingPower && !lockAmountValid)
+            }
             className="bg-mezo text-primary-foreground hover:bg-mezo-hover"
           >
             {ctaLabel}

@@ -164,6 +164,25 @@ if (NETWORK === "mainnet" && !VE_MEZO_NFT_ADDRESS) {
   );
 }
 
+/**
+ * Real Mezo MEZO ERC-20 token contract on mainnet. Only present in the
+ * `external` block of the mainnet manifest — testnet has no MEZO ERC-20
+ * (the testnet flow mints veMEZO directly via the mock's faucet/mint).
+ * The frontend's activate flow uses this to read MEZO balance + allowance
+ * and submit `approve` before `VeMEZO.createLock`.
+ *
+ * `undefined` on testnet — callers MUST gate on `MEZO_NETWORK === "mainnet"`
+ * before reading this. Empty/missing on mainnet is a manifest bug.
+ */
+export const MEZO_TOKEN_ADDRESS: `0x${string}` | undefined =
+  NETWORK === "mainnet" ? (manifest.external?.MEZO as `0x${string}` | undefined) : undefined;
+if (NETWORK === "mainnet" && !MEZO_TOKEN_ADDRESS) {
+  throw new Error(
+    "mezo-mainnet.json `external.MEZO` missing — required by the dApp's " +
+      "activate flow to read MEZO balance and approve VeMEZO for createLock.",
+  );
+}
+
 // Lower bound for `getLogs` calls against the optimizer. On testnet the
 // deploy block is captured in the manifest; on mainnet, when the optimizer
 // lands, the deploy script will populate it. Fall back to 0n so the log

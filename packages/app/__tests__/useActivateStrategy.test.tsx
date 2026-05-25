@@ -3,31 +3,102 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 
 /**
  * Mock harness for `useActivateStrategy` covering the chained-precondition
- * flow added by #32/#33/#39. The hook reads two contracts (isDelegated,
- * balanceOf), submits up to three writes (faucet, delegate, vote), and
- * awaits each receipt via `publicClient.waitForTransactionReceipt` between
- * steps. The mocks below let each test set the "world" state and assert
- * which writes fired in which order.
+ * flow:
+ *   - testnet: `MockVeMezo.mint(user, amount)` (when balance==0) → delegate
+ *     → setManualAllocation (manual mode only)
+ *   - mainnet: `MEZO.approve` (if allowance < amount) → `VeMEZO.createLock`
+ *     (when balance==0) → delegate → `VeMEZO.setApprovalForAll` (if not
+ *     already approved) → setManualAllocation (manual mode only)
+ *
+ * The hook reads two contracts via wagmi's `useReadContract` (isDelegated
+ * and veMEZO balanceOf — discriminated here by `functionName`) and an
+ * arbitrary number of additional reads via `publicClient.readContract`
+ * (mainnet allowance, isApprovedForAll, MEZO balanceOf — discriminated by
+ * `${address}:${functionName}`). Each write is awaited via
+ * `publicClient.waitForTransactionReceipt` between steps.
  */
+
+// ─── Mock @/lib/contracts so MEZO_NETWORK + addresses are deterministic ──
+// The constants are inlined into the factory because `vi.mock` is hoisted
+// to the top of the file and can't see `const` declarations above it.
+vi.mock("@/lib/contracts", () => ({
+  OPTIMIZER_ADDRESS: "0x0000000000000000000000000000000000000111",
+  GAUGE_CONTROLLER_ADDRESS: "0x0000000000000000000000000000000000000222",
+  VE_MEZO_ADDRESS: "0x0000000000000000000000000000000000000333",
+  VE_MEZO_NFT_ADDRESS: "0x0000000000000000000000000000000000000444",
+  MEZO_TOKEN_ADDRESS: "0x0000000000000000000000000000000000000555",
+  MEZO_CHAIN_ID: 31611,
+  MEZO_NETWORK: "testnet",
+  MEZO_TESTNET_CHAIN_ID: 31611,
+}));
+
+// Re-declared for use INSIDE tests (the factory above is the source of
+// truth for the hook's imports; these mirror it for assertion lookups).
+const OPTIMIZER = "0x0000000000000000000000000000000000000111" as const;
+const GAUGE_CTRL = "0x0000000000000000000000000000000000000222" as const;
+const VE_MEZO = "0x0000000000000000000000000000000000000333" as const;
+const VE_MEZO_NFT = "0x0000000000000000000000000000000000000444" as const;
+const MEZO_TOKEN = "0x0000000000000000000000000000000000000555" as const;
+// Silence unused warnings — OPTIMIZER/GAUGE_CTRL/VE_MEZO are kept for
+// future tests that assert on those addresses; remove if still unused
+// after the next test pass.
+void OPTIMIZER;
+void GAUGE_CTRL;
+void VE_MEZO;
 
 const writeContractAsync = vi.fn(
   async (_args: unknown): Promise<`0x${string}`> =>
     `0x${Math.random().toString(16).slice(2, 10).padEnd(64, "0")}` as `0x${string}`,
 );
 const isDelegatedState: { value?: boolean } = { value: false };
-const veMezoBalanceState: { value: bigint } = { value: 0n };
+// `value` is `undefined` while the read is in-flight; the hook must
+// treat that as "loaded === false" and refuse to act. Once the read
+// resolves the value is `bigint`. Tests toggle this to exercise the
+// loading-vs-zero distinction.
+const veMezoBalanceState: { value: bigint | undefined } = { value: 0n };
 const refetchDelegated = vi.fn();
 const refetchVeMezoBalance = vi.fn();
-const waitForReceipt = vi.fn(async () => ({ status: "success" as const }));
+// Per-hash receipt status: defaults to "success" for hashes not in the
+// map. Set entries with `setReceiptStatus(hash, "reverted")` to test
+// the abort-on-revert path. We can't pre-key by hash because the
+// `writeContractAsync` mock generates random hashes, so the map is
+// keyed by *call index* via a counter the mock increments. Tests
+// declare expected statuses by call order.
+const receiptStatusByCall: ("success" | "reverted")[] = [];
+let waitForReceiptCallIndex = 0;
+const waitForReceipt = vi.fn(async () => {
+  const status = receiptStatusByCall[waitForReceiptCallIndex] ?? "success";
+  waitForReceiptCallIndex += 1;
+  return { status };
+});
 const receiptState: {
   isSuccess: boolean;
   isError: boolean;
   error: Error | null;
+  data?: { status: "success" | "reverted" };
 } = {
   isSuccess: false,
   isError: false,
   error: null,
+  data: undefined,
 };
+
+// publicClient.readContract returns keyed by `${address.toLowerCase()}:${functionName}`.
+// Tests seed expected values via `setPublicRead(addr, fn, value)`.
+const publicReads = new Map<string, unknown>();
+const publicReadContract = vi.fn(
+  async (args: { address: string; functionName: string }) => {
+    const key = `${args.address.toLowerCase()}:${args.functionName}`;
+    return publicReads.get(key);
+  },
+);
+function setPublicRead(address: string, functionName: string, value: unknown) {
+  publicReads.set(`${address.toLowerCase()}:${functionName}`, value);
+}
+
+// Toggleable: tests that need to exercise the "no RPC client" failure
+// path flip this to `false` so `usePublicClient` returns undefined.
+const publicClientAvailable: { value: boolean } = { value: true };
 
 vi.mock("wagmi", () => ({
   useReadContract: ({
@@ -35,8 +106,6 @@ vi.mock("wagmi", () => ({
   }: {
     functionName?: string;
   } = {}) => {
-    // The hook reads two contracts. Discriminate by functionName so each
-    // returns the matching test-state value.
     if (functionName === "balanceOf") {
       return {
         data: veMezoBalanceState.value,
@@ -44,7 +113,6 @@ vi.mock("wagmi", () => ({
         refetch: refetchVeMezoBalance,
       };
     }
-    // isDelegated (default)
     return {
       data: isDelegatedState.value,
       isLoading: false,
@@ -53,7 +121,13 @@ vi.mock("wagmi", () => ({
   },
   useWriteContract: () => ({ writeContractAsync }),
   useWaitForTransactionReceipt: () => receiptState,
-  usePublicClient: () => ({ waitForTransactionReceipt: waitForReceipt }),
+  usePublicClient: () =>
+    publicClientAvailable.value
+      ? {
+          waitForTransactionReceipt: waitForReceipt,
+          readContract: publicReadContract,
+        }
+      : undefined,
 }));
 
 import { useActivateStrategy } from "@/features/strategies/useActivateStrategy";
@@ -91,15 +165,16 @@ const STAB_MAX = STRATEGY_PRESETS.find((p) => p.id === "stability-max")!;
 const BALANCED = STRATEGY_PRESETS.find((p) => p.id === "balanced")!;
 const CUSTOM = STRATEGY_PRESETS.find((p) => p.id === "custom")!;
 
+const ONE_MEZO = 10n ** 18n;
+const LOCK_500 = 500n * ONE_MEZO;
+
 /**
  * Default world: connected wallet ALREADY has 1000 veMEZO and IS already
- * delegated. This is the "everything pre-met" state used by tests that
- * only care about the final strategy-specific tx. Branch tests override
- * the relevant flags in their setup.
+ * delegated. Branch tests override flags in their setup.
  */
 function setPreconditionsMet() {
   isDelegatedState.value = true;
-  veMezoBalanceState.value = 1_000n * 10n ** 18n;
+  veMezoBalanceState.value = 1_000n * ONE_MEZO;
 }
 
 describe("useActivateStrategy", () => {
@@ -108,143 +183,387 @@ describe("useActivateStrategy", () => {
     refetchDelegated.mockClear();
     refetchVeMezoBalance.mockClear();
     waitForReceipt.mockClear();
+    publicReadContract.mockClear();
+    publicReads.clear();
+    receiptStatusByCall.length = 0;
+    waitForReceiptCallIndex = 0;
     isDelegatedState.value = false;
     veMezoBalanceState.value = 0n;
     receiptState.isSuccess = false;
     receiptState.isError = false;
     receiptState.error = null;
+    receiptState.data = undefined;
+    publicClientAvailable.value = true;
   });
 
-  // ─── Set & Forget mode ───────────────────────────────────────────
+  // ─── Testnet path ────────────────────────────────────────────────
 
-  it("Set & Forget with preconditions met: short-circuits to success, no tx", async () => {
-    // #32: already-delegated wallet should not pop a redundant prompt.
-    setPreconditionsMet();
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: SET_AND_FORGET, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+  describe("testnet", () => {
+    it("Set & Forget with preconditions met: short-circuits to success, no tx", async () => {
+      setPreconditionsMet();
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      expect(writeContractAsync).not.toHaveBeenCalled();
+      expect(result.current.status).toBe("success");
     });
-    expect(writeContractAsync).not.toHaveBeenCalled();
-    expect(result.current.status).toBe("success");
-  });
 
-  it("Set & Forget on fresh testnet wallet: faucet → delegate → success (2 txs)", async () => {
-    // #33 + #39: zero veMEZO + not-delegated → chained txs.
-    veMezoBalanceState.value = 0n;
-    isDelegatedState.value = false;
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: SET_AND_FORGET, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+    it("Set & Forget on fresh wallet with amount: mint → delegate (2 txs)", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: LOCK_500 });
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual(["mint", "delegate"]);
+      // The mint call's args should reflect the caller-supplied amount.
+      const mintArgs = writeContractAsync.mock.calls[0][0] as {
+        functionName: string;
+        args: [Address, bigint];
+      };
+      expect(mintArgs.args[0]).toBe(USER);
+      expect(mintArgs.args[1]).toBe(LOCK_500);
+      expect(result.current.status).toBe("success");
     });
-    const calls = writeContractAsync.mock.calls.map(
-      (c) => (c[0] as { functionName: string }).functionName,
-    );
-    expect(calls).toEqual(["faucet", "delegate"]);
-    expect(waitForReceipt).toHaveBeenCalledTimes(2); // one per intermediate write
-    expect(result.current.status).toBe("success");
-  });
 
-  it("Set & Forget with veMEZO but not delegated: delegate only (1 tx)", async () => {
-    // #39: faucet skipped (balance > 0), delegate fires.
-    veMezoBalanceState.value = 500n * 10n ** 18n;
-    isDelegatedState.value = false;
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: SET_AND_FORGET, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+    it("Set & Forget with veMEZO but not delegated: delegate only (1 tx)", async () => {
+      veMezoBalanceState.value = LOCK_500;
+      isDelegatedState.value = false;
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual(["delegate"]);
+      expect(result.current.status).toBe("success");
     });
-    const calls = writeContractAsync.mock.calls.map(
-      (c) => (c[0] as { functionName: string }).functionName,
-    );
-    expect(calls).toEqual(["delegate"]);
-    expect(result.current.status).toBe("success");
-  });
 
-  // ─── Manual mode ─────────────────────────────────────────────────
-
-  it("Stability Max with preconditions met: setManualAllocation only (1 tx)", async () => {
-    setPreconditionsMet();
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: STAB_MAX, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+    it("Stability Max with preconditions met: setManualAllocation only (1 tx)", async () => {
+      setPreconditionsMet();
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: STAB_MAX,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      expect(writeContractAsync).toHaveBeenCalledTimes(1);
+      const args = writeContractAsync.mock.calls[0][0] as {
+        functionName: string;
+        args: [Address[], bigint[]];
+      };
+      expect(args.functionName).toBe("setManualAllocation");
+      expect(args.args[0]).toEqual([G_STAB.address]);
+      expect(args.args[1]).toEqual([BigInt(TOTAL_BPS)]);
     });
-    expect(writeContractAsync).toHaveBeenCalledTimes(1);
-    const args = writeContractAsync.mock.calls[0][0] as {
-      functionName: string;
-      args: [Address[], bigint[]];
-    };
-    expect(args.functionName).toBe("setManualAllocation");
-    expect(args.args[0]).toEqual([G_STAB.address]);
-    expect(args.args[1]).toEqual([BigInt(TOTAL_BPS)]);
-  });
 
-  it("Balanced with preconditions met: setManualAllocation across all three gauges", async () => {
-    setPreconditionsMet();
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: BALANCED, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+    it("Balanced with preconditions met: setManualAllocation across all three gauges", async () => {
+      setPreconditionsMet();
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: BALANCED,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      expect(writeContractAsync).toHaveBeenCalledTimes(1);
+      const args = writeContractAsync.mock.calls[0][0] as {
+        functionName: string;
+        args: [Address[], bigint[]];
+      };
+      expect(args.functionName).toBe("setManualAllocation");
+      expect(args.args[0]).toHaveLength(3);
+      const sum = args.args[1].reduce((a, b) => a + b, 0n);
+      expect(sum).toBe(BigInt(TOTAL_BPS));
     });
-    expect(writeContractAsync).toHaveBeenCalledTimes(1);
-    const args = writeContractAsync.mock.calls[0][0] as {
-      functionName: string;
-      args: [Address[], bigint[]];
-    };
-    expect(args.functionName).toBe("setManualAllocation");
-    expect(args.args[0]).toHaveLength(3);
-    const sum = args.args[1].reduce((a, b) => a + b, 0n);
-    expect(sum).toBe(BigInt(TOTAL_BPS));
-  });
 
-  it("Manual mode on fresh testnet wallet: faucet → delegate → setManualAllocation (3 txs, in order)", async () => {
-    // #39: the full chained-precondition path. Without the auto-delegate
-    // step the keeper would silently skip this user; without auto-faucet
-    // their projected reward would be 0.
-    veMezoBalanceState.value = 0n;
-    isDelegatedState.value = false;
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: STAB_MAX, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+    it("Manual mode on fresh wallet with amount: mint → delegate → setManualAllocation", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: STAB_MAX,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: LOCK_500 });
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual(["mint", "delegate", "setManualAllocation"]);
+      expect(result.current.status).toBe("confirming");
     });
-    const calls = writeContractAsync.mock.calls.map(
-      (c) => (c[0] as { functionName: string }).functionName,
-    );
-    expect(calls).toEqual(["faucet", "delegate", "setManualAllocation"]);
-    expect(waitForReceipt).toHaveBeenCalledTimes(2); // between faucet→delegate and delegate→vote
-    expect(result.current.status).toBe("confirming");
-  });
 
-  it("Manual mode with veMEZO already, not delegated: delegate → setManualAllocation (2 txs)", async () => {
-    veMezoBalanceState.value = 1_500n * 10n ** 18n;
-    isDelegatedState.value = false;
-    const { result } = renderHook(() =>
-      useActivateStrategy({ preset: STAB_MAX, user: USER, gauges: ALL_GAUGES }),
-    );
-    await act(async () => {
-      await result.current.activate();
+    it("fresh wallet with NO amount supplied: clear error, no tx fires", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "testnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      expect(writeContractAsync).not.toHaveBeenCalled();
+      expect(result.current.status).toBe("error");
+      expect(result.current.errorMessage).toMatch(/voting-power amount/i);
     });
-    const calls = writeContractAsync.mock.calls.map(
-      (c) => (c[0] as { functionName: string }).functionName,
-    );
-    expect(calls).toEqual(["delegate", "setManualAllocation"]);
   });
 
-  // ─── Edge cases ──────────────────────────────────────────────────
+  // ─── Mainnet path ────────────────────────────────────────────────
+
+  describe("mainnet", () => {
+    function seedMainnetReads({
+      mezoBalance,
+      allowance,
+      nftApproved,
+    }: {
+      mezoBalance: bigint;
+      allowance: bigint;
+      nftApproved: boolean;
+    }) {
+      setPublicRead(MEZO_TOKEN, "balanceOf", mezoBalance);
+      setPublicRead(MEZO_TOKEN, "allowance", allowance);
+      setPublicRead(VE_MEZO_NFT, "isApprovedForAll", nftApproved);
+    }
+
+    it("fresh mainnet wallet, 1 MEZO available: approve → createLock → delegate → setApprovalForAll", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: 0n,
+        nftApproved: false,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: ONE_MEZO });
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual([
+        "approve",
+        "createLock",
+        "delegate",
+        "setApprovalForAll",
+      ]);
+      expect(result.current.status).toBe("success");
+    });
+
+    it("allowance already sufficient: skips approve, fires lock → delegate → setApprovalForAll", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: ONE_MEZO, // ← pre-existing approval covers full amount
+        nftApproved: false,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: ONE_MEZO });
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual(["createLock", "delegate", "setApprovalForAll"]);
+    });
+
+    it("veMEZO already > 0 and delegated: only setApprovalForAll fires if NFT not yet approved", async () => {
+      veMezoBalanceState.value = LOCK_500;
+      isDelegatedState.value = true;
+      seedMainnetReads({
+        mezoBalance: 0n, // doesn't matter, lock branch is skipped
+        allowance: 0n,
+        nftApproved: false,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual(["setApprovalForAll"]);
+      expect(result.current.status).toBe("success");
+    });
+
+    it("veMEZO already > 0 and delegated and NFT-approved: no tx, immediate success", async () => {
+      veMezoBalanceState.value = LOCK_500;
+      isDelegatedState.value = true;
+      seedMainnetReads({
+        mezoBalance: 0n,
+        allowance: 0n,
+        nftApproved: true,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      expect(writeContractAsync).not.toHaveBeenCalled();
+      expect(result.current.status).toBe("success");
+    });
+
+    it("MAX-race clamp: input > current MEZO balance is clamped to balance before approve", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      // User typed MAX based on a stale balance (2 MEZO); a transfer-out
+      // dropped the on-chain balance to 1 MEZO between read and submit.
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: 0n,
+        nftApproved: true,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: 2n * ONE_MEZO });
+      });
+      const approveCall = writeContractAsync.mock.calls.find(
+        (c) => (c[0] as { functionName: string }).functionName === "approve",
+      );
+      expect(approveCall).toBeDefined();
+      const approveArgs = approveCall![0] as {
+        functionName: string;
+        args: [Address, bigint];
+      };
+      // Clamped to the on-chain MEZO balance (1 MEZO), not the user's
+      // requested 2 MEZO.
+      expect(approveArgs.args[1]).toBe(ONE_MEZO);
+    });
+
+    it("zero MEZO balance, even with lockAmountWei supplied: errors with bridge-or-swap message", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      seedMainnetReads({
+        mezoBalance: 0n,
+        allowance: 0n,
+        nftApproved: false,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: ONE_MEZO });
+      });
+      expect(writeContractAsync).not.toHaveBeenCalled();
+      expect(result.current.status).toBe("error");
+      expect(result.current.errorMessage).toMatch(/bridge or swap/i);
+    });
+
+    it("fresh mainnet wallet with NO amount supplied: clear error, no tx fires", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate();
+      });
+      expect(writeContractAsync).not.toHaveBeenCalled();
+      expect(result.current.status).toBe("error");
+      expect(result.current.errorMessage).toMatch(/MEZO to lock/i);
+    });
+  });
+
+  // ─── Edge cases (network-agnostic) ───────────────────────────────
 
   it("Custom strategy errors out — UI handles via the manual editor", async () => {
     setPreconditionsMet();
     const { result } = renderHook(() =>
-      useActivateStrategy({ preset: CUSTOM, user: USER, gauges: ALL_GAUGES }),
+      useActivateStrategy({
+        preset: CUSTOM,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
     );
     await act(async () => {
       await result.current.activate();
@@ -256,7 +575,12 @@ describe("useActivateStrategy", () => {
   it("Manual presets error gracefully when gauges haven't loaded yet", async () => {
     setPreconditionsMet();
     const { result } = renderHook(() =>
-      useActivateStrategy({ preset: STAB_MAX, user: USER, gauges: [] }),
+      useActivateStrategy({
+        preset: STAB_MAX,
+        user: USER,
+        gauges: [],
+        network: "testnet",
+      }),
     );
     await act(async () => {
       await result.current.activate();
@@ -272,6 +596,7 @@ describe("useActivateStrategy", () => {
         preset: SET_AND_FORGET,
         user: undefined,
         gauges: ALL_GAUGES,
+        network: "testnet",
       }),
     );
     await act(async () => {
@@ -284,13 +609,19 @@ describe("useActivateStrategy", () => {
   it("transitions to success when manual-mode receipt confirms", async () => {
     setPreconditionsMet();
     const { result, rerender } = renderHook(() =>
-      useActivateStrategy({ preset: STAB_MAX, user: USER, gauges: ALL_GAUGES }),
+      useActivateStrategy({
+        preset: STAB_MAX,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
     );
     await act(async () => {
       await result.current.activate();
     });
     expect(result.current.status).toBe("confirming");
     receiptState.isSuccess = true;
+    receiptState.data = { status: "success" };
     rerender();
     await waitFor(() => expect(result.current.status).toBe("success"));
   });
@@ -298,22 +629,167 @@ describe("useActivateStrategy", () => {
   it("isDelegated reflects the on-chain read", async () => {
     isDelegatedState.value = true;
     const { result } = renderHook(() =>
-      useActivateStrategy({ preset: SET_AND_FORGET, user: USER, gauges: ALL_GAUGES }),
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
     );
     expect(result.current.isDelegated).toBe(true);
+  });
+
+  it("veMezoBalance is surfaced so the modal can render the Set-Voting-Power section", async () => {
+    veMezoBalanceState.value = 0n;
+    const { result } = renderHook(() =>
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
+    );
+    expect(result.current.veMezoBalance).toBe(0n);
+  });
+
+  // ─── Revert-detection + loading-state regression tests (Codex round 1) ──
+
+  it("testnet: reverted mint aborts the chain — delegate never fires", async () => {
+    veMezoBalanceState.value = 0n;
+    isDelegatedState.value = false;
+    // First receipt (mint) reverts. Without the status check, the hook
+    // would fall through into `delegate` and burn gas a second time.
+    receiptStatusByCall.push("reverted");
+    const { result } = renderHook(() =>
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
+    );
+    await act(async () => {
+      await result.current.activate({ lockAmountWei: LOCK_500 });
+    });
+    const calls = writeContractAsync.mock.calls.map(
+      (c) => (c[0] as { functionName: string }).functionName,
+    );
+    expect(calls).toEqual(["mint"]); // ← only mint fired; delegate aborted
+    expect(result.current.status).toBe("error");
+    expect(result.current.errorMessage).toMatch(/reverted/i);
+  });
+
+  it("mainnet: reverted createLock aborts the chain — delegate never fires", async () => {
+    veMezoBalanceState.value = 0n;
+    isDelegatedState.value = false;
+    setPublicRead(MEZO_TOKEN, "balanceOf", ONE_MEZO);
+    setPublicRead(MEZO_TOKEN, "allowance", ONE_MEZO);
+    setPublicRead(VE_MEZO_NFT, "isApprovedForAll", true);
+    // Allowance is pre-set, so no approve fires. Receipts: [createLock]
+    // → revert. Without the status check, delegate would still go.
+    receiptStatusByCall.push("reverted");
+    const { result } = renderHook(() =>
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "mainnet",
+      }),
+    );
+    await act(async () => {
+      await result.current.activate({ lockAmountWei: ONE_MEZO });
+    });
+    const calls = writeContractAsync.mock.calls.map(
+      (c) => (c[0] as { functionName: string }).functionName,
+    );
+    expect(calls).toEqual(["createLock"]);
+    expect(result.current.status).toBe("error");
+    expect(result.current.errorMessage).toMatch(/reverted/i);
+  });
+
+  it("balance still loading (undefined): activate refuses to act, no tx fires", async () => {
+    // Returning user with an existing lock opens the modal during the
+    // in-flight read. Hook must refuse to act — otherwise it could
+    // submit an unnecessary lock for funds the user already locked.
+    veMezoBalanceState.value = undefined;
+    isDelegatedState.value = false;
+    const { result } = renderHook(() =>
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "mainnet",
+      }),
+    );
+    expect(result.current.veMezoBalanceLoaded).toBe(false);
+    await act(async () => {
+      await result.current.activate({ lockAmountWei: ONE_MEZO });
+    });
+    expect(writeContractAsync).not.toHaveBeenCalled();
+    expect(result.current.status).toBe("error");
+    expect(result.current.errorMessage).toMatch(/Still reading/i);
+  });
+
+  it("no publicClient available: hook errors instead of advancing without receipt confirmation", async () => {
+    // If usePublicClient() returns undefined (wallet disconnected
+    // mid-flow), waitOrRevert must fail closed — otherwise subsequent
+    // steps would fire without on-chain confirmation of the previous.
+    veMezoBalanceState.value = 0n;
+    isDelegatedState.value = false;
+    publicClientAvailable.value = false;
+    const { result } = renderHook(() =>
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
+    );
+    await act(async () => {
+      await result.current.activate({ lockAmountWei: LOCK_500 });
+    });
+    // mint fired (the write itself goes through writeContractAsync,
+    // which is independent of publicClient), but waitOrRevert threw
+    // before delegate could be queued.
+    const calls = writeContractAsync.mock.calls.map(
+      (c) => (c[0] as { functionName: string }).functionName,
+    );
+    expect(calls).toEqual(["mint"]);
+    expect(result.current.status).toBe("error");
+    expect(result.current.errorMessage).toMatch(/no RPC client/i);
+  });
+
+  it("veMezoBalanceLoaded reflects whether the read has resolved", async () => {
+    veMezoBalanceState.value = undefined;
+    const { result, rerender } = renderHook(() =>
+      useActivateStrategy({
+        preset: SET_AND_FORGET,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
+    );
+    expect(result.current.veMezoBalanceLoaded).toBe(false);
+    veMezoBalanceState.value = 0n;
+    rerender();
+    expect(result.current.veMezoBalanceLoaded).toBe(true);
   });
 
   it("exposes currentStep so the activation modal can describe the in-flight tx", async () => {
     veMezoBalanceState.value = 0n;
     isDelegatedState.value = false;
     const { result } = renderHook(() =>
-      useActivateStrategy({ preset: STAB_MAX, user: USER, gauges: ALL_GAUGES }),
+      useActivateStrategy({
+        preset: STAB_MAX,
+        user: USER,
+        gauges: ALL_GAUGES,
+        network: "testnet",
+      }),
     );
     await act(async () => {
-      await result.current.activate();
+      await result.current.activate({ lockAmountWei: LOCK_500 });
     });
-    // After all three steps complete, currentStep ends on "vote" (the
-    // last write fired). The modal reads this throughout the flow.
+    // After mint → delegate → vote, currentStep ends on "vote".
     expect(result.current.currentStep).toBe("vote");
   });
 });
