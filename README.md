@@ -1,5 +1,7 @@
 # MezoYield
 
+![Set your MEZO yield on autopilot — Connect once. Delegate. Earn MUSD every week. Forever.](./screenshots/pitch-hero.png)
+
 **Set-and-forget MEZO yield. One CTA. Auto-vote the highest-incentive gauges every epoch — rewards in MUSD.**
 
 Built for **Mezo Hack 2026** (Encode Club · MEZO Track).
@@ -110,6 +112,13 @@ pnpm test && pnpm lint                                  # quick local gate
 - **Keeper** (`packages/keeper/`) — long-running cron worker that nudges the optimizer at each epoch boundary.
 
 See [CLAUDE.md](./CLAUDE.md) for the contributor guide (stack, commands, house rules), [docs/HOW_YIELD_WORKS.md](./docs/HOW_YIELD_WORKS.md) for the yield mechanics in plain English, and [docs/DEPLOY.md](./docs/DEPLOY.md) for the deployment reference.
+
+## Known issues on Mezo Mainnet
+
+Two quirks worth flagging if you're trying the live mainnet flow:
+
+1. **MEZO `approve` may need to be retried.** The MEZO token (`0x7B7c…0001`) is a Cosmos-native asset exposed as ERC-20 via a precompile. A standard EVM `approve()` sets the EVM allowance, but the precompile internally dispatches `cosmos.bank.MsgSend`, which needs a **separate Cosmos-side authorization** with its own TTL. If your first `createLock` attempt reverts with `MsgSend authorization type does not exist or is expired`, signing the approval again refreshes the Cosmos-side grant and the lock then succeeds. We're tracking a UI affordance to detect-and-prompt this case automatically — for now: retry once.
+2. **No "add to existing lock" path yet.** `VeMEZO.createLock` only works for first-time lockers; the contract has separate `increaseAmount` / `increaseLockTime` functions for topping up. The current UI only handles the first-lock case. Power-user workflows (extend duration, add MEZO to a live lock) land in a follow-up PR.
 
 ## License
 
