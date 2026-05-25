@@ -154,6 +154,7 @@ describe("lib/contracts — NEXT_PUBLIC_MEZO_NETWORK selector", () => {
             MezoBoostVoter: "0x4444444444444444444444444444444444444444",
             VeMEZO: "0x5555555555555555555555555555555555555555",
             MUSD: "0x6666666666666666666666666666666666666666",
+            MEZO: "0x7777777777777777777777777777777777777777",
           },
           notes: "test fixture",
         },

@@ -1,7 +1,8 @@
 "use client";
 
 import { useReadContracts, useBalance } from "wagmi";
-import { DEPLOYMENT_MANIFEST, MEZO_NETWORK } from "@/lib/contracts";
+import { DEPLOYMENT_MANIFEST, MEZO_NETWORK, MEZO_TOKEN_ADDRESS } from "@/lib/contracts";
+import { mezoErc20Abi } from "@/lib/abi";
 import type { Address } from "@/lib/types";
 
 /**
@@ -21,16 +22,6 @@ import type { Address } from "@/lib/types";
  * round trip; BTC native balance uses wagmi's dedicated `useBalance`.
  */
 
-const ERC20_ABI = [
-  {
-    type: "function",
-    stateMutability: "view",
-    name: "balanceOf",
-    inputs: [{ name: "owner", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-] as const;
-
 export type TokenBalances = {
   btcWei: bigint;
   mezoWei: bigint;
@@ -49,24 +40,24 @@ export function useTokenBalances(user: Address | undefined): UseTokenBalancesRes
     query: { enabled: !!user, staleTime: 15_000 },
   });
 
-  // Pull MEZO + MUSD addresses from the manifest's `external` block
-  // (only present on mainnet). On testnet, return 0n for both
-  // gracefully — there's no equivalent.
+  // MEZO uses the top-level `MEZO_TOKEN_ADDRESS` export (mainnet-gated,
+  // throws at module load if missing). MUSD stays manifest-derived
+  // because the hot path doesn't write to it — only reads — so the
+  // dynamic-lookup smell is tolerable here.
   const ext = DEPLOYMENT_MANIFEST.external ?? {};
-  const mezoAddr = MEZO_NETWORK === "mainnet" ? (ext.MEZO as `0x${string}` | undefined) : undefined;
   const musdAddr = MEZO_NETWORK === "mainnet" ? (ext.MUSD as `0x${string}` | undefined) : undefined;
 
   const erc20 = useReadContracts({
     query: {
-      enabled: !!user && MEZO_NETWORK === "mainnet" && !!mezoAddr && !!musdAddr,
+      enabled: !!user && MEZO_NETWORK === "mainnet" && !!MEZO_TOKEN_ADDRESS && !!musdAddr,
       staleTime: 15_000,
     },
     contracts: [
-      ...(mezoAddr
+      ...(MEZO_TOKEN_ADDRESS
         ? [
             {
-              address: mezoAddr,
-              abi: ERC20_ABI,
+              address: MEZO_TOKEN_ADDRESS,
+              abi: mezoErc20Abi,
               functionName: "balanceOf" as const,
               args: user ? ([user] as const) : undefined,
             },
@@ -76,7 +67,7 @@ export function useTokenBalances(user: Address | undefined): UseTokenBalancesRes
         ? [
             {
               address: musdAddr,
-              abi: ERC20_ABI,
+              abi: mezoErc20Abi,
               functionName: "balanceOf" as const,
               args: user ? ([user] as const) : undefined,
             },
