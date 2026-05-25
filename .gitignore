@@ -35,6 +35,10 @@ coverage/
 # README.md, docs/, and the source under packages/.
 context/
 
+# Demo/submission prep materials (video script, pitch-deck prompts,
+# image-gen prompts). Internal workflow, not for the public repo.
+demo/
+
 # Agent + screenshot-loop artifacts.
 .claude/last-review.json
 .playwright-mcp/
