@@ -13,25 +13,31 @@
 
 The deployment manifests at `packages/contracts/deployments/mezo-{testnet,mainnet}.json` are the on-disk source of truth — they're loaded by `packages/app/lib/contracts.ts` at build time based on the `NEXT_PUBLIC_MEZO_NETWORK` env var. Update the manifest, rebuild the app.
 
-## Testnet contracts (v3 — per-user fan-out)
+## Testnet contracts
+
+Source of truth: `packages/contracts/deployments/mezo-testnet.json` (loaded by `packages/app/lib/contracts.ts` at build time).
 
 | Slot                  | Address                                       | Real contract                | Block      |
 |-----------------------|-----------------------------------------------|------------------------------|------------|
-| `MezoYieldOptimizer`  | `0x62Bc24173cE545b751f095563716E93819d5740e`  | `MezoYieldOptimizer`         | `13205245` |
-| `MockGaugeController` | `0x2d413D8267b9ab5DE06C8588da66d1Caff337544`  | `MockGaugeController` (mock) | `13205242` |
-| `MockMatchbox`        | `0x3A8B5b22A3a433e3f31359c796e542221F48aB38`  | `MockMatchbox` (mock)        | `13205243` |
-| `MockVeMezo`          | `0xFe5C3420784C6F312fD5977FFfb7Af616C7dEb75`  | `MockVeMezo` (mock)          | `13205244` |
+| `MezoYieldOptimizer`  | `0x8cB8cC254B0Aa9d9ae4e621F17E191635FF1DdF9`  | `MezoYieldOptimizer`         | `13207622` |
+| `MockGaugeController` | `0xa827809897E0B8C52d5513AEfB692FB406434b8E`  | `MockGaugeController` (mock) | `13207616` |
+| `MockMatchbox`        | `0xc6B0A8340e6dE6f2B675aE3116FF1800684231D5`  | `MockMatchbox` (mock)        | `13207617` |
+| `MockVeMezo`          | `0x2E9A3656BEBc3D5aB761bEa9cF913C38Fc0eB99f`  | `MockVeMezo` (mock)          | `13207619` |
 
-[Optimizer](https://explorer.test.mezo.org/address/0x62Bc24173cE545b751f095563716E93819d5740e) · [MockGaugeController](https://explorer.test.mezo.org/address/0x2d413D8267b9ab5DE06C8588da66d1Caff337544) · [MockMatchbox](https://explorer.test.mezo.org/address/0x3A8B5b22A3a433e3f31359c796e542221F48aB38) · [MockVeMezo](https://explorer.test.mezo.org/address/0xFe5C3420784C6F312fD5977FFfb7Af616C7dEb75)
+[Optimizer](https://explorer.test.mezo.org/address/0x8cB8cC254B0Aa9d9ae4e621F17E191635FF1DdF9) · [MockGaugeController](https://explorer.test.mezo.org/address/0xa827809897E0B8C52d5513AEfB692FB406434b8E) · [MockMatchbox](https://explorer.test.mezo.org/address/0xc6B0A8340e6dE6f2B675aE3116FF1800684231D5) · [MockVeMezo](https://explorer.test.mezo.org/address/0x2E9A3656BEBc3D5aB761bEa9cF913C38Fc0eB99f)
 
-## Mainnet contracts (v3)
+## Mainnet contracts
 
-| Slot                  | Address                                       | Real contract                                  | Notes |
-|-----------------------|-----------------------------------------------|------------------------------------------------|-------|
-| `MezoYieldOptimizer`  | _see `deployments/mezo-mainnet.json`_         | `MezoYieldOptimizer`                           | redeployed each canonical run |
-| `MockGaugeController` | _see manifest_                                | `BoostVoterAdapter` (wraps real BoostVoter)    | slot named for shape compat |
-| `MockMatchbox`        | `0xdB2CB451fBCfa232d97d5De878F17Cc3F2b10535`  | `MatchboxAdapter` (5 tracked gauges, seeded bribes) | preserved across redeploys |
-| `MockVeMezo`          | `0x2d413D8267b9ab5DE06C8588da66d1Caff337544`  | `VeMezoVotingPower` (sums NFT voting power)    | preserved across redeploys |
+Source of truth: `packages/contracts/deployments/mezo-mainnet.json`.
+
+| Slot                  | Address                                       | Real contract                                  | Block     |
+|-----------------------|-----------------------------------------------|------------------------------------------------|-----------|
+| `MezoYieldOptimizer`  | `0xCC79A460DACaB94b6e4C8cB74209488470cFAd53`  | `MezoYieldOptimizer`                           | `9133130` |
+| `MockGaugeController` | `0x9811F510C87ddAcA311b41D21530c97213b2cA2A`  | `BoostVoterAdapter` (wraps real `BoostVoter`)  | `9133117` |
+| `MockMatchbox`        | `0x96cDD2eD6fD82e34a747AC21d2F03637fAF69927`  | `MatchboxAdapter` (multiplexes per-gauge bribes) | `9133123` |
+| `MockVeMezo`          | `0xE097c6E34C3FbfC906dF3c0C41232AED056A3b95`  | `VeMezoVotingPower` (sums NFT voting power)    | `9133121` |
+
+[Optimizer](https://explorer.mezo.org/address/0xCC79A460DACaB94b6e4C8cB74209488470cFAd53) · [BoostVoterAdapter](https://explorer.mezo.org/address/0x9811F510C87ddAcA311b41D21530c97213b2cA2A) · [MatchboxAdapter](https://explorer.mezo.org/address/0x96cDD2eD6fD82e34a747AC21d2F03637fAF69927) · [VeMezoVotingPower](https://explorer.mezo.org/address/0xE097c6E34C3FbfC906dF3c0C41232AED056A3b95)
 
 `external` block (real upstream Mezo contracts the adapters wrap):
 
