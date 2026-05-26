@@ -21,6 +21,7 @@ import { useActivateStrategy } from "./useActivateStrategy";
 import { type StrategyPreset, SET_AND_FORGET_ID } from "./presets";
 import type { Address, Gauge } from "@/lib/types";
 import { MEZO_EXPLORER, MEZO_NETWORK, OPTIMIZER_ADDRESS } from "@/lib/contracts";
+import { formatAddressLong } from "@/lib/format";
 
 // Testnet cap on the self-mint amount — keeps the input from accepting
 // arbitrarily-large strings that would build but fail at the wallet.
@@ -364,7 +365,7 @@ export function StrategyDetailModal({
               rel="noopener noreferrer"
               className="font-mono underline-offset-2 hover:underline"
             >
-              {OPTIMIZER_ADDRESS.slice(0, 8)}…{OPTIMIZER_ADDRESS.slice(-6)}
+              {formatAddressLong(OPTIMIZER_ADDRESS)}
             </a>
             . Non-custodial — your veMEZO never moves.
           </p>

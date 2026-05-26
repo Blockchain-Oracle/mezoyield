@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useVeMezoPosition } from "@/hooks/useVeMezoPosition";
 import { useGaugeData } from "@/hooks/useGaugeData";
 import { TOTAL_BPS } from "@/lib/optimize";
+import { formatAddressShort } from "@/lib/format";
 
 /**
  * Per-gauge breakdown of the user's current allocation. Reads
@@ -52,8 +53,7 @@ export function ActiveStrategyCard() {
                     <div key={entry.gauge} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-foreground">
-                          {g?.name ??
-                            `${entry.gauge.slice(0, 6)}…${entry.gauge.slice(-4)}`}
+                          {g?.name ?? formatAddressShort(entry.gauge)}
                         </span>
                         <span className="font-mono text-foreground">
                           {pct.toFixed(0)}%

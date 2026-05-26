@@ -57,13 +57,10 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
-    /* Extra semantic surfaces — these are referenced directly by
-     * components that previously hardcoded #121212 / #1C1C1C / #222222
-     * / etc. Mapped through CSS vars so the dark / light palettes can
-     * override them independently. */
-    --color-surface-elevated: var(--surface-elevated);
+    /* Extra semantic surfaces — referenced directly by components
+     * that previously hardcoded raw hex. Mapped through CSS vars so
+     * the dark / light palettes can override them independently. */
     --color-surface-raised: var(--surface-raised);
-    --color-surface-overlay: var(--surface-overlay);
     --color-nav-active: var(--nav-active);
     --color-pill-base: var(--pill-base);
 
@@ -124,13 +121,10 @@
     --sidebar-border: rgba(255, 255, 255, 0.05);
     --sidebar-ring: #FF004D;
 
-    /* Extra semantic surfaces — referenced from components that used
-     * to hardcode raw hex. Keeps the brand palette consistent across
-     * Sidebar, MobileHeader, NavItem, Providers (toaster), etc. */
-    --surface-elevated: #121212;  /* sidebar / mobile header background */
+    /* Extra semantic surfaces — keeps the brand palette consistent
+     * across Sidebar, MobileHeader, NavItem, Providers (toaster). */
     --surface-raised: #1C1C1C;    /* dropdown menu surface */
-    --surface-overlay: #222222;   /* active nav-item pill background */
-    --nav-active: #222222;
+    --nav-active: #222222;        /* active nav-item pill background */
     --pill-base: #0F0F0F;
     --mezo: #FF004D;
     --mezo-hover: #FF2666;
@@ -175,9 +169,7 @@
     --sidebar-border: rgba(255, 255, 255, 0.05);
     --sidebar-ring: #FF004D;
 
-    --surface-elevated: #F7F7F8;
     --surface-raised: #FFFFFF;
-    --surface-overlay: #ECEDF0;
     --nav-active: #ECEDF0;
     --pill-base: #ECEDF0;
     --mezo: #FF004D;

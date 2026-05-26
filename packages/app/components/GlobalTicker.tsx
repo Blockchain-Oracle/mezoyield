@@ -11,6 +11,7 @@ import {
   MEZO_NETWORK,
   OPTIMIZER_ADDRESS,
 } from "@/lib/contracts";
+import { formatAddressLong } from "@/lib/format";
 
 /**
  * Bloomberg-style top-of-page ticker. Mounts once at the root of the
@@ -29,7 +30,7 @@ import {
  *     announce updates without being noisy.
  */
 
-const SHORT_OPTIMIZER = `${OPTIMIZER_ADDRESS.slice(0, 8)}…${OPTIMIZER_ADDRESS.slice(-6)}`;
+const SHORT_OPTIMIZER = formatAddressLong(OPTIMIZER_ADDRESS);
 // Single-network product: keeper runs on Mezo Mainnet only. UI never
 // references testnet to a visitor. (The testnet build still exists
 // internally for sandbox work; it just doesn't appear in this strip.)

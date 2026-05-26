@@ -4,6 +4,7 @@ import { formatUnits } from "viem";
 import { useGaugeData } from "@/hooks/useGaugeData";
 import { useWalletReady } from "@/app/providers";
 import { OPTIMIZER_ADDRESS, MEZO_EXPLORER } from "@/lib/contracts";
+import { formatAddressLong } from "@/lib/format";
 import { ExternalLink } from "lucide-react";
 
 /**
@@ -86,7 +87,7 @@ function LiveDataStripInner() {
             rel="noopener noreferrer"
             className="mt-2 inline-flex items-center gap-1.5 font-mono text-base text-foreground hover:text-mezo"
           >
-            {OPTIMIZER_ADDRESS.slice(0, 8)}…{OPTIMIZER_ADDRESS.slice(-6)}
+            {formatAddressLong(OPTIMIZER_ADDRESS)}
             <ExternalLink aria-hidden className="h-3 w-3" />
           </a>
           <p className="mt-1 text-xs text-muted-foreground">

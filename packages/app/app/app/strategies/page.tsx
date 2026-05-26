@@ -11,6 +11,8 @@ import {
   type StrategyPreset,
 } from "@/features/strategies/presets";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/chrome/PageHeader";
+import { PageSkeleton } from "@/components/chrome/PageSkeleton";
 
 /**
  * Strategies grid — the wedge. 6 cards, browse & pick. Click "Activate"
@@ -20,26 +22,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function StrategiesPage() {
   const walletReady = useWalletReady();
   if (!walletReady) {
-    return <StrategiesSkeleton />;
+    return <PageSkeleton variant="grid" />;
   }
   return <StrategiesPageInner />;
-}
-
-function StrategiesSkeleton() {
-  return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-72" />
-        <Skeleton className="h-12 w-full max-w-2xl" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-72 w-full" />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 function StrategiesPageInner() {
@@ -57,20 +42,11 @@ function StrategiesPageInner() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-mezo">
-          Strategies
-        </p>
-        <h1 className="font-display text-4xl font-medium tracking-tight text-foreground">
-          Pick a yield strategy
-        </h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Browse 6 preset allocations across the live Mezo gauges. Activate
-          one → MezoYield writes your vote on the optimizer. Non-custodial —
-          your veMEZO never leaves your wallet. Re-activate any time to
-          switch.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Strategies"
+        title="Pick a yield strategy"
+        description="Browse 6 preset allocations across the live Mezo gauges. Activate one → MezoYield writes your vote on the optimizer. Non-custodial — your veMEZO never leaves your wallet. Re-activate any time to switch."
+      />
 
       {gaugeData.isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

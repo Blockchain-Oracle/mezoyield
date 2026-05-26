@@ -38,6 +38,8 @@ export function formatVeMezo(wei: bigint, opts?: { withSuffix?: boolean }): stri
 
 /** Compact address: `0xAbCd…1234` (6+4). Default for tables, lists. */
 export function formatAddressShort(addr: string): string {
+  if (!addr) return "";
+  if (addr.length <= 10) return addr;
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
 }
 

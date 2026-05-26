@@ -11,6 +11,7 @@ import {
   OPTIMIZER_ADDRESS,
 } from "@/lib/contracts";
 import type { Address, Gauge } from "@/lib/types";
+import { formatAddressShort } from "@/lib/format";
 
 /**
  * Receipts. The whole pitch ("MezoYield votes for you each epoch") is
@@ -74,7 +75,7 @@ function ProofLedgerInner() {
       {/* Anchor links — optimizer + explorer entry points */}
       <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         <ExplorerLink href={`${MEZO_EXPLORER}/address/${OPTIMIZER_ADDRESS}`}>
-          Optimizer · {OPTIMIZER_ADDRESS.slice(0, 8)}…{OPTIMIZER_ADDRESS.slice(-4)}
+          Optimizer · {formatAddressShort(OPTIMIZER_ADDRESS)}
         </ExplorerLink>
         <span className="hidden h-3 w-px bg-border sm:inline-block" />
         <ExplorerLink href={`${MEZO_EXPLORER}/address/${OPTIMIZER_ADDRESS}#events`}>
@@ -164,7 +165,7 @@ function LedgerBody({
           {top.name}
         </p>
         <p className="mt-2 font-mono text-[11px] tracking-[0.12em] text-muted-foreground">
-          {top.address.slice(0, 6)}…{top.address.slice(-4)}
+          {formatAddressShort(top.address)}
         </p>
       </div>
 
