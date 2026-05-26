@@ -116,6 +116,22 @@ export type ActivateOpts = {
    * Required when the user has zero veMEZO balance; ignored otherwise.
    */
   lockAmountWei?: bigint;
+  /**
+   * Force a fresh MEZO `approve(spender, amount)` write on mainnet even
+   * when the EVM allowance already covers the requested amount.
+   *
+   * Why this exists: MEZO is a Cosmos-native asset surfaced via a
+   * precompile. `approve()` sets EVM allowance AND dispatches
+   * `cosmos.bank.MsgSend` which creates a Cosmos-side authorization with
+   * its own TTL. The Cosmos grant can expire while EVM allowance remains
+   * untouched — so a "Re-sign approval and retry" path that relies on the
+   * default `allowance < amountWei` short-circuit would skip the approve
+   * (allowance is still sufficient) and re-run `createLock` against the
+   * stale Cosmos grant, which reverts identically. The Cosmos-TTL recovery
+   * CTA in the modal passes `forceApprove: true` so the approve write
+   * fires unconditionally and refreshes the Cosmos grant.
+   */
+  forceApprove?: boolean;
 };
 
 export type ActivationState = {
@@ -417,6 +433,13 @@ export function useActivateStrategy({
           // Allowance short-circuit: if a previous activate attempt set
           // allowance but the create/increase never landed (user cancelled
           // between approve and the second tx), skip the approve write.
+          //
+          // EXCEPTION — `opts.forceApprove`: the Cosmos-TTL retry path
+          // sets this. EVM allowance is still sufficient after a TTL
+          // revert, so the short-circuit would skip approve and re-run
+          // createLock against the SAME expired Cosmos grant, which
+          // reverts identically. Force the approve write to refresh the
+          // Cosmos-side authorization grant.
           const allowance = (await publicClient.readContract({
             address: MEZO_TOKEN_ADDRESS,
             abi: mezoErc20Abi,
@@ -424,7 +447,7 @@ export function useActivateStrategy({
             args: [user, VE_MEZO_NFT_ADDRESS],
           })) as bigint;
 
-          if (allowance < amountWei) {
+          if (opts.forceApprove || allowance < amountWei) {
             setCurrentStep("approve-mezo");
             setPhase("writing");
             const approveHash = await writeContractAsync({
