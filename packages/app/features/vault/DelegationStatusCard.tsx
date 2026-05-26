@@ -8,7 +8,7 @@ import { useIsDelegated } from "@/hooks/useIsDelegated";
 
 /**
  * Vault status card. Shows whether the user is delegated to MezoYield
- * (Set & Forget active), and links them to /app/strategies if not.
+ * (Set & Forget active), and links them to /app/earn/strategies if not.
  *
  * Three states:
  *   - Disconnected: prompt to connect (matches Dashboard's NextActionCard).
@@ -78,7 +78,7 @@ export function DelegationStatusCard() {
           </div>
           {!isDelegated && (
             <Link
-              href="/app/strategies"
+              href="/app/earn/strategies"
               className="inline-flex shrink-0 items-center justify-center rounded-md bg-mezo px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-mezo-hover"
             >
               Activate <ArrowRight aria-hidden className="ml-1 h-4 w-4" />

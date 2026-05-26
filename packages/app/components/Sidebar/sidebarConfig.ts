@@ -1,33 +1,61 @@
 import {
   LayoutDashboard,
   Sparkles,
-  Vote,
-  Vault,
   Trophy,
-  Coins,
   Settings,
   type LucideIcon,
 } from "lucide-react";
 
 /**
- * Adapted verbatim from Neko's `sidebarConfig.ts` — same shape (label
- * + href + icon), same exported style constants. Pruned to our 7
- * destinations and swapped Neko's blue (#229EDF) accent for the Mezo
- * brand color (#FF004D, sourced from mezo-org/tigris).
+ * Sidebar grouping mirrors Mezo's section-scoped layout (Earn ▸ Lock/Vote/...).
+ * Two grouped sections (Earn, Insights) plus two leaf entries (Dashboard,
+ * Settings). Groups render as always-expanded — the active group is
+ * highlighted via the parent's icon and the child sub-nav handles
+ * within-group routing.
  */
-export type NavItem = {
+
+export type NavLeaf = {
+  label: string;
+  href: string;
+};
+
+export type NavGroup = {
   label: string;
   href: string;
   icon: LucideIcon;
+  children?: readonly NavLeaf[];
 };
 
-export const NAV_ITEMS: readonly NavItem[] = [
+/**
+ * Sub-nav items derived from the grouped NAV_GROUPS structure. Pages drop
+ * these into `<SubNav items=…>` directly — single source of truth shared
+ * between the sidebar tree and the in-page tab strip.
+ */
+export const EARN_SUBNAV: readonly NavLeaf[] = [
+  { label: "Strategies", href: "/app/earn/strategies" },
+  { label: "Gauges", href: "/app/earn/gauges" },
+  { label: "My Vault", href: "/app/earn/vault" },
+] as const;
+
+export const INSIGHTS_SUBNAV: readonly NavLeaf[] = [
+  { label: "Leaderboard", href: "/app/insights/leaderboard" },
+  { label: "Bribe Market", href: "/app/insights/bribe-market" },
+] as const;
+
+export const NAV_GROUPS: readonly NavGroup[] = [
   { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
-  { label: "Strategies", href: "/app/strategies", icon: Sparkles },
-  { label: "Gauges", href: "/app/gauges", icon: Vote },
-  { label: "My Vault", href: "/app/vault", icon: Vault },
-  { label: "Leaderboard", href: "/app/leaderboard", icon: Trophy },
-  { label: "Bribe Market", href: "/app/bribe-market", icon: Coins },
+  {
+    label: "Earn",
+    href: "/app/earn",
+    icon: Sparkles,
+    children: EARN_SUBNAV,
+  },
+  {
+    label: "Insights",
+    href: "/app/insights",
+    icon: Trophy,
+    children: INSIGHTS_SUBNAV,
+  },
   { label: "Settings", href: "/app/settings", icon: Settings },
 ] as const;
 

@@ -75,7 +75,7 @@ page. The new tx should appear within ~10s of confirmation.
 
 ### Path 2 — Set & Forget activation
 
-1. Visit `/app/strategies`. Click **Activate** on the Set & Forget
+1. Visit `/app/earn/strategies`. Click **Activate** on the Set & Forget
    card.
 2. Verify the modal shows:
    - "ALLOCATION · RE-BALANCED EACH EPOCH"
@@ -88,7 +88,7 @@ page. The new tx should appear within ~10s of confirmation.
 5. Click **Delegate & activate**. Wallet popup → confirm. Wait for
    "Settling on chain…" → "Activated ✓".
 6. Note the tx hash, click "View transaction" link → opens explorer.
-7. Visit `/app/vault`. Verify "Delegation status" card shows you as
+7. Visit `/app/earn/vault`. Verify "Delegation status" card shows you as
    delegated.
 
 ### Path 3 — claim path
@@ -100,7 +100,7 @@ page. The new tx should appear within ~10s of confirmation.
 3. Confirm wallet popup → wait for receipt.
 4. Verify:
    - `pending` returns to 0 on the next read
-   - "Recent earnings" chart on `/app/vault` shows a new bar in the
+   - "Recent earnings" chart on `/app/earn/vault` shows a new bar in the
      current epoch
    - The optimizer emitted `RewardsClaimed(user, amount)` (visible
      on the explorer at the tx)
@@ -122,15 +122,15 @@ page. The new tx should appear within ~10s of confirmation.
 For each route:
 - `/app/dashboard` — position summary, epoch countdown,
   next-action card
-- `/app/strategies` — 6 cards (Set & Forget recommended, 4 manual
+- `/app/earn/strategies` — 6 cards (Set & Forget recommended, 4 manual
   presets, Custom disabled with "Coming next")
-- `/app/gauges` — table of 3 seeded gauges with APY computed from
+- `/app/earn/gauges` — table of 3 seeded gauges with APY computed from
   `(bribe / totalVeMezo) * 52`
-- `/app/vault` — delegation status, active strategy, vote history,
+- `/app/earn/vault` — delegation status, active strategy, vote history,
   earnings chart
-- `/app/leaderboard` — top users by claimed MUSD (seed deployer
+- `/app/insights/leaderboard` — top users by claimed MUSD (seed deployer
   should appear with their claimed total)
-- `/app/bribe-market` — Matchbox bribes per gauge
+- `/app/insights/bribe-market` — Matchbox bribes per gauge
 - `/app/settings` — auto-compound %, gas-fee boost (badge: "Coming
   next"), notification email (badge: not yet delivered)
 

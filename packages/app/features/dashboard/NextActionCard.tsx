@@ -14,7 +14,7 @@ import { useIsDelegated } from "@/hooks/useIsDelegated";
  *
  * State machine
  *   - Disconnected            → "Connect wallet to start"
- *   - Connected, no delegation, no allocation → "Pick a strategy → /app/strategies"
+ *   - Connected, no delegation, no allocation → "Pick a strategy → /app/earn/strategies"
  *   - Connected, delegated    → "Set & Forget active. Keeper votes at every weekly epoch boundary."
  *   - Connected, has allocation (manual) → "X gauges allocated. Switch any time."
  */
@@ -28,7 +28,7 @@ export function NextActionCard() {
   let title = "Pick a strategy";
   let description = "Browse 6 yield strategies and activate one.";
   let cta: { href: string; text: string } | null = {
-    href: "/app/strategies",
+    href: "/app/earn/strategies",
     text: "Browse strategies",
   };
 
@@ -44,14 +44,14 @@ export function NextActionCard() {
     title = "Set & Forget is active";
     description =
       "MezoYield's keeper votes for the highest-APY gauge for you at every weekly epoch boundary. You can claim rewards any time below.";
-    cta = { href: "/app/strategies", text: "Switch strategy" };
+    cta = { href: "/app/earn/strategies", text: "Switch strategy" };
   } else if (position.allocation.length > 0) {
     icon = <Vote aria-hidden className="h-5 w-5 text-mezo" />;
     label = "Active";
     title = `${position.allocation.length} gauge${position.allocation.length > 1 ? "s" : ""} allocated`;
     description =
       "Your manual allocation is live. Re-activate a strategy any time to change it.";
-    cta = { href: "/app/strategies", text: "Switch strategy" };
+    cta = { href: "/app/earn/strategies", text: "Switch strategy" };
   }
 
   return (

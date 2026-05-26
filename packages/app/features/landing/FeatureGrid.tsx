@@ -16,7 +16,7 @@ const LEAD = {
   icon: Sparkles,
   title: "Set & Forget",
   body: "Delegate once. The keeper bot picks the highest-APY gauge for you every Mezo epoch and casts the vote. You never come back unless you want to claim or switch strategies.",
-  cta: { href: "/app/strategies", label: "Browse strategies" },
+  cta: { href: "/app/earn/strategies", label: "Browse strategies" },
 } as const;
 
 const SATELLITES = [
@@ -28,7 +28,7 @@ const SATELLITES = [
   {
     icon: Coins,
     title: "Claim in MUSD",
-    body: "One click claims accumulated MUSD into your wallet. 8-week earnings chart on /app/vault.",
+    body: "One click claims accumulated MUSD into your wallet. 8-week earnings chart on /app/earn/vault.",
   },
   {
     icon: ShieldCheck,
