@@ -113,12 +113,12 @@ pnpm test && pnpm lint                                  # quick local gate
 
 See [CLAUDE.md](./CLAUDE.md) for the contributor guide (stack, commands, house rules), [docs/HOW_YIELD_WORKS.md](./docs/HOW_YIELD_WORKS.md) for the yield mechanics in plain English, and [docs/DEPLOY.md](./docs/DEPLOY.md) for the deployment reference.
 
-## Known issues on Mezo Mainnet
+## Mainnet flow notes
 
-Two quirks worth flagging if you're trying the live mainnet flow:
+Two Mezo-mainnet quirks that the app now handles end-to-end (worth knowing if you read the contracts):
 
-1. **MEZO `approve` may need to be retried.** The MEZO token (`0x7B7c…0001`) is a Cosmos-native asset exposed as ERC-20 via a precompile. A standard EVM `approve()` sets the EVM allowance, but the precompile internally dispatches `cosmos.bank.MsgSend`, which needs a **separate Cosmos-side authorization** with its own TTL. If your first `createLock` attempt reverts with `MsgSend authorization type does not exist or is expired`, signing the approval again refreshes the Cosmos-side grant and the lock then succeeds. We're tracking a UI affordance to detect-and-prompt this case automatically — for now: retry once.
-2. **No "add to existing lock" path yet.** `VeMEZO.createLock` only works for first-time lockers; the contract has separate `increaseAmount` / `increaseLockTime` functions for topping up. The current UI only handles the first-lock case. Power-user workflows (extend duration, add MEZO to a live lock) land in a follow-up PR.
+1. **Cosmos-side `approve` TTL handled automatically.** The MEZO token (`0x7B7c…0001`) is a Cosmos-native asset exposed as ERC-20 via a precompile. A standard EVM `approve()` sets the EVM allowance, but the precompile internally dispatches `cosmos.bank.MsgSend`, which carries a **separate Cosmos-side authorization** with its own TTL. If the Cosmos grant expires between approve and `createLock`, the next call reverts with `MsgSend authorization type does not exist or is expired`. The activation modal detects this revert in `useActivateStrategy` (`isCosmosTtlError`) and renders a one-click "Re-sign approval and retry" CTA in the Confirm tab — the retry re-fires the approve write, freshening the Cosmos grant, and the lock then succeeds in the same flow.
+2. **Add to existing lock supported.** `VeMEZO.createLock` is first-lock only; the contract exposes `increaseAmount(tokenId, value)` for top-ups. The activation flow reads the user's existing veMEZO NFT via `useRealVeMezoPosition` and, when one is present, swaps the `createLock` call for `increaseAmount(existingTokenId, amount)`. The strategy modal's Lock tab switches its label from "Lock MEZO" → "Add to lock" so the UX makes the branch visible.
 
 ## License
 
