@@ -14,12 +14,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useYieldHistory, type YieldBucket } from "@/hooks/useYieldHistory";
 
 /**
- * 8-week MUSD claim history bar chart for /app/vault.
- *
- * Re-implementation of the V1 YieldChart against the same
- * `useYieldHistory` hook (which already does the contiguous
- * zero-fill + dormant-anchor logic from STORY-009 round 3).
- * Mezo accent on the bars, dark grid, dark tooltip surface.
+ * 8-week MUSD claim history bar chart for /app/vault. Backed by
+ * `useYieldHistory` (contiguous zero-fill + dormant-anchor handled in
+ * the hook). Mezo accent on the bars, dark grid, dark tooltip surface.
  */
 export function YieldChartCard() {
   const { epochs, isLoading, isError, error } = useYieldHistory();

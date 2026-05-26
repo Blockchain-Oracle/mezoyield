@@ -13,11 +13,9 @@ export type UseUserAllocationResult = {
 
 /**
  * Read a user's pinned allocation from `MezoYieldOptimizer.getAllocation`.
- *
  * Returns an empty array (and `isConnected: false`) when no address is
- * provided so GaugeBoard can render the "—" placeholder per the
- * disconnected-state BDD criterion. We don't hide the gauges themselves —
- * just the user's column.
+ * provided — consumers render a "—" placeholder for the user's column
+ * without hiding the rest of the gauges.
  */
 export function useUserAllocation(user: Address | undefined): UseUserAllocationResult {
   const query = useReadContract({

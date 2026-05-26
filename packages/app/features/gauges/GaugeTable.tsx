@@ -13,13 +13,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useGaugeData } from "@/hooks/useGaugeData";
 import { MEZO_EXPLORER } from "@/lib/contracts";
+import { formatAddressLong } from "@/lib/format";
 
 /**
- * Full-page gauge directory. Replaces V1's GaugeBoard at a higher
- * scope: this page is the source of truth for "what gauges exist on
- * Mezo right now and what's their APY". All numbers come from
- * useGaugeData (subgraph → on-chain RPC fallback). §14: no synthesized
- * rows.
+ * Full-page gauge directory — source of truth for "what gauges exist
+ * on Mezo right now and what's their APY". Numbers come from
+ * useGaugeData (subgraph → on-chain RPC fallback). No synthesized rows.
  */
 export function GaugeTable() {
   const { gauges, isLoading, isError, error, source } = useGaugeData();
@@ -95,7 +94,7 @@ export function GaugeTable() {
                       rel="noopener noreferrer"
                       className="font-mono text-[10px] text-muted-foreground hover:text-mezo"
                     >
-                      {g.address.slice(0, 8)}…{g.address.slice(-6)}
+                      {formatAddressLong(g.address)}
                     </a>
                   </div>
                 </TableCell>

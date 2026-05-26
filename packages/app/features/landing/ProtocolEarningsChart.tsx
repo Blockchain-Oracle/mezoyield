@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { useWalletReady } from "@/app/providers";
 import { useProtocolBribesHistory } from "@/hooks/useProtocolBribesHistory";
+import { formatAddressShort } from "@/lib/format";
 import { useGaugeData } from "@/hooks/useGaugeData";
 import type { Address } from "@/lib/types";
 
@@ -216,7 +217,7 @@ function toRow(
     meta?.name ??
     (bucket.gauge === "0x0000000000000000000000000000000000000000"
       ? `Gauge ${index + 1}`
-      : `${bucket.gauge.slice(0, 6)}…${bucket.gauge.slice(-4)}`);
+      : formatAddressShort(bucket.gauge));
   const value = Number(formatUnits(bucket.amountWei, 18));
   const pct =
     total === 0n

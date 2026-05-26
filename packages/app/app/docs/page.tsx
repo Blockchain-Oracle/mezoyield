@@ -9,6 +9,7 @@ import {
   MEZO_CHAIN_ID,
 } from "@/lib/contracts";
 import { AppHeader } from "@/components/AppHeader/AppHeader";
+import { formatAddressLong } from "@/lib/format";
 
 /**
  * /docs — public static page. No wagmi hooks; renders without a wallet
@@ -186,7 +187,7 @@ function DocsPageBody() {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 font-mono text-xs text-foreground hover:text-mezo"
                     >
-                      {row.address.slice(0, 8)}…{row.address.slice(-6)}
+                      {formatAddressLong(row.address)}
                       <ExternalLink aria-hidden className="h-3 w-3" />
                     </a>
                   </td>

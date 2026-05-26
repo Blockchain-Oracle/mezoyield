@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ArrowRight, LogOut } from "lucide-react";
-import { truncateAddress } from "@/lib/utils";
+import { formatAddressShort } from "@/lib/format";
 import { CARD_STYLES, CARD_BUTTON_STYLES } from "./sidebarConfig";
 import { MEZO_CHAIN_ID } from "@/lib/contracts";
 
@@ -39,7 +39,7 @@ export function ConnectedCard({ address, onDisconnect }: ConnectedCardProps) {
         onClick={() => setOpen((v) => !v)}
         className={CARD_BUTTON_STYLES}
       >
-        <span className="truncate">{truncateAddress(address)}</span>
+        <span className="truncate">{formatAddressShort(address)}</span>
         <ArrowRight
           className={`ml-2 h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
         />

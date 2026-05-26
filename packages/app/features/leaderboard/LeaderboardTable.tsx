@@ -14,7 +14,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { truncateAddress, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatAddressShort } from "@/lib/format";
 import { useLeaderboard } from "./useLeaderboard";
 
 const RANK_ICON = {
@@ -104,7 +105,7 @@ export function LeaderboardTable() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm text-foreground">
-                        {truncateAddress(row.user)}
+                        {formatAddressShort(row.user)}
                       </span>
                       {isMe && (
                         <Badge className="bg-mezo text-primary-foreground">

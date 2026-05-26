@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { X, Menu, LogOut, ChevronDown } from "lucide-react";
 import { useAccount, useDisconnect } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { cn, truncateAddress } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { formatAddressShort } from "@/lib/format";
 import { useWalletReady } from "@/app/providers";
 import { NAV_ITEMS } from "./sidebarConfig";
 import { NetworkPill } from "./NetworkPill";
@@ -122,7 +123,7 @@ function MobileHeaderInner() {
                     aria-hidden
                   />
                   <span className="truncate">
-                    {truncateAddress(activeAddress)}
+                    {formatAddressShort(activeAddress)}
                   </span>
                   <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-80 sm:h-4 sm:w-4" />
                 </button>

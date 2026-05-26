@@ -11,8 +11,6 @@ import { ConnectedCard } from "./ConnectedCard";
 import { SetupCard } from "./SetupCard";
 import { ThemeToggle } from "@/components/AppHeader/ThemeToggle";
 
-export const SIDEBAR_WIDTH = "270px";
-
 /**
  * Adapted from Neko's `Sidebar.tsx` — same fixed-left rail, same
  * 270px width, same border-r `border-border` on `bg-sidebar`,
