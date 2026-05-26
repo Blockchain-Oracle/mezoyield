@@ -17,12 +17,33 @@ import {
 } from "@/lib/contracts";
 import { optimizerAbi, veMezoAbi, veMezoNftAbi, mezoErc20Abi } from "@/lib/abi";
 import { MIN_VEMEZO_LOCK_SECONDS } from "@/lib/constants";
+import { useRealVeMezoPosition } from "@/hooks/useRealVeMezoPosition";
 import type { Address } from "@/lib/types";
 import type { Gauge } from "@/lib/types";
 import {
   type StrategyPreset,
   type AllocationEntry,
 } from "./presets";
+
+/**
+ * Pattern matcher for the Cosmos-side authorization-expired revert:
+ * MEZO is a Cosmos-native asset surfaced as ERC-20 via a precompile.
+ * `approve()` sets EVM allowance but dispatches `cosmos.bank.MsgSend`
+ * internally — which requires a separate Cosmos authorization with its
+ * own TTL. Once that grant expires, the NEXT `createLock` reverts with
+ * this string even though EVM allowance is still in place.
+ *
+ * When we detect this exact shape we surface a Re-sign Cosmos approval
+ * CTA in the modal that re-fires the approve write (which freshens the
+ * Cosmos grant) instead of leaving the user staring at a generic
+ * "Transaction reverted" toast and guessing.
+ */
+const COSMOS_TTL_EXPIRED_PATTERN =
+  /MsgSend authorization (type does not exist|is expired)/i;
+
+function isCosmosTtlError(message: string | undefined): boolean {
+  return !!message && COSMOS_TTL_EXPIRED_PATTERN.test(message);
+}
 
 /**
  * Activate a strategy preset on the optimizer.
@@ -78,6 +99,17 @@ export type ActivationStatus =
   | "success"
   | "error";
 
+/**
+ * Classifier for surfacing typed errors. The modal switches on this to
+ * decide whether to show a generic "Transaction reverted" line vs a
+ * specific recovery CTA (re-sign Cosmos approval, etc).
+ */
+export type ActivationErrorKind =
+  | "generic"
+  | "cosmos-ttl-expired"
+  | "missing-input"
+  | "unknown-route";
+
 export type ActivateOpts = {
   /**
    * Amount of voting power to mint (testnet) or MEZO to lock (mainnet).
@@ -90,6 +122,27 @@ export type ActivationState = {
   status: ActivationStatus;
   txHash?: `0x${string}`;
   errorMessage?: string;
+  /**
+   * Typed error classification. The modal switches on this to render
+   * recovery CTAs (e.g. "Re-sign Cosmos approval" for Cosmos TTL errors).
+   * `undefined` when no error is active.
+   */
+  errorKind?: ActivationErrorKind;
+  /**
+   * True when the connected user already has at least one veMEZO NFT
+   * (mainnet only). The modal uses this to switch the Lock tab from
+   * "Lock MEZO" → "Add to your lock" and to call increaseAmount on the
+   * existing tokenId instead of createLock.
+   */
+  hasExistingLock: boolean;
+  /**
+   * `true` once the per-NFT existing-lock read has resolved (or is
+   * unavailable, e.g. testnet). The modal must NOT enable Activate
+   * until this flips true: otherwise an existing-lock wallet that
+   * clicks Activate while the read is in flight would silently fall
+   * through to `createLock` and revert (Codex P1).
+   */
+  realPositionLoaded: boolean;
   /** True iff the connected user has previously called `delegate()`. */
   isDelegated: boolean;
   /**
@@ -153,10 +206,31 @@ export function useActivateStrategy({
     query: { enabled: !!user },
   });
 
+  // Per-NFT lock state — mainnet only. When the user already has one
+  // or more veMEZO NFTs, we use `increaseAmount` on the first tokenId
+  // instead of `createLock`. Surfaced via `realPositionLoaded` so the
+  // caller can gate `activate()` on a resolved read — without that
+  // gate, an existing-lock wallet that hits Activate during the load
+  // window would silently fall through to `createLock` (Codex P1).
+  const realPosition = useRealVeMezoPosition(user);
+  // On testnet (or any environment where the hook is `available === false`),
+  // the query stays idle forever — treat that as "loaded" so non-mainnet
+  // flows aren't permanently blocked waiting for a read that never fires.
+  const realPositionLoaded =
+    !realPosition.available || !realPosition.isLoading;
+  const existingTokenId =
+    realPosition.data && realPosition.data.tokenIds.length > 0
+      ? realPosition.data.tokenIds[0]!
+      : null;
+  const hasExistingLock = existingTokenId !== null;
+
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  const [errorKind, setErrorKind] = useState<ActivationErrorKind | undefined>(
+    undefined,
+  );
   const [phase, setPhase] = useState<ActivationStatus>("idle");
   const [currentStep, setCurrentStep] = useState<ActivationStep | undefined>(
     undefined,
@@ -239,6 +313,7 @@ export function useActivateStrategy({
   const activate = async (opts: ActivateOpts = {}): Promise<void> => {
     if (!user) return;
     setErrorMessage(undefined);
+    setErrorKind(undefined);
     try {
       // Defense against the modal-loading race: if a caller fires
       // activate() before the balance read resolves, refuse to act.
@@ -252,18 +327,40 @@ export function useActivateStrategy({
         return;
       }
 
+      // Codex P1 fix: gate on the per-NFT existing-lock read too. Without
+      // this, a wallet with an existing veMEZO NFT could click Activate
+      // during the in-flight read, `hasExistingLock` would still be false,
+      // and the hook would call `createLock` (which reverts on a wallet
+      // that already owns an NFT) instead of `increaseAmount`.
+      if (!realPositionLoaded) {
+        setPhase("error");
+        setErrorMessage(
+          "Still reading your existing lock — try again in a second.",
+        );
+        return;
+      }
+
       const isTestnet = network === "testnet";
       const isMainnet = network === "mainnet";
 
       // ─── Precondition 1: set initial voting power ───
-      // If the user has zero veMEZO, mint/lock so `delegate()` doesn't
-      // revert. Modal supplies the amount via `opts.lockAmountWei`;
-      // we treat absent + zero-balance as a clear caller error so the
-      // failure mode is surfaced instead of silently submitting a
-      // doomed tx.
-      if (veMezoBalance === 0n) {
+      // Two branches here:
+      //   (a) `veMezoBalance === 0n` → user has no voting power; mint or
+      //       lock to establish it (network-specific path below).
+      //   (b) `opts.lockAmountWei > 0n` AND user already has a lock →
+      //       top-up path via increaseAmount(tokenId, amount). Closes
+      //       README Known Issue #2 ("no add-to-existing-lock path").
+      // Both branches require `opts.lockAmountWei`; if the caller wants
+      // to skip them, they pass undefined and we fall through to delegate.
+      const wantsTopUp =
+        isMainnet &&
+        hasExistingLock &&
+        !!opts.lockAmountWei &&
+        opts.lockAmountWei > 0n;
+      if (veMezoBalance === 0n || wantsTopUp) {
         if (!opts.lockAmountWei || opts.lockAmountWei <= 0n) {
           setPhase("error");
+          setErrorKind("missing-input");
           setErrorMessage(
             isMainnet
               ? "You have no veMEZO yet — pick an amount of MEZO to lock before activating."
@@ -318,8 +415,8 @@ export function useActivateStrategy({
           }
 
           // Allowance short-circuit: if a previous activate attempt set
-          // allowance but the createLock never landed (user cancelled
-          // between approve and lock), skip the approve write.
+          // allowance but the create/increase never landed (user cancelled
+          // between approve and the second tx), skip the approve write.
           const allowance = (await publicClient.readContract({
             address: MEZO_TOKEN_ADDRESS,
             abi: mezoErc20Abi,
@@ -340,16 +437,30 @@ export function useActivateStrategy({
             await waitOrRevert(approveHash, "MEZO approve");
           }
 
-          setCurrentStep("lock");
-          setPhase("writing");
-          const lockHash = await writeContractAsync({
-            address: VE_MEZO_NFT_ADDRESS,
-            abi: veMezoNftAbi,
-            functionName: "createLock",
-            args: [amountWei, MIN_VEMEZO_LOCK_SECONDS],
-          });
-          setTxHash(lockHash);
-          await waitOrRevert(lockHash, "veMEZO createLock");
+          // Branch: top up an existing NFT, or create a fresh lock.
+          if (hasExistingLock && existingTokenId !== null) {
+            setCurrentStep("lock");
+            setPhase("writing");
+            const topUpHash = await writeContractAsync({
+              address: VE_MEZO_NFT_ADDRESS,
+              abi: veMezoNftAbi,
+              functionName: "increaseAmount",
+              args: [existingTokenId, amountWei],
+            });
+            setTxHash(topUpHash);
+            await waitOrRevert(topUpHash, "veMEZO increaseAmount");
+          } else {
+            setCurrentStep("lock");
+            setPhase("writing");
+            const lockHash = await writeContractAsync({
+              address: VE_MEZO_NFT_ADDRESS,
+              abi: veMezoNftAbi,
+              functionName: "createLock",
+              args: [amountWei, MIN_VEMEZO_LOCK_SECONDS],
+            });
+            setTxHash(lockHash);
+            await waitOrRevert(lockHash, "veMEZO createLock");
+          }
           await veMezoBalanceQuery.refetch();
         }
       }
@@ -453,8 +564,13 @@ export function useActivateStrategy({
       );
     } catch (err) {
       const e = err as { shortMessage?: string; message?: string };
+      const msg = e.shortMessage ?? e.message ?? "Activation failed";
       setPhase("error");
-      setErrorMessage(e.shortMessage ?? e.message ?? "Activation failed");
+      setErrorMessage(msg);
+      // Classify so the modal can render a recovery CTA instead of a
+      // generic toast. Cosmos TTL is the only typed kind right now;
+      // everything else stays "generic".
+      setErrorKind(isCosmosTtlError(msg) ? "cosmos-ttl-expired" : "generic");
     }
   };
 
@@ -462,6 +578,9 @@ export function useActivateStrategy({
     status: phase,
     txHash,
     errorMessage,
+    errorKind,
+    hasExistingLock,
+    realPositionLoaded,
     isDelegated: !!delegatedQuery.data,
     veMezoBalance,
     veMezoBalanceLoaded,
@@ -472,7 +591,11 @@ export function useActivateStrategy({
       setPhase("idle");
       setTxHash(undefined);
       setErrorMessage(undefined);
+      setErrorKind(undefined);
       setCurrentStep(undefined);
     },
   };
 }
+
+// Re-export the classifier for tests + the modal's typed-error branch.
+export { isCosmosTtlError };
