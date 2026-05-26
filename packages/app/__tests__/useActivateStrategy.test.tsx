@@ -100,6 +100,32 @@ function setPublicRead(address: string, functionName: string, value: unknown) {
 // path flip this to `false` so `usePublicClient` returns undefined.
 const publicClientAvailable: { value: boolean } = { value: true };
 
+// Mock useRealVeMezoPosition — it uses @tanstack/react-query under the
+// hood (`useQuery`), which requires a provider. The tests don't care
+// about that fetch path; they only need the hook's resolved value to
+// drive the createLock vs increaseAmount branch.
+type MockedRealPosition = {
+  data: {
+    nftCount: bigint;
+    tokenIds: bigint[];
+    totalLockedMezoWei: bigint;
+    totalVotingPowerWei: bigint;
+    earliestUnlockSeconds: bigint | null;
+  } | null;
+  isLoading: boolean;
+  isError: boolean;
+  available: boolean;
+};
+const realPositionState: MockedRealPosition = {
+  data: null,
+  isLoading: false,
+  isError: false,
+  available: true,
+};
+vi.mock("@/hooks/useRealVeMezoPosition", () => ({
+  useRealVeMezoPosition: () => realPositionState,
+}));
+
 vi.mock("wagmi", () => ({
   useReadContract: ({
     functionName,
@@ -194,6 +220,7 @@ describe("useActivateStrategy", () => {
     receiptState.error = null;
     receiptState.data = undefined;
     publicClientAvailable.value = true;
+    realPositionState.data = null;
   });
 
   // ─── Testnet path ────────────────────────────────────────────────
@@ -399,6 +426,88 @@ describe("useActivateStrategy", () => {
         "setApprovalForAll",
       ]);
       expect(result.current.status).toBe("success");
+    });
+
+    it("existing NFT (top-up mode): approve → increaseAmount → delegate → setApprovalForAll, NEVER createLock", async () => {
+      // User has an existing lock with 0 voting power (e.g. just expired)
+      // — we should use increaseAmount on the existing tokenId rather
+      // than blindly calling createLock (which would either revert or
+      // mint a duplicate NFT depending on contract behavior).
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      realPositionState.data = {
+        nftCount: 1n,
+        tokenIds: [42n],
+        totalLockedMezoWei: 0n,
+        totalVotingPowerWei: 0n,
+        earliestUnlockSeconds: null,
+      };
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: 0n,
+        nftApproved: false,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: ONE_MEZO });
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      expect(calls).toEqual([
+        "approve",
+        "increaseAmount",
+        "delegate",
+        "setApprovalForAll",
+      ]);
+      // increaseAmount must target the user's existing tokenId, not 0.
+      const increaseCall = writeContractAsync.mock.calls.find(
+        (c) => (c[0] as { functionName: string }).functionName === "increaseAmount",
+      );
+      expect(increaseCall).toBeDefined();
+      const increaseArgs = (increaseCall![0] as { args: [bigint, bigint] }).args;
+      expect(increaseArgs[0]).toBe(42n);
+      expect(increaseArgs[1]).toBe(ONE_MEZO);
+      // Exposes hasExistingLock = true on the result.
+      expect(result.current.hasExistingLock).toBe(true);
+    });
+
+    it("Cosmos TTL revert: errorKind classified as 'cosmos-ttl-expired'", async () => {
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: ONE_MEZO,
+        nftApproved: false,
+      });
+      // Make createLock throw with the Cosmos TTL signature — emulating
+      // the precompile-side revert that the Mezo MEZO ERC-20 surfaces
+      // when the Cosmos grant has expired.
+      writeContractAsync.mockImplementationOnce(async () => {
+        throw new Error(
+          "execution reverted: MsgSend authorization type does not exist",
+        );
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: ONE_MEZO });
+      });
+      expect(result.current.status).toBe("error");
+      expect(result.current.errorKind).toBe("cosmos-ttl-expired");
     });
 
     it("allowance already sufficient: skips approve, fires lock → delegate → setApprovalForAll", async () => {

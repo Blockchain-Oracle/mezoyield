@@ -180,6 +180,46 @@ export const veMezoNftAbi = [
     ],
     outputs: [{ name: "", type: "uint256" }],
   },
+  // ─── Existing-lock mutators ────────────────────────────────────────
+  // Signatures follow the Solidly-derived veNFT pattern (Velodrome,
+  // Aerodrome, BoostVoter). `increaseAmount` tops up an existing
+  // tokenId; `increaseUnlockTime` extends the lock duration. If the
+  // deployed Mezo veMEZO ABI diverges from this signature, the call
+  // reverts and the activation hook surfaces a clean error + a deep
+  // link to mezo.org/earn/lock as fallback — see useActivateStrategy.
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "increaseAmount",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "value", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    stateMutability: "nonpayable",
+    name: "increaseUnlockTime",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "lockDuration", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  // Read the per-NFT lock state (amount + unlock-end timestamp). Used
+  // by the activation hook to decide between createLock vs
+  // increaseAmount and whether to also extend the unlock time.
+  {
+    type: "function",
+    stateMutability: "view",
+    name: "locked",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [
+      { name: "amount", type: "int128" },
+      { name: "end", type: "uint256" },
+    ],
+  },
 ] as const;
 
 export const optimizerAbi = [
