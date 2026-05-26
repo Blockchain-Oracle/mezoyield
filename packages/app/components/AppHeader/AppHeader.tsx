@@ -32,8 +32,8 @@ type Variant = "landing" | "full";
 
 const APP_NAV: ReadonlyArray<{ label: string; href: string }> = [
   { label: "Dashboard", href: "/app/dashboard" },
-  { label: "Strategies", href: "/app/strategies" },
-  { label: "Gauges", href: "/app/gauges" },
+  { label: "Strategies", href: "/app/earn/strategies" },
+  { label: "Gauges", href: "/app/earn/gauges" },
   { label: "Docs", href: "/docs" },
 ];
 

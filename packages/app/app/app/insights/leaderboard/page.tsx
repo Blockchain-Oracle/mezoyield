@@ -3,6 +3,8 @@
 import { useWalletReady } from "@/app/providers";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { PageSkeleton } from "@/components/chrome/PageSkeleton";
+import { SubNav } from "@/components/chrome/SubNav";
+import { INSIGHTS_SUBNAV } from "@/components/Sidebar/sidebarConfig";
 import { LeaderboardTable } from "@/features/leaderboard/LeaderboardTable";
 
 export default function LeaderboardPage() {
@@ -13,7 +15,7 @@ export default function LeaderboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Leaderboard"
+        eyebrow="Insights"
         title="Top earners on MezoYield"
         description={
           <>
@@ -23,6 +25,7 @@ export default function LeaderboardPage() {
           </>
         }
       />
+      <SubNav items={INSIGHTS_SUBNAV} />
       <LeaderboardTable />
     </div>
   );

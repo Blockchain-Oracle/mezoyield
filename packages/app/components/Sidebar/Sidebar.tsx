@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useMemo } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAccount, useDisconnect } from "wagmi";
 import { useWalletReady } from "@/app/providers";
-import { NAV_ITEMS } from "./sidebarConfig";
+import { NAV_GROUPS, type NavGroup } from "./sidebarConfig";
 import { SidebarLogo } from "./SidebarLogo";
 import { NavItem } from "./NavItem";
 import { ConnectedCard } from "./ConnectedCard";
 import { SetupCard } from "./SetupCard";
 import { ThemeToggle } from "@/components/AppHeader/ThemeToggle";
+import { cn } from "@/lib/utils";
 
 /**
  * Adapted from Neko's `Sidebar.tsx` — same fixed-left rail, same
@@ -25,7 +27,7 @@ import { ThemeToggle } from "@/components/AppHeader/ThemeToggle";
 export function Sidebar() {
   const pathname = usePathname();
   const walletReady = useWalletReady();
-  const navItems = useMemo(() => NAV_ITEMS, []);
+  const groups = useMemo(() => NAV_GROUPS, []);
 
   const isActive = (href: string) =>
     href === "/app/dashboard"
@@ -37,14 +39,8 @@ export function Sidebar() {
       <SidebarLogo />
 
       <nav className="flex flex-1 flex-col gap-1 px-3 min-h-0 overflow-y-auto">
-        {navItems.map(({ label, href, icon }) => (
-          <NavItem
-            key={href}
-            label={label}
-            href={href}
-            icon={icon}
-            isActive={isActive(href)}
-          />
+        {groups.map((group) => (
+          <SidebarGroup key={group.href} group={group} isActive={isActive} />
         ))}
       </nav>
 
@@ -56,6 +52,58 @@ export function Sidebar() {
         {walletReady ? <WalletStateCard /> : <SetupCardSkeleton />}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Renders a single sidebar group. Leaf groups (no `children`) render as a
+ * plain NavItem. Grouped entries render the parent pill (active when any
+ * descendant route matches) plus a static list of indented child links
+ * (always-expanded, no collapse state to persist).
+ */
+function SidebarGroup({
+  group,
+  isActive,
+}: {
+  group: NavGroup;
+  isActive: (href: string) => boolean;
+}) {
+  if (!group.children) {
+    return (
+      <NavItem
+        label={group.label}
+        href={group.href}
+        icon={group.icon}
+        isActive={isActive(group.href)}
+      />
+    );
+  }
+  const parentActive = isActive(group.href);
+  return (
+    <div className="space-y-0.5">
+      <NavItem
+        label={group.label}
+        href={group.children[0]!.href}
+        icon={group.icon}
+        isActive={parentActive}
+      />
+      <div className="ml-5 flex flex-col gap-0.5 border-l border-border/40 pl-3">
+        {group.children.map((child) => (
+          <Link
+            key={child.href}
+            href={child.href}
+            className={cn(
+              "px-3 py-1.5 text-sm transition-colors rounded-md",
+              isActive(child.href)
+                ? "text-foreground font-medium"
+                : "text-sidebar-foreground/60 hover:text-sidebar-foreground",
+            )}
+          >
+            {child.label}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
 

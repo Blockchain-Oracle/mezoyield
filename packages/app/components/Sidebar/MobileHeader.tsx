@@ -9,7 +9,8 @@ import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { cn } from "@/lib/utils";
 import { formatAddressShort } from "@/lib/format";
 import { useWalletReady } from "@/app/providers";
-import { NAV_ITEMS } from "./sidebarConfig";
+import { NAV_GROUPS } from "./sidebarConfig";
+import type { LucideIcon } from "lucide-react";
 import { NetworkPill } from "./NetworkPill";
 import { MEZO_CHAIN_ID } from "@/lib/contracts";
 import { ThemeToggle } from "@/components/AppHeader/ThemeToggle";
@@ -56,7 +57,23 @@ function MobileHeaderInner() {
   const walletButtonRef = useRef<HTMLDivElement>(null);
 
   const activeAddress = address ?? "";
-  const navItems = useMemo(() => NAV_ITEMS, []);
+  // Flatten groups → leaf nav entries for the mobile sheet (each child
+  // inherits its parent group's icon so the rail still reads visually).
+  // Leaf groups (no children) pass through unchanged.
+  const navItems = useMemo<readonly { label: string; href: string; icon: LucideIcon }[]>(
+    () =>
+      NAV_GROUPS.flatMap((group) => {
+        if (!group.children) {
+          return [{ label: group.label, href: group.href, icon: group.icon }];
+        }
+        return group.children.map((child) => ({
+          label: child.label,
+          href: child.href,
+          icon: group.icon,
+        }));
+      }),
+    [],
+  );
 
   const isActive = (href: string) =>
     href === "/app/dashboard"

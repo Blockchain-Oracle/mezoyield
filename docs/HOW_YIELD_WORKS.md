@@ -67,7 +67,7 @@ except track delegations and forward votes.
 
 1. User locks MEZO → gets veMEZO (this happens *outside* MezoYield, on Mezo's
    own staking UI; we read the balance via `MockVeMezo.balanceOf`).
-2. User opens MezoYield → **/app/strategies** → picks a strategy.
+2. User opens MezoYield → **/app/earn/strategies** → picks a strategy.
 3. For **Set & Forget** (the headline strategy):
    - Wallet pops up: `delegate(user)` → user signs → optimizer flips
      `isDelegated[user] = true`.
@@ -186,7 +186,7 @@ auto-compounds MUSD back into MEZO. We're first on every one of those.
 > MezoYield is a non-custodial gauge-vote optimizer for Mezo. Locked MEZO
 > (veMEZO) earns MUSD bribes for voting on liquidity gauges every week.
 > MezoYield's keeper bot does that vote for you automatically. You delegate
-> once on /app/strategies, claim MUSD whenever, and never think about gauge
+> once on /app/earn/strategies, claim MUSD whenever, and never think about gauge
 > voting again. Built on real testnet contracts (`0x1A9a4f…133B6D`); the
 > keeper bot has already cast votes on chain. First yield product on Mezo's
 > MEZO Track — Andre Coutinho named the gap on camera ("no simple way of

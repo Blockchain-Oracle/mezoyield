@@ -38,7 +38,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/app/strategies"
+                  href="/app/earn/strategies"
                   className="text-muted-foreground hover:text-foreground"
                 >
                   Strategies
@@ -46,7 +46,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/app/gauges"
+                  href="/app/earn/gauges"
                   className="text-muted-foreground hover:text-foreground"
                 >
                   Gauges
@@ -54,7 +54,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/app/bribe-market"
+                  href="/app/insights/bribe-market"
                   className="text-muted-foreground hover:text-foreground"
                 >
                   Bribe market

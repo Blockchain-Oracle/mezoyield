@@ -13,6 +13,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { PageSkeleton } from "@/components/chrome/PageSkeleton";
+import { SubNav } from "@/components/chrome/SubNav";
+import { EARN_SUBNAV } from "@/components/Sidebar/sidebarConfig";
 
 /**
  * Strategies grid — the wedge. 6 cards, browse & pick. Click "Activate"
@@ -43,10 +45,11 @@ function StrategiesPageInner() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Strategies"
+        eyebrow="Earn"
         title="Pick a yield strategy"
         description="Browse 6 preset allocations across the live Mezo gauges. Activate one → MezoYield writes your vote on the optimizer. Non-custodial — your veMEZO never leaves your wallet. Re-activate any time to switch."
       />
+      <SubNav items={EARN_SUBNAV} />
 
       {gaugeData.isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">

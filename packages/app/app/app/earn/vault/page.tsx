@@ -4,6 +4,8 @@ import { useWalletReady } from "@/app/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { PageSkeleton } from "@/components/chrome/PageSkeleton";
+import { SubNav } from "@/components/chrome/SubNav";
+import { EARN_SUBNAV } from "@/components/Sidebar/sidebarConfig";
 import { DelegationStatusCard } from "@/features/vault/DelegationStatusCard";
 import { ActiveStrategyCard } from "@/features/vault/ActiveStrategyCard";
 import { EarningsCard } from "@/features/vault/EarningsCard";
@@ -35,7 +37,7 @@ function VaultInner() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="My Vault"
+        eyebrow="Earn"
         title="Your delegation, allocation, and history"
         description={
           <>
@@ -44,6 +46,7 @@ function VaultInner() {
           </>
         }
       />
+      <SubNav items={EARN_SUBNAV} />
 
       <DelegationStatusCard />
 

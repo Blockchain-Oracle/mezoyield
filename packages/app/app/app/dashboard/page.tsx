@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/chrome/PageHeader";
 import { PageSkeleton } from "@/components/chrome/PageSkeleton";
 import { PositionSummary } from "@/features/dashboard/PositionSummary";
 import { RealChainPositionCard } from "@/features/dashboard/RealChainPositionCard";
-import { EpochCountdownStrip } from "@/features/dashboard/EpochCountdownStrip";
+import { EpochStatsCard } from "@/features/dashboard/EpochStatsCard";
 import { NextActionCard } from "@/features/dashboard/NextActionCard";
 import { PendingClaimCard } from "@/features/dashboard/PendingClaimCard";
 import { ExampleUserRow } from "@/features/dashboard/ExampleUserRow";
@@ -29,13 +29,19 @@ function DashboardInner() {
         description="Live position, weekly reward projection, and one-click claim. Pick a strategy on the Strategies tab to put the system on autopilot."
       />
 
-      {!isConnected && <ExampleUserRow />}
-
-      <PositionSummary />
-      <RealChainPositionCard />
-      <EpochCountdownStrip />
-      <NextActionCard />
-      <PendingClaimCard />
+      {/* Right-rail epoch stats panel sits at xl+; on lg and below the
+       *  card stacks under the main column so the sidebar's 270px doesn't
+       *  squeeze the hero numbers. */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6 min-w-0">
+          {!isConnected && <ExampleUserRow />}
+          <PositionSummary />
+          <RealChainPositionCard />
+          <NextActionCard />
+          <PendingClaimCard />
+        </div>
+        <EpochStatsCard />
+      </div>
     </div>
   );
 }

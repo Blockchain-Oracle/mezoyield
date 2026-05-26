@@ -4,6 +4,8 @@ import { useWalletReady } from "@/app/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/chrome/PageHeader";
 import { PageSkeleton } from "@/components/chrome/PageSkeleton";
+import { SubNav } from "@/components/chrome/SubNav";
+import { INSIGHTS_SUBNAV } from "@/components/Sidebar/sidebarConfig";
 import { BribeTable } from "@/features/bribe-market/BribeTable";
 
 export default function BribeMarketPage() {
@@ -19,7 +21,7 @@ export default function BribeMarketPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Bribe Market"
+        eyebrow="Insights"
         title={"What’s being bribed this epoch"}
         description={
           <>
@@ -30,6 +32,7 @@ export default function BribeMarketPage() {
           </>
         }
       />
+      <SubNav items={INSIGHTS_SUBNAV} />
       <BribeTable />
     </div>
   );
