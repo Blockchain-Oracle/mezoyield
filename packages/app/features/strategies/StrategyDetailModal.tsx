@@ -177,12 +177,13 @@ export function StrategyDetailModal({
   // top-up input is non-empty but invalid, block the submit instead.
   const topUpInputDirty = isTopUpMode && inputAmount !== "" && inputAmount !== ".";
   const topUpInputInvalid = topUpInputDirty && !lockAmountValid;
-  const submitActivate = () =>
-    void activation.activate(
-      needsInitialVotingPower || (isTopUpMode && lockAmountValid)
+  const submitActivate = (opts: { forceApprove?: boolean } = {}) =>
+    void activation.activate({
+      ...(needsInitialVotingPower || (isTopUpMode && lockAmountValid)
         ? { lockAmountWei }
-        : undefined,
-    );
+        : {}),
+      ...(opts.forceApprove ? { forceApprove: true } : {}),
+    });
 
   const ctaLabel = (() => {
     if (activation.status === "writing") return "Confirm in wallet…";
@@ -351,7 +352,10 @@ export function StrategyDetailModal({
             )}
 
             {isErr && activation.errorKind === "cosmos-ttl-expired" && (
-              <CosmosTtlRecoveryCard onRetry={submitActivate} disabled={isBusy} />
+              <CosmosTtlRecoveryCard
+                onRetry={() => submitActivate({ forceApprove: true })}
+                disabled={isBusy}
+              />
             )}
 
             {isErr &&

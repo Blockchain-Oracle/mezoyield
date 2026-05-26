@@ -513,6 +513,41 @@ describe("useActivateStrategy", () => {
       expect(result.current.errorMessage).toMatch(/still reading your existing lock/i);
     });
 
+    it("forceApprove: fires approve unconditionally even when allowance >= amount (Cosmos TTL retry path)", async () => {
+      // EVM allowance is already sufficient — under default behavior the
+      // hook would skip approve. But the Cosmos-side grant has its own
+      // TTL that's independent of EVM allowance; once that expires, the
+      // next createLock reverts. The retry CTA passes `forceApprove: true`
+      // so approve fires anyway and refreshes the Cosmos grant.
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: ONE_MEZO * 100n, // way more than amount → would normally skip approve
+        nftApproved: true,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      await act(async () => {
+        await result.current.activate({
+          lockAmountWei: ONE_MEZO,
+          forceApprove: true,
+        });
+      });
+      const calls = writeContractAsync.mock.calls.map(
+        (c) => (c[0] as { functionName: string }).functionName,
+      );
+      // approve MUST appear in the call sequence even though allowance was
+      // already 100x the requested amount.
+      expect(calls).toEqual(["approve", "createLock", "delegate"]);
+    });
+
     it("Cosmos TTL revert: errorKind classified as 'cosmos-ttl-expired'", async () => {
       veMezoBalanceState.value = 0n;
       isDelegatedState.value = false;
