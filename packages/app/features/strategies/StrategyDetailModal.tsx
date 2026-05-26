@@ -170,6 +170,13 @@ export function StrategyDetailModal({
   const isErr = activation.status === "error";
 
   // ─── Footer CTA — switches by active tab ───
+  // Codex P2 fix: if the user typed something in top-up mode, it has to
+  // be a valid amount before we proceed. Silently passing `undefined`
+  // would tell the hook "no top-up" and the activation would still
+  // succeed — but without the lock change the user asked for. So when
+  // top-up input is non-empty but invalid, block the submit instead.
+  const topUpInputDirty = isTopUpMode && inputAmount !== "" && inputAmount !== ".";
+  const topUpInputInvalid = topUpInputDirty && !lockAmountValid;
   const submitActivate = () =>
     void activation.activate(
       needsInitialVotingPower || (isTopUpMode && lockAmountValid)
@@ -193,17 +200,22 @@ export function StrategyDetailModal({
   const ctaDisabled = (() => {
     if (!user || isBusy || isDone) return true;
     if (activeTab === "lock") {
-      // Allow advancing only if the Lock tab is satisfied OR user is in
-      // top-up mode (Lock is optional there, so we allow advance without input).
+      // Lock tab → block "Next" when:
+      //   - first-lock branch requires a valid amount
+      //   - top-up branch with a dirty input requires that input be valid
+      //     (Codex P2: don't let users advance with garbage input that
+      //     would later be silently dropped)
       if (needsInitialVotingPower) return !lockAmountValid;
-      if (isTopUpMode) return false;
+      if (isTopUpMode) return topUpInputInvalid;
       return true;
     }
     if (activeTab === "preview") return false;
-    // Confirm tab — block if balance read still pending OR (when lock
-    // is required) the input isn't valid.
+    // Confirm tab — block on incomplete reads, on missing required input,
+    // or on dirty-but-invalid top-up input.
     if (!activation.veMezoBalanceLoaded) return true;
+    if (!activation.realPositionLoaded) return true;
     if (needsInitialVotingPower && !lockAmountValid) return true;
+    if (topUpInputInvalid) return true;
     return false;
   })();
 
@@ -281,6 +293,11 @@ export function StrategyDetailModal({
                 inputAmount={inputAmount}
                 handleInputChange={handleInputChange}
                 isBusy={isBusy}
+                inputError={
+                  topUpInputInvalid
+                    ? `Amount exceeds your ${Number(formatUnits(mezoAvailableWei, 18)).toFixed(2)} MEZO balance.`
+                    : null
+                }
               />
             </TabsContent>
           )}
@@ -395,6 +412,7 @@ function LockPanel({
   inputAmount,
   handleInputChange,
   isBusy,
+  inputError,
 }: {
   isMainnet: boolean;
   isTopUp: boolean;
@@ -405,6 +423,7 @@ function LockPanel({
   inputAmount: string;
   handleInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   isBusy: boolean;
+  inputError: string | null;
 }) {
   return (
     <div className="space-y-2 rounded-lg border border-border bg-card/40 p-3">
@@ -465,6 +484,15 @@ function LockPanel({
       {isMainnet && mezoAvailableWei === 0n && (
         <p className="rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-400">
           You don&apos;t have any MEZO yet. Bridge or swap on Mezo first, then come back.
+        </p>
+      )}
+
+      {inputError && (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive"
+        >
+          {inputError}
         </p>
       )}
     </div>

@@ -135,6 +135,14 @@ export type ActivationState = {
    * existing tokenId instead of createLock.
    */
   hasExistingLock: boolean;
+  /**
+   * `true` once the per-NFT existing-lock read has resolved (or is
+   * unavailable, e.g. testnet). The modal must NOT enable Activate
+   * until this flips true: otherwise an existing-lock wallet that
+   * clicks Activate while the read is in flight would silently fall
+   * through to `createLock` and revert (Codex P1).
+   */
+  realPositionLoaded: boolean;
   /** True iff the connected user has previously called `delegate()`. */
   isDelegated: boolean;
   /**
@@ -200,9 +208,16 @@ export function useActivateStrategy({
 
   // Per-NFT lock state — mainnet only. When the user already has one
   // or more veMEZO NFTs, we use `increaseAmount` on the first tokenId
-  // instead of `createLock`. The hook gracefully degrades to first-lock
-  // behavior when this returns null (testnet, or pre-load).
+  // instead of `createLock`. Surfaced via `realPositionLoaded` so the
+  // caller can gate `activate()` on a resolved read — without that
+  // gate, an existing-lock wallet that hits Activate during the load
+  // window would silently fall through to `createLock` (Codex P1).
   const realPosition = useRealVeMezoPosition(user);
+  // On testnet (or any environment where the hook is `available === false`),
+  // the query stays idle forever — treat that as "loaded" so non-mainnet
+  // flows aren't permanently blocked waiting for a read that never fires.
+  const realPositionLoaded =
+    !realPosition.available || !realPosition.isLoading;
   const existingTokenId =
     realPosition.data && realPosition.data.tokenIds.length > 0
       ? realPosition.data.tokenIds[0]!
@@ -308,6 +323,19 @@ export function useActivateStrategy({
         setPhase("error");
         setErrorMessage(
           "Still reading your veMEZO position — try again in a second.",
+        );
+        return;
+      }
+
+      // Codex P1 fix: gate on the per-NFT existing-lock read too. Without
+      // this, a wallet with an existing veMEZO NFT could click Activate
+      // during the in-flight read, `hasExistingLock` would still be false,
+      // and the hook would call `createLock` (which reverts on a wallet
+      // that already owns an NFT) instead of `increaseAmount`.
+      if (!realPositionLoaded) {
+        setPhase("error");
+        setErrorMessage(
+          "Still reading your existing lock — try again in a second.",
         );
         return;
       }
@@ -552,6 +580,7 @@ export function useActivateStrategy({
     errorMessage,
     errorKind,
     hasExistingLock,
+    realPositionLoaded,
     isDelegated: !!delegatedQuery.data,
     veMezoBalance,
     veMezoBalanceLoaded,

@@ -221,6 +221,8 @@ describe("useActivateStrategy", () => {
     receiptState.data = undefined;
     publicClientAvailable.value = true;
     realPositionState.data = null;
+    realPositionState.isLoading = false;
+    realPositionState.available = true;
   });
 
   // ─── Testnet path ────────────────────────────────────────────────
@@ -477,6 +479,38 @@ describe("useActivateStrategy", () => {
       expect(increaseArgs[1]).toBe(ONE_MEZO);
       // Exposes hasExistingLock = true on the result.
       expect(result.current.hasExistingLock).toBe(true);
+    });
+
+    it("refuses to act while existing-lock read is still in flight (Codex P1)", async () => {
+      // Mainnet wallet, balance hasn't loaded yet for the NFT query —
+      // an existing-lock user clicking Activate during this window must
+      // NOT fall through to createLock. Hook should set an error and no
+      // tx should fire.
+      veMezoBalanceState.value = 0n;
+      isDelegatedState.value = false;
+      realPositionState.isLoading = true;
+      realPositionState.data = null;
+      seedMainnetReads({
+        mezoBalance: ONE_MEZO,
+        allowance: 0n,
+        nftApproved: false,
+      });
+      const { result } = renderHook(() =>
+        useActivateStrategy({
+          preset: SET_AND_FORGET,
+          user: USER,
+          gauges: ALL_GAUGES,
+          network: "mainnet",
+        }),
+      );
+      // realPositionLoaded must be exposed as false while loading.
+      expect(result.current.realPositionLoaded).toBe(false);
+      await act(async () => {
+        await result.current.activate({ lockAmountWei: ONE_MEZO });
+      });
+      expect(writeContractAsync).not.toHaveBeenCalled();
+      expect(result.current.status).toBe("error");
+      expect(result.current.errorMessage).toMatch(/still reading your existing lock/i);
     });
 
     it("Cosmos TTL revert: errorKind classified as 'cosmos-ttl-expired'", async () => {
